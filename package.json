@@ -1,0 +1,11 @@
+{
+  "name": "ez-shots",
+  "version": "1.0.0",
+  "description": "EZ Shots — real estate photography portfolio website",
+  "scripts": {
+    "start": "serve -s . -l ${PORT:-3000}"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  }
+}
