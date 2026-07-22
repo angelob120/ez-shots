@@ -15,7 +15,28 @@
   --shadow: 0 8px 26px rgba(15, 23, 42, 0.06);
   --shadow-lg: 0 18px 44px rgba(15, 23, 42, 0.10);
   --max: 1120px;
+  --panel-dark: #0f172a;                 /* ticker + footer background */
+  --header-bg: rgba(255,255,255,.86);    /* sticky header background */
 }
+
+/* Dark theme */
+[data-theme="dark"] {
+  --clay: #3b82f6;
+  --clay-dark: #60a5fa;
+  --sand: #0e1626;
+  --sand-2: #1b2436;
+  --cream: #161d2e;
+  --ink: #e8edf5;
+  --muted: #9aa7bd;
+  --line: #29344c;
+  --sage: #3b82f6;
+  --shadow: 0 8px 26px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.5);
+  --panel-dark: #0a0f1c;
+  --header-bg: rgba(22,29,46,.88);
+}
+[data-theme="dark"] body { background: #0b1220; }
+[data-theme="dark"] .btn-ghost { color: var(--ink); }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
@@ -64,7 +85,7 @@ h2 { font-size: 40px; }
 /* Header */
 .site-header {
   position: sticky; top: 0; z-index: 50;
-  background: rgba(255,255,255,.86); backdrop-filter: blur(10px);
+  background: var(--header-bg); backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
 }
 .nav { display: flex; align-items: center; justify-content: space-between; height: 74px; }
@@ -76,6 +97,13 @@ h2 { font-size: 40px; }
 .nav-links a.active { color: var(--ink); }
 .nav-links .btn { color: #fff; }
 .menu-btn { display: none; background: none; border: none; font-size: 26px; color: var(--ink); cursor: pointer; }
+.theme-toggle {
+  background: transparent; border: 1.5px solid var(--line); border-radius: 999px;
+  width: 40px; height: 40px; font-size: 17px; cursor: pointer; color: var(--ink);
+  display: grid; place-items: center; margin-left: 18px; transition: border-color .18s ease, background .18s ease;
+  flex: none;
+}
+.theme-toggle:hover { border-color: var(--clay); background: var(--sand); }
 
 /* Page header band */
 .page-head { background: var(--sand); border-bottom: 1px solid var(--line); padding: 66px 0 56px; }
@@ -84,7 +112,7 @@ h2 { font-size: 40px; }
 
 /* Top bar */
 .ticker {
-  background: var(--ink); color: #fff; overflow: hidden; white-space: nowrap;
+  background: var(--panel-dark); color: #fff; overflow: hidden; white-space: nowrap;
   padding: 8px 0; font-size: 13px; font-weight: 700; text-align: center; letter-spacing: .02em;
 }
 .tick { display: inline-block; padding: 0 20px; }
@@ -253,7 +281,7 @@ form { display: grid; gap: 16px; }
 .legal .updated { font-size: 14px; color: var(--muted); margin-bottom: 8px; }
 
 /* Footer */
-.footer { background: var(--ink); color: rgba(255,255,255,.6); padding: 64px 0 30px; }
+.footer { background: var(--panel-dark); color: rgba(255,255,255,.6); padding: 64px 0 30px; }
 .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; padding-bottom: 40px; }
 .footer-brand { max-width: 320px; }
 .footer .brand { color: #fff; margin-bottom: 14px; }

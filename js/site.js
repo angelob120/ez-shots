@@ -23,6 +23,7 @@
       '<nav class="nav-links">' + nav +
         '<a href="packages.html" class="btn">Book a Shoot</a>' +
       '</nav>' +
+      '<button class="theme-toggle" aria-label="Toggle light/dark theme" title="Toggle theme">🌙</button>' +
       '<button class="menu-btn" aria-label="Menu">☰</button>' +
     '</div></header>';
 
@@ -64,6 +65,36 @@
   var f = document.getElementById("site-footer");
   if (h) h.outerHTML = header;
   if (f) f.outerHTML = footer;
+
+  // Light / dark theme toggle (defaults to system, remembers choice)
+  function currentTheme() {
+    return document.documentElement.getAttribute("data-theme") || "light";
+  }
+  function updateThemeIcon() {
+    var b = document.querySelector(".theme-toggle");
+    if (b) b.textContent = currentTheme() === "dark" ? "☀️" : "🌙";
+  }
+  updateThemeIcon();
+  var themeBtn = document.querySelector(".theme-toggle");
+  if (themeBtn) {
+    themeBtn.addEventListener("click", function () {
+      var next = currentTheme() === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", next);
+      try { localStorage.setItem("theme", next); } catch (e) {}
+      updateThemeIcon();
+    });
+  }
+  // Follow system changes only while the user hasn't chosen manually
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function (e) {
+      var saved;
+      try { saved = localStorage.getItem("theme"); } catch (err) {}
+      if (!saved) {
+        document.documentElement.setAttribute("data-theme", e.matches ? "dark" : "light");
+        updateThemeIcon();
+      }
+    });
+  }
 
   // Package "Book" → reveal Buy Now / Book a Time options
   document.querySelectorAll(".pkg-book").forEach(function (b) {
