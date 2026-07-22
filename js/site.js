@@ -15,18 +15,9 @@
     return '<a href="' + l[0] + '"' + active + ">" + l[1] + "</a>";
   }).join("");
 
-  // Infinite scrolling top bar
-  var tickerItems = [
-    "🚁 Trusted by local colleges &amp; universities",
-    "⏱️ 24–48 hour turnaround",
-    "🎉 New realtors: first shoot 50% off",
-    "📸 Photo · Video · Drone",
-    "✈️ FAA Part 107 licensed pilot",
-    "🏡 MLS-ready delivery"
-  ];
-  var run = tickerItems.map(function (t) { return '<span class="tick">' + t + '</span>'; }).join("");
+  // Static top bar
   var header =
-    '<div class="ticker"><div class="ticker-track">' + run + run + '</div></div>' +
+    '<div class="ticker"><span class="tick">🎉 New realtors: first shoot 50% off</span></div>' +
     '<header class="site-header"><div class="container nav">' +
       '<a href="index.html" class="brand">EZ<span>Shots</span></a>' +
       '<nav class="nav-links">' + nav +

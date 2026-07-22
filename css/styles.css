@@ -80,7 +80,7 @@ h2 { font-size: 34px; }
 /* Infinite scrolling top bar */
 .ticker {
   background: var(--navy); color: #fff; overflow: hidden; white-space: nowrap;
-  padding: 11px 0; font-size: 14px; font-weight: 600;
+  padding: 11px 0; font-size: 14px; font-weight: 600; text-align: center;
 }
 .ticker-track { display: inline-block; white-space: nowrap; animation: ticker 28s linear infinite; }
 .ticker:hover .ticker-track { animation-play-state: paused; }
