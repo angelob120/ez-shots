@@ -127,15 +127,16 @@ h2 { font-size: 40px; }
 .hero h1 { color: #fff; font-size: 62px; letter-spacing: -.02em; margin-bottom: 14px; }
 .hero p { color: rgba(255,255,255,.92); font-size: 21px; max-width: 620px; margin: 0 auto 32px; font-weight: 600; }
 .hero-stat {
-  display: block; max-width: 560px; color: rgba(255,255,255,.92) !important;
-  font-size: 16px !important; font-weight: 500; font-style: italic;
-  padding: 14px 22px; border-left: 3px solid var(--clay);
-  background: rgba(37,99,235,.15); border-radius: 8px;
-  margin: 0 auto 26px !important; line-height: 1.55;
+  display: block; max-width: 540px; color: #fff !important;
+  font-size: 17px !important; font-weight: 600;
+  margin: 0 auto 30px !important; line-height: 1.5;
 }
-.hero-stat strong { font-weight: 800; font-style: normal; }
-.hero-stat a { display: inline-block; margin-top: 4px; font-size: 13px; font-style: normal; font-weight: 600; color: #93c5fd; }
+.hero-stat a {
+  color: var(--clay); font-weight: 700; text-decoration: underline;
+  text-underline-offset: 3px; white-space: nowrap;
+}
 .hero-stat a:hover { color: #fff; }
+[data-theme="dark"] .hero-stat a { color: #93c5fd; }
 .hero .btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
 .hero .btn-ghost { color: #fff; border-color: rgba(255,255,255,.6); }
 .hero .btn-ghost:hover { background: rgba(255,255,255,.14); border-color: #fff; color: #fff; }
