@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // Paths resolve against baseUrl, and this file lives one level down from
+    // the real tsconfig — so baseUrl has to point back at the repo root or
+    // every mapping below lands in scripts/.
+    "baseUrl": "..",
+    "paths": {
+      "@/lib/prisma": ["./scripts/test-stubs/prisma.ts"],
+      "@/*": ["./src/*"]
+    }
+  }
+}

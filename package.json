@@ -1,11 +1,53 @@
 {
-  "name": "ez-shots",
+  "name": "hearth",
   "version": "1.0.0",
-  "description": "EZ Shots — real estate photography portfolio website",
+  "private": true,
   "scripts": {
-    "start": "serve -s . -l ${PORT:-3000}"
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "node scripts/migrate.mjs && node scripts/config-check.mjs && node scripts/storage-check.mjs && next start -p ${PORT:-3000}",
+    "storage:check": "node scripts/storage-check.mjs",
+    "config:check": "node scripts/config-check.mjs",
+    "postinstall": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "admin:create": "tsx scripts/create-admin.ts",
+    "test": "node scripts/server-only.check.mjs && node scripts/client-values.check.mjs && tsx scripts/prisma-fields.check.ts && tsx scripts/hours.test.ts && tsx --tsconfig scripts/tsconfig.test.json scripts/orders.test.ts && tsx --tsconfig scripts/tsconfig.concurrency.json scripts/orders.concurrency.test.ts && tsx --tsconfig scripts/tsconfig.sms.json scripts/sms.test.ts && tsx --tsconfig scripts/tsconfig.sms.json scripts/entitlements.test.ts && tsx scripts/rate-limit.test.ts && tsx scripts/domains.test.ts && tsx scripts/simulator.test.ts && tsx --tsconfig scripts/tsconfig.invites.json scripts/invites.test.ts && tsx --tsconfig scripts/tsconfig.invites.json scripts/readiness.test.ts && tsx --tsconfig scripts/tsconfig.settings.json scripts/payment-mode.test.ts && tsx --tsconfig scripts/tsconfig.test.json scripts/analytics.test.ts && tsx --tsconfig scripts/tsconfig.support.json scripts/support.test.ts && tsx scripts/theme.test.ts && tsx scripts/store-theme.test.ts && tsx scripts/onboarding.test.ts && tsx scripts/reorder.test.ts && tsx scripts/booking-slots.test.ts && tsx scripts/plans.test.ts && tsx scripts/menu-scrape.test.ts && tsx scripts/net-guard.test.ts && tsx scripts/oauth.test.ts && tsx scripts/campaigns.test.ts && tsx --tsconfig scripts/tsconfig.test.json scripts/automation-flow.test.ts && tsx --tsconfig scripts/tsconfig.customers.json scripts/customer-import.test.ts && tsx scripts/help-articles.test.ts && tsx scripts/notifications.test.ts",
+    "db:studio": "prisma studio",
+    "db:migrate": "node scripts/migrate.mjs",
+    "media:gc": "tsx scripts/media-gc.ts",
+    "sweep": "tsx scripts/sweep.ts",
+    "check:prisma-fields": "tsx scripts/prisma-fields.check.ts",
+    "check:server-only": "node scripts/server-only.check.mjs",
+    "check:client-values": "node scripts/client-values.check.mjs"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "serve": "^14.2.1"
+    "@prisma/client": "^5.22.0",
+    "aws4fetch": "^1.0.20",
+    "bcryptjs": "^2.4.3",
+    "jose": "^5.9.6",
+    "next": "^14.2.35",
+    "prisma": "^5.22.0",
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsx": "^4.19.1"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.7.5",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=18.18"
   }
 }

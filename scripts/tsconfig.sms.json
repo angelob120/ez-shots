@@ -1,0 +1,13 @@
+{
+  // The SMS seam tests exercise lib/sms.ts itself rather than mocking it out,
+  // so unlike tsconfig.concurrency.json this does NOT alias @/lib/sms — it
+  // only swaps the database underneath. Same baseUrl trick as the others.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": {
+      "@/lib/prisma": ["./scripts/test-stubs/prisma-sms.ts"],
+      "@/*": ["./src/*"]
+    }
+  }
+}

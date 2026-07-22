@@ -1,0 +1,20 @@
+{
+  // Invites and readiness. Both modules are `server-only` and touch the
+  // database, so three things get swapped: the database itself, the auth module
+  // (which reaches for next/headers), and the `server-only` marker package —
+  // that one resolves to a module that throws unless the react-server condition
+  // is set, which is exactly what makes it useless under tsx.
+  //
+  // Nothing else is aliased. These tests exercise lib/invites.ts and
+  // lib/readiness.ts themselves rather than mocking them out.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": {
+      "@/lib/prisma": ["./scripts/test-stubs/prisma-invites.ts"],
+      "@/lib/auth": ["./scripts/test-stubs/auth.ts"],
+      "server-only": ["./scripts/test-stubs/server-only.ts"],
+      "@/*": ["./src/*"]
+    }
+  }
+}

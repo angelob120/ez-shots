@@ -1,0 +1,614 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────
+   Operator tokens — dashboard, admin, marketing, auth pages.
+
+   Dark is the default and is declared on :root rather than under a
+   selector, so anything rendered before the theme cookie is known
+   (an error boundary, a 404 outside a layout) still gets a complete
+   palette instead of transparent-on-transparent.
+
+   Channel triplets, not hex — see the comment in tailwind.config.ts.
+   ───────────────────────────────────────────────────────────── */
+:root,
+.hearth-shell[data-h-theme="dark"] {
+  --h-base: 11 12 14;
+  --h-surface: 18 20 23;
+  --h-surface-2: 23 26 30;
+  --h-line: 35 39 45;
+  --h-line-2: 46 52 59;
+  --h-ink: 232 234 237;
+  --h-dim: 154 161 171;
+  --h-mute: 126 134 144;
+  --h-accent: 59 130 246;
+  --h-accent-dim: 37 99 235;
+  --h-accent-ink: 255 255 255;
+  --h-accent-fill: 37 99 235;
+  --h-warn: 224 163 58;
+  --h-bad: 224 85 74;
+  --h-good: 91 191 122;
+  --h-accent-hover: 29 78 216;
+  --h-bad-line: 90 39 35;
+  --h-bad-ink: 240 138 128;
+  --h-bad-bg: 42 22 19;
+  --h-warn-line: 90 74 30;
+  --h-warn-bg: 36 29 14;
+  --h-warn-ink: 240 185 95;
+  --h-warn-dim: 201 167 104;
+  --h-good-line: 31 92 58;
+  --h-good-bg: 15 28 20;
+
+  color-scheme: dark;
+}
+
+/* Light is a genuine light palette, not an inversion. Two things move
+   more than a flip would: the accent darkens (#3b82f6 on white is 3.1:1
+   and fails on the small 12–13px type this console is built from), and
+   warn/bad/good darken for the same reason — amber on white is the worst
+   offender, and it carries the failed-refund banner. */
+.hearth-shell[data-h-theme="light"] {
+  --h-base: 247 248 249;
+  --h-surface: 255 255 255;
+  --h-surface-2: 241 243 245;
+  --h-line: 226 230 234;
+  --h-line-2: 209 215 222;
+  --h-ink: 20 23 26;
+  --h-dim: 91 99 109;
+  --h-mute: 100 108 118;
+  --h-accent: 29 78 216;
+  --h-accent-dim: 30 64 175;
+  --h-accent-ink: 255 255 255;
+  --h-accent-fill: 29 78 216;
+  --h-warn: 146 89 6;
+  --h-bad: 185 44 34;
+  --h-good: 21 128 61;
+  --h-accent-hover: 30 64 175;
+  --h-bad-line: 250 190 185;
+  --h-bad-ink: 159 36 28;
+  --h-bad-bg: 254 242 241;
+  --h-warn-line: 240 219 165;
+  --h-warn-bg: 254 248 235;
+  --h-warn-ink: 124 72 13;
+  --h-warn-dim: 140 96 34;
+  --h-good-line: 176 219 191;
+  --h-good-bg: 240 250 243;
+
+  color-scheme: light;
+}
+
+/* SYSTEM is stored as the absence of a resolved choice. The shell carries
+   data-h-theme="light"/"dark" for an explicit preference and omits the
+   attribute entirely for system, so this query is the only thing that needs
+   to know the device's opinion — no client-side probe, no flash.
+
+   The tokens are scoped to `.hearth-shell` rather than `:root` on purpose.
+   Putting them on the document would mean reading the theme cookie in the
+   root layout, and reading *any* cookie there opts every route into dynamic
+   rendering — including `/r/[slug]`, the customer storefront, which is the
+   one page in this product that has to be fast on a phone on cell data.
+   The operator layouts are all `force-dynamic` already, so scoping it here
+   costs nothing. */
+@media (prefers-color-scheme: light) {
+  .hearth-shell:not([data-h-theme="dark"]) {
+    --h-base: 247 248 249;
+    --h-surface: 255 255 255;
+    --h-surface-2: 241 243 245;
+    --h-line: 226 230 234;
+    --h-line-2: 209 215 222;
+    --h-ink: 20 23 26;
+    --h-dim: 91 99 109;
+    --h-mute: 100 108 118;
+    --h-accent: 29 78 216;
+    --h-accent-dim: 30 64 175;
+    --h-accent-ink: 255 255 255;
+    --h-accent-fill: 29 78 216;
+    --h-warn: 146 89 6;
+    --h-bad: 185 44 34;
+    --h-good: 21 128 61;
+    --h-accent-hover: 30 64 175;
+    --h-bad-line: 250 190 185;
+    --h-bad-ink: 159 36 28;
+    --h-bad-bg: 254 242 241;
+    --h-warn-line: 240 219 165;
+    --h-warn-bg: 254 248 235;
+    --h-warn-ink: 124 72 13;
+    --h-warn-dim: 140 96 34;
+    --h-good-line: 176 219 191;
+    --h-good-bg: 240 250 243;
+
+    color-scheme: light;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+img {
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+/* Operator shell — applied on /admin, /dashboard, /login, /signup, the
+   marketing site. Themed by the tokens above; see lib/theme.ts for who
+   sets data-h-theme. Colours transition so flipping the toggle reads as
+   the page changing rather than a hard cut, but only the two properties
+   the shell itself owns — a blanket `transition: all` here would drag
+   every hover state on every child through a 150ms fade. */
+.hearth-shell {
+  background: rgb(var(--h-base));
+  color: rgb(var(--h-ink));
+  min-height: 100vh;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hearth-shell {
+    transition: none;
+  }
+}
+
+/* Native form controls take a real colour, not a channel triplet — the same
+   reason the store block below does this. Set here rather than per-input so
+   a checkbox added later is themed by default; the alternative was an
+   an `accent-[#3b82f6]` utility repeated at eight call sites, every one of
+   which was a hardcoded dark-mode blue. */
+.hearth-shell input[type="checkbox"],
+.hearth-shell input[type="radio"],
+.hearth-shell input[type="range"] {
+  accent-color: rgb(var(--h-accent));
+}
+
+/* A horizontally scrolling strip with no visible scrollbar — the top-bar nav.
+   Distinct from `.hearth-scroll`, which *styles* a scrollbar for panes where
+   seeing one is useful. A nav is chrome: a scrollbar sitting under it reads as
+   a rendering fault rather than an affordance, and the row is only ~10px tall
+   so the bar eats a noticeable fraction of it. */
+.hearth-rail {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hearth-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.hearth-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.hearth-scroll::-webkit-scrollbar-thumb {
+  background: rgb(var(--h-line-2));
+  border-radius: 999px;
+}
+.hearth-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Customer store tokens.
+
+   The shell is deliberately neutral: a cool paper white rather than a
+   warm cream, so a tenant accent of any hue — red, teal, mustard —
+   sits on it without clashing. The restaurant's photos and accent are
+   the identity; this layer stays out of the way.
+
+   Values are RGB channel triplets, not hex, because Tailwind needs
+   `rgb(var(--x) / <alpha-value>)` to make opacity modifiers like
+   `bg-s-accent/10` work. --store-accent is injected per tenant at
+   runtime from the database.
+   ───────────────────────────────────────────────────────────── */
+.store {
+  --s-bg: 251 251 250;
+  --s-raised: 255 255 255;
+  --s-ink: 20 20 20;
+  --s-dim: 92 95 99;
+  --s-mute: 112 116 120;
+  --s-line: 230 230 228;
+  --s-line-2: 213 213 210;
+
+  /* Falls back to a neutral graphite if a tenant never set one. */
+  --store-accent: 47 51 55;
+  --store-accent-ink: 255 255 255;
+
+  /* Shape and type. A preset moves these; nothing else may. They are the
+     difference between "the same page in a different outfit" and a layout an
+     owner can break — a preset that could move spacing or hide a section
+     would let a tenant produce a storefront with no visible order button. */
+  --s-radius: 14px;
+  --s-radius-lg: 28px;
+  --s-display-weight: 700;
+  --s-display-tracking: -0.02em;
+
+  background: rgb(var(--s-bg));
+  color: rgb(var(--s-ink));
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Explicit dark, chosen by the owner. Always dark, regardless of device. */
+.store[data-theme="dark"] {
+  --s-bg: 14 15 16;
+  --s-raised: 23 25 27;
+  --s-ink: 242 243 244;
+  --s-dim: 166 171 176;
+  --s-mute: 125 130 136;
+  --s-line: 38 41 44;
+  --s-line-2: 51 56 60;
+}
+
+/* SYSTEM (the default) follows the visitor's device. An explicit "light"
+   choice opts out, so it is excluded here. */
+@media (prefers-color-scheme: dark) {
+  .store:not([data-theme="light"]) {
+    --s-bg: 14 15 16;
+    --s-raised: 23 25 27;
+    --s-ink: 242 243 244;
+    --s-dim: 166 171 176;
+    --s-mute: 125 130 136;
+    --s-line: 38 41 44;
+    --s-line-2: 51 56 60;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   THEME PRESETS
+
+   Same skeleton, different surface. A preset moves the neutral
+   palette, the corner radius and the display weight — and nothing
+   else. The accent stays inline per tenant (from the database);
+   see the header of src/lib/store-theme.ts for why the palette
+   cannot join it there.
+
+   Every preset needs three blocks: light, explicit dark, and the
+   `prefers-color-scheme` twin for SYSTEM. Miss the third and a
+   tenant on that preset renders a light page on a dark phone, and
+   the stylesheet looks correct while it happens.
+   `scripts/store-theme.test.ts` parses this file and fails on a
+   missing block or a token under WCAG AA.
+
+   Classic is the base `.store` block above — it is the default, so
+   it costs no extra selector.
+   ───────────────────────────────────────────────────────────── */
+
+/* ── Warm — cream, soft corners. Bakeries, cafés, comfort food. ── */
+.store[data-preset="warm"] {
+  --s-bg: 253 250 245;
+  --s-raised: 255 255 255;
+  --s-ink: 28 24 21;
+  --s-dim: 106 96 88;
+  --s-mute: 124 114 103;
+  --s-line: 235 228 218;
+  --s-line-2: 218 209 196;
+  --s-radius: 20px;
+  --s-radius-lg: 32px;
+  --s-display-weight: 700;
+  --s-display-tracking: -0.02em;
+}
+.store[data-preset="warm"][data-theme="dark"] {
+  --s-bg: 20 17 15;
+  --s-raised: 30 26 23;
+  --s-ink: 244 239 232;
+  --s-dim: 176 166 152;
+  --s-mute: 138 129 117;
+  --s-line: 43 38 34;
+  --s-line-2: 58 51 45;
+}
+@media (prefers-color-scheme: dark) {
+  .store[data-preset="warm"]:not([data-theme="light"]) {
+    --s-bg: 20 17 15;
+    --s-raised: 30 26 23;
+    --s-ink: 244 239 232;
+    --s-dim: 176 166 152;
+    --s-mute: 138 129 117;
+    --s-line: 43 38 34;
+    --s-line-2: 58 51 45;
+  }
+}
+
+/* ── Bold — square, heavy, high contrast. Pizza, burgers, BBQ. ── */
+.store[data-preset="bold"] {
+  --s-bg: 247 247 245;
+  --s-raised: 255 255 255;
+  --s-ink: 11 11 11;
+  --s-dim: 85 88 92;
+  --s-mute: 110 114 119;
+  --s-line: 228 228 224;
+  --s-line-2: 207 207 201;
+  --s-radius: 4px;
+  --s-radius-lg: 10px;
+  --s-display-weight: 800;
+  --s-display-tracking: -0.035em;
+}
+.store[data-preset="bold"][data-theme="dark"] {
+  --s-bg: 11 12 13;
+  --s-raised: 22 24 26;
+  --s-ink: 245 246 247;
+  --s-dim: 169 174 179;
+  --s-mute: 124 129 134;
+  --s-line: 36 39 42;
+  --s-line-2: 51 56 60;
+}
+@media (prefers-color-scheme: dark) {
+  .store[data-preset="bold"]:not([data-theme="light"]) {
+    --s-bg: 11 12 13;
+    --s-raised: 22 24 26;
+    --s-ink: 245 246 247;
+    --s-dim: 169 174 179;
+    --s-mute: 124 129 134;
+    --s-line: 36 39 42;
+    --s-line-2: 51 56 60;
+  }
+}
+
+/* ── Fresh — cool, airy. Salads, juice, poke, health food. ── */
+.store[data-preset="fresh"] {
+  --s-bg: 248 251 250;
+  --s-raised: 255 255 255;
+  --s-ink: 18 33 28;
+  --s-dim: 79 101 96;
+  --s-mute: 96 120 114;
+  --s-line: 224 234 231;
+  --s-line-2: 203 218 214;
+  --s-radius: 16px;
+  --s-radius-lg: 30px;
+  --s-display-weight: 600;
+  --s-display-tracking: -0.015em;
+}
+.store[data-preset="fresh"][data-theme="dark"] {
+  --s-bg: 13 20 18;
+  --s-raised: 22 32 29;
+  --s-ink: 238 245 242;
+  --s-dim: 163 184 178;
+  --s-mute: 117 138 132;
+  --s-line: 33 45 41;
+  --s-line-2: 46 61 56;
+}
+@media (prefers-color-scheme: dark) {
+  .store[data-preset="fresh"]:not([data-theme="light"]) {
+    --s-bg: 13 20 18;
+    --s-raised: 22 32 29;
+    --s-ink: 238 245 242;
+    --s-dim: 163 184 178;
+    --s-mute: 117 138 132;
+    --s-line: 33 45 41;
+    --s-line-2: 46 61 56;
+  }
+}
+
+/* ── Night — dark whatever the device says. Bars, late-night.
+   The only preset with one palette. `isAlwaysDark` in
+   src/lib/store-theme.ts forces data-theme="dark" on the root, so
+   this needs no media-query twin and the owner's light/dark control
+   is hidden while it is selected rather than offered and ignored. ── */
+.store[data-preset="night"],
+.store[data-preset="night"][data-theme="dark"],
+.store[data-preset="night"][data-theme="light"] {
+  --s-bg: 14 15 16;
+  --s-raised: 23 25 27;
+  --s-ink: 242 243 244;
+  --s-dim: 166 171 176;
+  --s-mute: 125 130 136;
+  --s-line: 38 41 44;
+  --s-line-2: 51 56 60;
+  --s-radius: 12px;
+  --s-radius-lg: 26px;
+  --s-display-weight: 600;
+  --s-display-tracking: -0.02em;
+}
+
+/* Native form controls take a real color, not a channel triplet. */
+.store input[type="checkbox"],
+.store input[type="radio"] {
+  accent-color: rgb(var(--store-accent));
+}
+
+/* Safe areas — this runs installed, full-bleed, on notched phones. */
+.store-pad-top {
+  padding-top: env(safe-area-inset-top);
+}
+.store-pad-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Category rail: scrolls horizontally, no visible scrollbar. */
+.store-rail {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.store-rail::-webkit-scrollbar {
+  display: none;
+}
+
+/* Anchor targets sit below the sticky nav (search row + chip rail). The nav
+   measures its own height at runtime and writes it here, so a store with one
+   category (no chips) doesn't get a phantom gap. */
+.store {
+  --s-nav-h: 108px;
+}
+
+.store-section {
+  scroll-margin-top: calc(var(--s-nav-h) + 12px);
+}
+
+/* Elevation. Two steps only — the menu is a list, not a dashboard, and more
+   depth than this starts competing with the food photography. */
+.store-lift {
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 4px 16px -6px rgb(0 0 0 / 0.10);
+}
+.store-lift-lg {
+  box-shadow:
+    0 2px 4px rgb(0 0 0 / 0.05),
+    0 12px 32px -10px rgb(0 0 0 / 0.18);
+}
+/* On a dark surface a soft grey shadow reads as fog, not elevation, so depth
+   comes from a deeper, tighter shadow plus a top highlight instead. */
+.store[data-theme="dark"] .store-lift {
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.05) inset,
+    0 2px 12px -4px rgb(0 0 0 / 0.6);
+}
+.store[data-theme="dark"] .store-lift-lg {
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.06) inset,
+    0 16px 44px -12px rgb(0 0 0 / 0.85);
+}
+
+/* Loading placeholder for photos that haven't decoded yet. Keeps the list from
+   flashing grey blocks on a slow connection. */
+@keyframes store-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+.store-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    rgb(var(--s-line) / 0) 0%,
+    rgb(var(--s-line-2) / 0.55) 50%,
+    rgb(var(--s-line) / 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: store-shimmer 1.4s linear infinite;
+}
+
+/* Staggered entrance for the item rows. Subtle — it should register as the
+   page settling, not as a performance. */
+@keyframes store-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.store-rise {
+  animation: store-rise 340ms cubic-bezier(0.22, 0.9, 0.28, 1) both;
+}
+
+/* Line-clamp helpers used by the item rows. */
+.store-underline {
+  background-image: linear-gradient(rgb(var(--store-accent)), rgb(var(--store-accent)));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 2px;
+}
+
+@keyframes store-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes store-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes store-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.14);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+/* Cart bar reacting to an item landing in it — a short, confident nudge
+   rather than a bounce, so it reads as "got it" at a glance. */
+@keyframes store-bump {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.035) translateY(-2px);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes store-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.store-sheet {
+  animation: store-sheet-in 260ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.store-scrim {
+  animation: store-fade-in 200ms ease-out;
+}
+.store-pop {
+  animation: store-pop 320ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.store-bump {
+  animation: store-bump 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.store-slide-up {
+  animation: store-slide-up 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.store-fade {
+  animation: store-fade-in 260ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .store-sheet,
+  .store-scrim,
+  .store-pop,
+  .store-bump,
+  .store-slide-up,
+  .store-fade,
+  .store-shimmer,
+  .store-rise {
+    animation: none;
+  }
+  .store-rise {
+    opacity: 1;
+    transform: none;
+  }
+}
