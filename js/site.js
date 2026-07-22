@@ -21,7 +21,7 @@
     '<header class="site-header"><div class="container nav">' +
       '<a href="index.html" class="brand">EZ<span>Shots</span></a>' +
       '<nav class="nav-links">' + nav +
-        '<a href="contact.html" class="btn">Book a Shoot</a>' +
+        '<a href="packages.html" class="btn">Book a Shoot</a>' +
       '</nav>' +
       '<button class="menu-btn" aria-label="Menu">☰</button>' +
     '</div></header>';
@@ -29,7 +29,7 @@
   var footer =
     '<footer class="footer"><div class="container">' +
       '<div class="brand">EZ<span style="color:#7fb2ff">Shots</span></div>' +
-      '<p>Real estate photography, video &amp; drone &nbsp;|&nbsp; bigmoneygelo2@gmail.com &nbsp;|&nbsp; (555) 123-4567</p>' +
+      '<p>Real estate photography, video &amp; drone &nbsp;|&nbsp; bigmoneygelo2@gmail.com</p>' +
       '<p>&copy; ' + new Date().getFullYear() + ' EZ Shots. All rights reserved.</p>' +
     '</div></footer>';
 
@@ -37,6 +37,13 @@
   var f = document.getElementById("site-footer");
   if (h) h.outerHTML = header;
   if (f) f.outerHTML = footer;
+
+  // Package "Book" → reveal Buy Now / Book a Time options
+  document.querySelectorAll(".pkg-book").forEach(function (b) {
+    b.addEventListener("click", function () {
+      b.closest(".pkg-cta").classList.add("open");
+    });
+  });
 
   // Mobile menu toggle
   var btn = document.querySelector(".menu-btn");
