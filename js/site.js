@@ -28,9 +28,36 @@
 
   var footer =
     '<footer class="footer"><div class="container">' +
-      '<div class="brand">EZ<span style="color:#7fb2ff">Shots</span></div>' +
-      '<p>Real estate photography, video &amp; drone &nbsp;|&nbsp; bigmoneygelo2@gmail.com</p>' +
-      '<p>&copy; ' + new Date().getFullYear() + ' EZ Shots. All rights reserved.</p>' +
+      '<div class="footer-top">' +
+        '<div class="footer-brand">' +
+          '<div class="brand">EZ<span>Shots</span></div>' +
+          '<p>Real estate photography, video &amp; drone. MLS-ready delivery in 24–48 hours.</p>' +
+          '<a href="mailto:bigmoneygelo2@gmail.com" class="footer-email">bigmoneygelo2@gmail.com</a>' +
+        '</div>' +
+        '<div class="footer-col">' +
+          '<h4>Explore</h4>' +
+          '<a href="portfolio.html">Portfolio</a>' +
+          '<a href="gallery.html">Gallery</a>' +
+          '<a href="packages.html">Packages</a>' +
+          '<a href="about.html">About</a>' +
+          '<a href="contact.html">Contact</a>' +
+        '</div>' +
+        '<div class="footer-col">' +
+          '<h4>Legal</h4>' +
+          '<a href="terms.html">Terms of Service</a>' +
+          '<a href="refund.html">Refund &amp; Cancellation</a>' +
+          '<a href="privacy.html">Privacy Policy</a>' +
+        '</div>' +
+        '<div class="footer-col">' +
+          '<h4>Get started</h4>' +
+          '<a href="packages.html">Book a Shoot</a>' +
+          '<a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">Book a Call</a>' +
+        '</div>' +
+      '</div>' +
+      '<div class="footer-bottom">' +
+        '<p>&copy; ' + new Date().getFullYear() + ' EZ Shots. All rights reserved.</p>' +
+        '<p class="footer-source">*Listings with aerial photos sold 68% faster — <a href="https://www.redfin.com/blog/professional-real-estate-photos-sell-homes-for-more/" target="_blank" rel="noopener">Redfin / MLS study</a>.</p>' +
+      '</div>' +
     '</div></footer>';
 
   var h = document.getElementById("site-header");
