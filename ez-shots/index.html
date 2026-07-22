@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EZ Shots — Real Estate Photography, Video &amp; Drone</title>
+  <meta name="description" content="EZ Shots — professional real estate photography, 1-minute listing videos, and drone aerials that help realtors sell faster." />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="offer">
+    🎉 New realtor? Your <strong>first shoot is 50% off</strong> — no strings attached.
+  </div>
+
+  <header class="site-header">
+    <div class="container nav">
+      <a href="index.html" class="brand">EZ<span>Shots</span></a>
+      <nav class="nav-links">
+        <a href="#work">Work</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#packages">Packages</a>
+        <a href="#contact">Contact</a>
+        <a href="#contact" class="btn">Book a Shoot</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <h1>Listings that sell faster.</h1>
+      <p>Photo · Video · Drone</p>
+      <div class="btns">
+        <a href="#contact" class="btn">Book a Shoot</a>
+        <a href="#work" class="btn btn-ghost">View Portfolio</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Portfolio -->
+  <section class="section" id="work">
+    <div class="container">
+      <div class="center" style="margin-bottom:48px">
+        <p class="eyebrow">Portfolio</p>
+        <h2>Recent shoots</h2>
+      </div>
+      <div class="grid" id="portfolio-grid"><!-- filled by JS --></div>
+    </div>
+  </section>
+
+  <!-- Gallery strip -->
+  <section class="section section-soft" id="gallery">
+    <div class="container">
+      <div class="center" style="margin-bottom:40px">
+        <p class="eyebrow">Gallery</p>
+        <h2>A few more frames</h2>
+      </div>
+      <div class="masonry" id="gallery-strip"><!-- filled by JS --></div>
+    </div>
+  </section>
+
+  <!-- Packages -->
+  <section class="section section-soft" id="packages">
+    <div class="container">
+      <div class="center" style="margin-bottom:48px">
+        <p class="eyebrow">Pricing</p>
+        <h2>Packages</h2>
+        <p class="lead center">Placeholder pricing — swap in your real rates.</p>
+      </div>
+      <div class="pkg-grid">
+        <div class="pkg">
+          <h3>Essential</h3>
+          <div class="price">$199<span> / shoot</span></div>
+          <p class="desc">Great for condos, lofts &amp; smaller listings.</p>
+          <ul>
+            <li>Up to 25 HDR photos</li>
+            <li>Interior &amp; exterior</li>
+            <li>Next-day delivery</li>
+            <li>MLS-ready sizing</li>
+          </ul>
+          <a href="#contact" class="btn btn-ghost">Book Essential</a>
+        </div>
+        <div class="pkg featured">
+          <div class="badge">MOST POPULAR</div>
+          <h3>Premium</h3>
+          <div class="price">$349<span> / shoot</span></div>
+          <p class="desc">Photo, video &amp; drone — the full listing package.</p>
+          <ul>
+            <li>Up to 40 HDR photos</li>
+            <li>Drone aerial photos</li>
+            <li>1-minute listing video</li>
+            <li>Next-day delivery</li>
+          </ul>
+          <a href="#contact" class="btn">Book Premium</a>
+        </div>
+        <div class="pkg">
+          <h3>Luxury</h3>
+          <div class="price">$549<span> / shoot</span></div>
+          <p class="desc">The works for high-end &amp; luxury listings.</p>
+          <ul>
+            <li>Unlimited HDR photos</li>
+            <li>Drone photo &amp; video</li>
+            <li>1-minute cinematic video</li>
+            <li>Twilight photos</li>
+          </ul>
+          <a href="#contact" class="btn btn-ghost">Book Luxury</a>
+        </div>
+      </div>
+      <p class="pkg-note">✦ First shoot for new realtors is <strong>50% off</strong> — no strings attached. Add-ons like twilight, virtual staging &amp; floor plans available on request.</p>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section class="section" id="contact">
+    <div class="container contact-wrap">
+      <div class="contact-info">
+        <p class="eyebrow">Get in touch</p>
+        <h2>Book your shoot</h2>
+        <p>Ready to make your next listing stand out? Send a few details and I'll get back to you within 24 hours.</p>
+        <div class="contact-item">
+          <div class="ic">✉️</div>
+          <div><b>Email</b><span>bigmoneygelo2@gmail.com</span></div>
+        </div>
+        <div class="contact-item">
+          <div class="ic">📞</div>
+          <div><b>Phone</b><span>(555) 123-4567</span></div>
+        </div>
+        <div class="contact-item">
+          <div class="ic">📍</div>
+          <div><b>Service area</b><span>Serving Greater [Your City] &amp; surrounding areas</span></div>
+        </div>
+      </div>
+
+      <form id="contact-form" action="https://formsubmit.co/bigmoneygelo2@gmail.com" method="POST">
+        <div class="row2">
+          <div class="field">
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" required placeholder="Jane Realtor" />
+          </div>
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="tel" placeholder="(555) 123-4567" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required placeholder="you@email.com" />
+        </div>
+        <div class="field">
+          <label for="package">Package</label>
+          <select id="package" name="package">
+            <option>Essential — $199</option>
+            <option selected>Premium — $349</option>
+            <option>Luxury — $549</option>
+            <option>Not sure yet</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="message">Property details</label>
+          <textarea id="message" name="message" rows="4" placeholder="Address, size, timeline, anything else..."></textarea>
+        </div>
+        <button type="submit" class="btn">Send Request</button>
+        <p class="form-note">By submitting, you'll get a reply within 24 hours. New realtors: mention it's your first shoot for 50% off.</p>
+      </form>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="brand">EZ<span style="color:#7fb2ff">Shots</span></div>
+      <p>Real estate photography, video &amp; drone. &nbsp;|&nbsp; bigmoneygelo2@gmail.com &nbsp;|&nbsp; (555) 123-4567</p>
+      <p>&copy; <span id="year"></span> EZ Shots. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/projects.js"></script>
+  <script>
+    // Build portfolio cards
+    (function () {
+      var grid = document.getElementById("portfolio-grid");
+      (window.EZ_PROJECTS || []).forEach(function (p) {
+        var a = document.createElement("a");
+        a.className = "card";
+        a.href = "project.html?id=" + encodeURIComponent(p.id);
+        a.innerHTML =
+          '<div class="thumb"><img src="' + p.cover + '" alt="' + p.title + '" loading="lazy"></div>' +
+          '<div class="body">' +
+            '<span class="tag">' + p.type + '</span>' +
+            '<h3>' + p.title + '</h3>' +
+            '<p>' + p.short + '</p>' +
+            '<span class="more">View project →</span>' +
+          '</div>';
+        grid.appendChild(a);
+      });
+      // Gallery strip
+      var strip = document.getElementById("gallery-strip");
+      (window.EZ_GALLERY || []).forEach(function (src) {
+        var img = document.createElement("img");
+        img.src = src; img.loading = "lazy"; img.alt = "EZ Shots real estate photo";
+        strip.appendChild(img);
+      });
+      document.getElementById("year").textContent = new Date().getFullYear();
+    })();
+  </script>
+</body>
+</html>

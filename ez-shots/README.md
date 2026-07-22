@@ -3,18 +3,10 @@
 Clean, modern portfolio site for a real estate photography business. Home page with hero,
 portfolio grid, pricing packages, and a contact form. Each project links to its own detail page.
 
-## Pages
-- `index.html` — home (hero + featured work + gallery teaser)
-- `portfolio.html` — full project grid
-- `gallery.html` — full photo gallery
-- `packages.html` — pricing
-- `contact.html` — contact info + form
-- `project.html` — project detail (loads a project by `?id=` from the URL)
-
-## Other files
-- `js/projects.js` — **all your portfolio & gallery content lives here** (titles, photos, descriptions)
-- `js/site.js` — shared nav + footer (edit once, applies to every page)
-- `js/render.js` — builds the portfolio grid & gallery from your data
+## Files
+- `index.html` — home page (hero, portfolio, packages, contact)
+- `project.html` — project detail page (loads a project by `?id=` from the URL)
+- `js/projects.js` — **all your portfolio content lives here** (titles, photos, descriptions)
 - `css/styles.css` — styling
 - `package.json` — lets Railway serve the static site
 

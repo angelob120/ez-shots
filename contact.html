@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact — EZ Shots</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-page="contact">
+  <div id="site-header"></div>
+
+  <section class="page-head">
+    <div class="container">
+      <p class="eyebrow">Get in touch</p>
+      <h1>Book your shoot</h1>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container contact-wrap">
+      <div class="contact-info">
+        <div class="contact-item">
+          <div class="ic">✉️</div>
+          <div><b>Email</b><span>bigmoneygelo2@gmail.com</span></div>
+        </div>
+        <div class="contact-item">
+          <div class="ic">📞</div>
+          <div><b>Phone</b><span>(555) 123-4567</span></div>
+        </div>
+        <div class="contact-item">
+          <div class="ic">📍</div>
+          <div><b>Service area</b><span>Serving Greater [Your City] &amp; surrounding areas</span></div>
+        </div>
+      </div>
+
+      <form action="https://formsubmit.co/bigmoneygelo2@gmail.com" method="POST">
+        <div class="row2">
+          <div class="field">
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" required placeholder="Jane Realtor" />
+          </div>
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="tel" placeholder="(555) 123-4567" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required placeholder="you@email.com" />
+        </div>
+        <div class="field">
+          <label for="package">Package</label>
+          <select id="package" name="package">
+            <option>Essential — $199</option>
+            <option selected>Premium — $349</option>
+            <option>Luxury — $549</option>
+            <option>Not sure yet</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="message">Property details</label>
+          <textarea id="message" name="message" rows="4" placeholder="Address, size, timeline..."></textarea>
+        </div>
+        <button type="submit" class="btn">Send Request</button>
+        <p class="form-note">New realtors: mention it's your first shoot for 50% off.</p>
+      </form>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/projects.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project — EZ Shots</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-page="portfolio">
+  <div id="site-header"></div>
+
+  <section class="section detail-hero">
+    <div class="container" id="detail"></div>
+  </section>
+
+  <section class="section section-soft" style="text-align:center">
+    <div class="container">
+      <h2>Like what you see?</h2>
+      <a href="contact.html" class="btn" style="margin-top:12px">Book a Shoot</a>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/projects.js"></script>
+  <script src="js/site.js"></script>
+  <script>
+    (function () {
+      var id = new URLSearchParams(window.location.search).get("id");
+      var p = (window.EZ_PROJECTS || []).find(function (x) { return x.id === id; });
+      var el = document.getElementById("detail");
+      if (!p) {
+        el.innerHTML = '<a class="back" href="portfolio.html">← Back to portfolio</a>' +
+          '<h2>Project not found</h2>';
+        return;
+      }
+      document.title = p.title + " — EZ Shots";
+      var chips = (p.services || []).map(function (s) { return '<span class="chip">' + s + '</span>'; }).join("");
+      var imgs = (p.gallery || []).map(function (src) {
+        return '<img src="' + src + '" alt="' + p.title + '" loading="lazy">';
+      }).join("");
+      el.innerHTML =
+        '<a class="back" href="portfolio.html">← Back to portfolio</a>' +
+        '<p class="eyebrow">' + p.type + '</p>' +
+        '<h1>' + p.title + '</h1>' +
+        '<p class="detail-meta">📍 ' + p.location + '</p>' +
+        '<div class="chips">' + chips + '</div>' +
+        '<p class="lead" style="margin-top:18px">' + p.description + '</p>' +
+        '<div class="gallery">' + imgs + '</div>';
+    })();
+  </script>
+</body>
+</html>
