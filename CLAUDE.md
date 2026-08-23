@@ -1,0 +1,47 @@
+# CLAUDE.md - EZ Shots
+
+## What this is
+EZ Shots is a static marketing and portfolio website for a real estate photography business (photo, video, and licensed FAA Part 107 drone work). It is plain HTML, CSS, and vanilla JavaScript with no build step and no framework. Shared nav and footer are injected by `js/site.js`; portfolio and gallery content lives as data in `js/projects.js` and is rendered by `js/render.js`. It is served as static files by the `serve` package (`npm start`) and deploys on Railway. The lead contact form emails submissions to the owner through EmailJS (client side, no backend).
+
+## Absolute rule: no dashes
+Never write an em-dash or an en-dash anywhere: not in code, comments, docs, commit messages, or replies to the owner. Use a plain hyphen `-` or split the sentence in two. Check every file you touch before you finish. (Older untouched pages may still contain them; clean them only when you edit that file.)
+
+## Rules that will bite you
+- The git remote is named `ez-shots`, not `origin`. Pushes go to `git push ez-shots <branch>`. The GitHub repo is https://github.com/angelob120/ez-shots.git.
+- There are two lead forms, one in the `#contact` section of `index.html` and one on `contact.html`. Both share `js/contact-form.js` via the `form.lead-form` class. Change form behaviour in the JS once, not per page. If you add a third form, give it class `lead-form` and it wires itself up.
+- `form.name` in JavaScript returns the form's name attribute, not the input named "name". The handler reads fields with `form.elements.namedItem(...)` for this reason. Do not switch to `form.name.value`.
+- EmailJS keys are publishable client-side keys and live in the `CONFIG` object at the top of `js/contact-form.js`, not in env files (this is a static site with no build step). The `PUBLIC_KEY` is a placeholder until the owner pastes the real one.
+- Nav links are hardcoded in `js/site.js`. Adding a page means adding it to the `links` array there, not just creating the file.
+- Theme (light/dark) is set inline in each page's `<head>` before render to avoid a flash, and toggled in `js/site.js`. Keep both in sync if you touch theming.
+- Portfolio/gallery content is data in `js/projects.js`. Edit content there, not in the HTML.
+
+## Session protocol
+1. Start every session by reading `CLAUDE.md` and `PROJECT-STATE.md`.
+2. Do all work on the `staging` branch. `main` is production and is only updated after the owner tests staging.
+3. Finish every session by appending a dated entry to the top of the Work Log in `PROJECT-STATE.md`: what changed, why, anything the next session would otherwise rediscover, and how you verified it.
+4. Never run git yourself. Do not `git add`, `git commit`, `git push`, or stage anything. Hand the owner paste-ready terminal commands instead (format below).
+
+## Git handover format
+End every session, even a one-line change, with two fenced blocks in this order. Each starts by cd-ing into the project so it runs from a fresh terminal. Remote is `ez-shots`.
+
+Commit to staging:
+
+```
+cd "/Users/ab/Downloads/Code Projects/ez-shots" && git checkout staging && git add <files> && git commit -F- <<'MSG'
+Short imperative subject
+
+- what was done, as a bullet
+- another thing that was done
+- anything the owner must do by hand
+MSG
+git push ez-shots staging
+```
+
+Then promote to production after the owner tests staging:
+
+```
+cd "/Users/ab/Downloads/Code Projects/ez-shots" && git checkout main && git pull ez-shots main && git merge staging && git push ez-shots main
+git checkout staging && git merge main && git push ez-shots staging
+```
+
+Commit message: short imperative subject, blank line, then `- ` bullets, one per line. No paragraphs, no `Co-Authored-By` or attribution trailer, no dashes of any kind (em or en) in the message.

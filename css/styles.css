@@ -1,4 +1,4 @@
-/* EZ Shots — warm & approachable theme */
+/* EZ Shots - warm & approachable theme */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
@@ -141,7 +141,7 @@ h2 { font-size: 40px; }
 .hero .btn-ghost { color: #fff; border-color: rgba(255,255,255,.6); }
 .hero .btn-ghost:hover { background: rgba(255,255,255,.14); border-color: #fff; color: #fff; }
 
-/* Compact "worked with" badges — single row, scrolls on mobile */
+/* Compact "worked with" badges - single row, scrolls on mobile */
 .orgs {
   display: flex; flex-wrap: nowrap; gap: 8px; justify-content: center; align-items: center;
   overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px;
@@ -262,6 +262,19 @@ form { display: grid; gap: 16px; }
 .field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--clay); box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-note { color: var(--muted); font-size: 13.5px; }
+
+/* Contact form status message */
+.form-status {
+  display: none; margin: 0; font-size: 14.5px; font-weight: 600;
+  padding: 12px 15px; border-radius: 12px; border: 1.5px solid transparent;
+}
+.form-status.show { display: block; }
+.form-status.pending { color: var(--muted); background: var(--sand); border-color: var(--line); }
+.form-status.success { color: #166534; background: #dcfce7; border-color: #bbf7d0; }
+.form-status.error { color: #991b1b; background: #fee2e2; border-color: #fecaca; }
+[data-theme="dark"] .form-status.success { color: #86efac; background: rgba(22,101,52,.25); border-color: rgba(22,101,52,.5); }
+[data-theme="dark"] .form-status.error { color: #fca5a5; background: rgba(153,27,27,.25); border-color: rgba(153,27,27,.5); }
+button[type="submit"]:disabled { opacity: .65; cursor: not-allowed; transform: none; }
 
 /* Promo bar */
 .promo-bar { background: var(--clay); color: #fff; padding: 14px 0; }
