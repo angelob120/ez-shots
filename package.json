@@ -1,7 +1,7 @@
 {
   "name": "ez-shots",
   "version": "1.0.0",
-  "description": "EZ Shots — real estate photography portfolio website",
+  "description": "EZ Shots, real estate photography website for Metro Detroit realtors",
   "scripts": {
     "start": "serve . -l ${PORT:-3000}"
   },

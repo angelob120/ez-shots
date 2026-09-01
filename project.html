@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Project — EZ Shots</title>
+  <title>Shoot | EZ Shots</title>
+  <meta name="description" content="A recent real estate photography shoot by EZ Shots in Metro Detroit." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/styles.css" />
   <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 </head>
@@ -14,10 +16,24 @@
     <div class="container" id="detail"></div>
   </section>
 
-  <section class="section section-soft" style="text-align:center">
+  <section class="section section-soft">
     <div class="container">
-      <h2>Like what you see?</h2>
-      <a href="contact.html" class="btn" style="margin-top:12px">Book a Shoot</a>
+      <div class="sec-head center">
+        <p class="eyebrow">More work</p>
+        <h2>Other recent shoots</h2>
+      </div>
+      <div class="grid" id="more-projects"></div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container">
+      <h2>Want this for your listing?</h2>
+      <p>Photos and drone aerials from $150, half price on your first shoot, refundable for 48 hours.</p>
+      <div class="btn-row center">
+        <a href="packages.html" class="btn btn-lg btn-white">See pricing</a>
+        <a href="contact.html" class="btn btn-lg btn-outline-white">Book a shoot</a>
+      </div>
     </div>
   </section>
 
@@ -26,27 +42,59 @@
   <script src="js/site.js"></script>
   <script>
     (function () {
-      var id = new URLSearchParams(window.location.search).get("id");
-      var p = (window.EZ_PROJECTS || []).find(function (x) { return x.id === id; });
-      var el = document.getElementById("detail");
-      if (!p) {
-        el.innerHTML = '<a class="back" href="portfolio.html">← Back to portfolio</a>' +
-          '<h2>Project not found</h2>';
-        return;
+      function esc(s) {
+        return String(s == null ? "" : s)
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
       }
-      document.title = p.title + " — EZ Shots";
-      var chips = (p.services || []).map(function (s) { return '<span class="chip">' + s + '</span>'; }).join("");
-      var imgs = (p.gallery || []).map(function (src) {
-        return '<img src="' + src + '" alt="' + p.title + '" loading="lazy">';
-      }).join("");
-      el.innerHTML =
-        '<a class="back" href="portfolio.html">← Back to portfolio</a>' +
-        '<p class="eyebrow">' + p.type + '</p>' +
-        '<h1>' + p.title + '</h1>' +
-        '<p class="detail-meta">📍 ' + p.location + '</p>' +
-        '<div class="chips">' + chips + '</div>' +
-        '<p class="lead" style="margin-top:18px">' + p.description + '</p>' +
-        '<div class="gallery">' + imgs + '</div>';
+      var all = window.EZ_PROJECTS || [];
+      var id = new URLSearchParams(window.location.search).get("id");
+      var p = all.filter(function (x) { return x.id === id; })[0];
+      var el = document.getElementById("detail");
+
+      if (!p) {
+        el.innerHTML =
+          '<a class="back" href="portfolio.html">&larr; Back to portfolio</a>' +
+          '<h1>Shoot not found</h1>' +
+          '<p class="lead">That link does not match a shoot. Everything else is on the portfolio page.</p>' +
+          '<a class="btn" href="portfolio.html">View the portfolio</a>';
+      } else {
+        document.title = p.title + " | EZ Shots";
+        var chips = (p.services || []).map(function (s) { return '<span class="chip">' + esc(s) + '</span>'; }).join("");
+        var imgs = (p.gallery || []).map(function (src) {
+          return '<img src="' + esc(src) + '" alt="' + esc(p.title) + '" loading="lazy">';
+        }).join("");
+        el.innerHTML =
+          '<a class="back" href="portfolio.html">&larr; Back to portfolio</a>' +
+          '<p class="eyebrow">' + esc(p.type) + '</p>' +
+          '<h1>' + esc(p.title) + '</h1>' +
+          '<p class="detail-meta">' + esc(p.location) + '</p>' +
+          '<div class="chips">' + chips + '</div>' +
+          '<div class="spec-row">' +
+            '<div><b>' + esc(p.sqft || "n/a") + '</b><span>Size</span></div>' +
+            '<div><b>' + esc(p.pkg || "n/a") + '</b><span>Package</span></div>' +
+            '<div><b>' + esc(p.photos || "n/a") + '</b><span>Delivered</span></div>' +
+            '<div><b>' + esc(p.delivered || "n/a") + '</b><span>Turnaround</span></div>' +
+          '</div>' +
+          '<p class="lead" style="margin-top:24px">' + esc(p.description) + '</p>' +
+          '<div class="gallery">' + imgs + '</div>';
+      }
+
+      // Three other shoots
+      var others = all.filter(function (x) { return x.id !== id; }).slice(0, 3);
+      var more = document.getElementById("more-projects");
+      if (more) {
+        more.innerHTML = others.map(function (o) {
+          return '<a class="card" href="project.html?id=' + encodeURIComponent(o.id) + '">' +
+            '<div class="thumb"><img src="' + esc(o.cover) + '" alt="' + esc(o.title) + '" loading="lazy">' +
+            (o.pkg ? '<span class="pill">' + esc(o.pkg) + '</span>' : "") + '</div>' +
+            '<div class="body">' +
+              '<span class="tag">' + esc(o.type) + '</span>' +
+              '<h3>' + esc(o.title) + '</h3>' +
+              '<p class="meta">' + esc(o.location) + '</p>' +
+              '<span class="more">View the shoot &rarr;</span>' +
+            '</div></a>';
+        }).join("");
+      }
     })();
   </script>
 </body>

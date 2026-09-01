@@ -3,176 +3,382 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EZ Shots - Real Estate Photography, Video &amp; Drone</title>
-  <meta name="description" content="EZ Shots - real estate photography, 1-minute listing videos, and drone aerials." />
+  <title>EZ Shots | Real Estate Photography in Metro Detroit</title>
+  <meta name="description" content="MLS ready real estate photography, drone aerials and 1 minute listing video for Metro Detroit realtors. Packages from $150. First shoot 50% off with a 48 hour money back guarantee." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/styles.css" />
   <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 </head>
 <body data-page="home">
   <div id="site-header"></div>
 
+  <!-- Hero -->
   <section class="hero">
     <div class="container">
-      <h1>Listings that sell faster.</h1>
-      <p class="hero-stat">Homes listed with professional real estate photos sell quicker and for more money. <a href="https://www.redfin.com/blog/professional-real-estate-photos-sell-homes-for-more/" target="_blank" rel="noopener">This is why&nbsp;→</a></p>
-      <p>Photo · Video · Drone</p>
-      <div class="btns">
-        <a href="packages.html" class="btn">Book a Shoot</a>
-        <a href="portfolio.html" class="btn btn-ghost">View Portfolio</a>
+      <div class="hero-inner">
+        <span class="hero-badge"><span class="pulse"></span> New client offer: first shoot 50% off</span>
+        <h1>Listings that look worth <em>every dollar</em> of the asking price.</h1>
+        <p class="hero-sub">Real estate photography, drone aerials and one minute listing video for realtors across Metro Detroit. Galleries land in your inbox the next day, on average in about 24 hours.</p>
+        <div class="btn-row">
+          <a href="packages.html" class="btn btn-lg">See pricing and book</a>
+          <a href="portfolio.html" class="btn btn-lg btn-outline-white">View recent shoots</a>
+        </div>
+        <div class="hero-trust">
+          <div><b>$150</b><span>Photo and drone package</span></div>
+          <div><b>~24 hrs</b><span>Average delivery time</span></div>
+          <div><b>48 hrs</b><span>Money back window</span></div>
+          <div><b>Part 107</b><span>FAA licensed drone pilot</span></div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Who we've worked with -->
-  <section class="section-soft" style="padding:34px 0">
+  <!-- Offer strip -->
+  <div class="offer-strip">
     <div class="container">
-      <div class="center" style="margin-bottom:18px">
-        <p class="eyebrow" style="margin:0">Who we've worked with</p>
-      </div>
-      <div class="orgs">
-        <div class="org">🎓 [University Name]</div>
-        <div class="org">🎓 [College Name]</div>
-        <div class="org">🎓 [Community College]</div>
-        <div class="org">🏫 [School District]</div>
-        <div class="org">🏟️ [Athletics Dept.]</div>
-        <div class="org">📸 [Event / Org]</div>
+      <div class="offer-item"><span class="ico">🎁</span> Your <b>first shoot is 50% off</b></div>
+      <div class="offer-item"><span class="ico">🛡️</span> <b>48 hour</b> money back happiness guarantee</div>
+      <div class="offer-item"><span class="ico">⏱️</span> Late past <b>72 hours</b> and it is free</div>
+    </div>
+  </div>
+
+  <!-- Service area -->
+  <section class="section-sm">
+    <div class="container center">
+      <p class="eyebrow">Where we shoot</p>
+      <h2 style="font-size:22px;letter-spacing:-.02em;margin-bottom:20px;">Serving realtors across Wayne, Oakland and Macomb counties</h2>
+      <div class="areas">
+        <span class="area-chip">Birmingham</span>
+        <span class="area-chip">Royal Oak</span>
+        <span class="area-chip">Ferndale</span>
+        <span class="area-chip">Troy</span>
+        <span class="area-chip">Rochester Hills</span>
+        <span class="area-chip">Grosse Pointe</span>
+        <span class="area-chip">Northville</span>
+        <span class="area-chip">Plymouth</span>
+        <span class="area-chip">Novi</span>
+        <span class="area-chip">Dearborn</span>
+        <span class="area-chip">Livonia</span>
+        <span class="area-chip">Sterling Heights</span>
+        <span class="area-chip">Detroit</span>
+        <span class="area-chip on"><a href="areas.html">See all areas</a></span>
       </div>
     </div>
   </section>
 
-  <!-- Featured work -->
-  <section class="section">
-    <div class="container">
-      <div class="center" style="margin-bottom:48px">
-        <p class="eyebrow">Portfolio</p>
-        <h2>Recent shoots</h2>
-      </div>
-      <div class="grid" id="portfolio-grid" data-limit="3"></div>
-      <div class="center" style="margin-top:40px">
-        <a href="portfolio.html" class="btn btn-ghost">See all projects</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Gallery teaser -->
+  <!-- What you get -->
   <section class="section section-soft">
     <div class="container">
-      <div class="center" style="margin-bottom:40px">
-        <p class="eyebrow">Gallery</p>
-        <h2>A few frames</h2>
+      <div class="sec-head center">
+        <p class="eyebrow">What you get</p>
+        <h2>Everything the listing needs, in one visit</h2>
+        <p class="lead">One photographer, one appointment, one gallery. No add on surprises and nothing you have to resize before it goes on the MLS.</p>
       </div>
-      <div class="masonry" id="gallery-strip" data-limit="8"></div>
-      <div class="center" style="margin-top:36px">
-        <a href="gallery.html" class="btn btn-ghost">View full gallery</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Drone Work / credibility -->
-  <section class="section section-soft" id="drone">
-    <div class="container">
-      <div class="center" style="margin-bottom:40px">
-        <p class="eyebrow">Aerial &amp; Drone</p>
-        <h2>Drone work</h2>
-        <p class="lead center">Licensed drone pilot - trusted for real estate aerials plus work with local colleges and universities.</p>
-      </div>
-      <div class="stats">
-        <div class="stat"><b>FAA Part&nbsp;107</b><span>Licensed drone pilot</span></div>
-        <div class="stat"><b>200+</b><span>Shoots delivered</span></div>
-        <div class="stat"><b>4K</b><span>Photo &amp; video</span></div>
-        <div class="stat"><b>24hr</b><span>Turnaround</span></div>
-      </div>
-      <div class="drone-grid">
-        <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1000&q=80" alt="Aerial drone shot - placeholder" loading="lazy">
-        <img src="https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1000&q=80" alt="Aerial drone shot - placeholder" loading="lazy">
-        <img src="https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&w=1000&q=80" alt="Aerial drone shot - placeholder" loading="lazy">
-      </div>
-      <div class="center" style="margin-top:32px">
-        <a href="about.html" class="btn btn-ghost">See who I've worked with</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- About Me -->
-  <section class="section" id="about">
-    <div class="container about-wrap">
-      <div class="about-photo">
-        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80" alt="Photo of the photographer - placeholder" />
-      </div>
-      <div class="about-text">
-        <p class="eyebrow">About me</p>
-        <h2>Hi, I'm [Your Name]</h2>
-        <p class="lead">Real estate photographer &amp; licensed drone pilot. I help realtors make listings stand out with sharp photos, quick video, and aerial shots. (Filler - replace with your story.)</p>
-        <p style="color:var(--muted)">I've also done drone work for local colleges and universities. <a href="about.html" style="color:var(--accent);font-weight:600">Read more →</a></p>
+      <div class="cards-3">
+        <div class="vcard">
+          <div class="ic">📷</div>
+          <h3>Interior and exterior photos</h3>
+          <p>Bracketed and hand edited so windows keep their view and rooms keep their real colors. Straight verticals, no fisheye stretch.</p>
+          <a class="link" href="services.html">How the photos are shot &rarr;</a>
+        </div>
+        <div class="vcard">
+          <div class="ic">🚁</div>
+          <h3>Drone aerials, included</h3>
+          <p>Every package includes aerials. Lot lines, roof condition, the street, the yard, the water. Flown by an FAA Part 107 certified pilot.</p>
+          <a class="link" href="services.html#drone">Why aerials matter &rarr;</a>
+        </div>
+        <div class="vcard">
+          <div class="ic">🎬</div>
+          <h3>One minute listing video</h3>
+          <p>On the Listing Pro package. A tight walkthrough cut for the MLS, plus a vertical version sized for Reels and TikTok.</p>
+          <a class="link" href="packages.html">See what is included &rarr;</a>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- Packages -->
-  <section class="section section-soft" id="packages">
+  <section class="section" id="packages">
     <div class="container">
-      <div class="center" style="margin-bottom:48px">
+      <div class="sec-head center">
         <p class="eyebrow">Pricing</p>
-        <h2>Packages</h2>
-        <p class="lead center">Placeholder pricing - swap in your real rates.</p>
+        <h2>Two packages. That is the whole menu.</h2>
+        <p class="lead">Flat rate for homes up to 3,000 sq ft. Both include drone aerials and MLS ready files.</p>
       </div>
       <div class="pkg-grid">
         <div class="pkg">
-          <h3>Essential</h3>
-          <div class="price">$199<span> / shoot</span></div>
-          <p class="desc">Condos, lofts &amp; smaller listings.</p>
+          <h3>Listing Essentials</h3>
+          <p class="desc">Photos and aerials for the everyday listing.</p>
+          <div class="price">$150<span> / shoot</span></div>
+          <span class="first-price">First shoot: $75</span>
           <ul>
-            <li>Up to 25 HDR photos</li>
-            <li>Interior &amp; exterior</li>
-            <li>24-48 hr delivery</li>
-            <li>MLS-ready sizing</li>
+            <li>25 to 30 finished photos</li>
+            <li>Full interior and exterior</li>
+            <li>5 to 8 drone aerials included</li>
+            <li>MLS sized plus full resolution files</li>
+            <li>Next day delivery on average</li>
           </ul>
           <div class="pkg-cta">
-            <button type="button" class="btn pkg-book">Book Essential</button>
+            <button type="button" class="btn pkg-book">Book Listing Essentials</button>
             <div class="pkg-options">
-              <a href="https://buy.stripe.com/9B628rebG7hPaXN2kj4Rq01" target="_blank" rel="noopener" class="btn">Buy Now</a>
-              <a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener" class="btn btn-ghost">Book a Time to Talk</a>
+              <a href="https://buy.stripe.com/4gM5kEaUIb3B4zV9BvaVa0n" target="_blank" rel="noopener" class="btn">Buy now</a>
+              <a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener" class="btn btn-ghost">Book a 10 minute call</a>
             </div>
           </div>
         </div>
         <div class="pkg featured">
-          <div class="badge">MOST POPULAR</div>
-          <h3>Premium</h3>
-          <div class="price">$349<span> / shoot</span></div>
-          <p class="desc">Photo, video &amp; drone.</p>
+          <div class="badge">MOST BOOKED</div>
+          <h3>Listing Pro</h3>
+          <p class="desc">Everything above plus the video that sells it.</p>
+          <div class="price">$250<span> / shoot</span></div>
+          <span class="first-price">First shoot: $125</span>
           <ul>
-            <li>Up to 40 HDR photos</li>
-            <li>Drone aerial photos</li>
-            <li>1-minute listing video</li>
-            <li>24-48 hr delivery</li>
+            <li>35 to 45 finished photos</li>
+            <li>Full interior and exterior</li>
+            <li>8 to 12 drone aerials included</li>
+            <li>One minute listing video</li>
+            <li>Vertical cut for Reels and TikTok</li>
+            <li>Next day delivery on average</li>
           </ul>
           <div class="pkg-cta">
-            <button type="button" class="btn pkg-book">Book Premium</button>
+            <button type="button" class="btn pkg-book">Book Listing Pro</button>
             <div class="pkg-options">
-              <a href="https://buy.stripe.com/28EeVdaZu7hPc1Rf754Rq02" target="_blank" rel="noopener" class="btn">Buy Now</a>
-              <a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener" class="btn btn-ghost">Book a Time to Talk</a>
+              <a href="https://buy.stripe.com/3cI8wQ6Es5JhaYj00VaVa0o" target="_blank" rel="noopener" class="btn">Buy now</a>
+              <a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener" class="btn btn-ghost">Book a 10 minute call</a>
             </div>
           </div>
         </div>
       </div>
-      <p class="pkg-note">✦ First shoot for new realtors is <strong>50% off</strong> - no strings attached.</p>
+      <p class="pkg-note">Homes over 3,000 sq ft, twilight and rush delivery are on the <a href="packages.html">full pricing page</a>.</p>
     </div>
   </section>
 
-  <!-- Contact form -->
+  <!-- Guarantee -->
+  <section class="section section-soft" id="guarantee">
+    <div class="container">
+      <div class="promise">
+        <div>
+          <p class="eyebrow" style="color:#93c5fd">The happiness guarantee</p>
+          <h2>If you are not happy, you do not pay.</h2>
+          <p>Hiring a photographer you have never worked with is a risk. So the risk is mine, not yours. Every shoot, not just the first one, comes with a 48 hour window to say the word and get all of your money back. No forms, no restocking logic, no argument.</p>
+          <a href="guarantee.html" class="btn btn-white">Read the full guarantee</a>
+        </div>
+        <ul>
+          <li><span class="k">50%</span> off your first shoot, so trying me costs $75</li>
+          <li><span class="k">48 hrs</span> to request a full refund after any gallery is delivered</li>
+          <li><span class="k">72 hrs</span> hard delivery deadline, or the shoot is free</li>
+          <li><span class="k">100%</span> back on the original card, no partial credits</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="section" id="how">
+    <div class="container">
+      <div class="sec-head center">
+        <p class="eyebrow">How it works</p>
+        <h2>Booked Monday, live on the MLS Tuesday</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="n">1</div>
+          <h3>Book the date</h3>
+          <p>Pick a package and pay, or grab a 10 minute call first. Most shoots get scheduled within 48 hours of the request.</p>
+        </div>
+        <div class="step">
+          <div class="n">2</div>
+          <h3>I shoot the property</h3>
+          <p>Around 60 to 90 minutes on site. You do not need to be there, lockbox or code works fine.</p>
+        </div>
+        <div class="step">
+          <div class="n">3</div>
+          <h3>Editing overnight</h3>
+          <p>Exposure blending, verticals corrected, colors matched room to room, sky cleaned up when it is flat grey.</p>
+        </div>
+        <div class="step">
+          <div class="n">4</div>
+          <h3>Gallery in your inbox</h3>
+          <p>A download link with MLS sized and full resolution files. Average is about 24 hours. The ceiling is 72.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Portfolio -->
+  <section class="section section-soft" id="work">
+    <div class="container">
+      <div class="sec-head center">
+        <p class="eyebrow">Recent work</p>
+        <h2>Shoots from around Metro Detroit</h2>
+      </div>
+      <div class="grid" id="portfolio-grid" data-limit="3"></div>
+      <div class="center" style="margin-top:42px">
+        <a href="portfolio.html" class="btn btn-ghost">See all shoots</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Drone band -->
+  <section class="section band-navy" id="drone">
+    <div class="container">
+      <div class="sec-head center">
+        <p class="eyebrow">Aerial and drone</p>
+        <h2>Aerials are included, not upsold</h2>
+        <p class="lead center">Listings marketed with aerial imagery have been reported to sell notably faster than listings without it. Every EZ Shots package includes drone coverage, flown legally by an FAA Part 107 certified pilot.</p>
+      </div>
+      <div class="stats stats-navy" style="margin-bottom:40px">
+        <div class="stat"><b>Part 107</b><span>FAA certified pilot</span></div>
+        <div class="stat"><b>Insured</b><span>Commercial liability coverage</span></div>
+        <div class="stat"><b>4K</b><span>Aerial photo and video</span></div>
+        <div class="stat"><b>Included</b><span>In both packages</span></div>
+      </div>
+      <div class="drone-grid">
+        <img src="https://images.unsplash.com/photo-1770938474431-d1192cac9642?auto=format&fit=crop&w=1200&q=80" alt="Aerial view of a suburban property" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1780882756309-0adb22a2c11e?auto=format&fit=crop&w=1200&q=80" alt="Aerial view of a home and its lot" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1765601296884-eb4fabe7fc2e?auto=format&fit=crop&w=1200&q=80" alt="Aerial view of a residential neighborhood" loading="lazy">
+      </div>
+    </div>
+  </section>
+
+  <!-- Gallery strip -->
+  <section class="section" id="frames">
+    <div class="container">
+      <div class="sec-head center">
+        <p class="eyebrow">Gallery</p>
+        <h2>A few frames</h2>
+      </div>
+      <div class="masonry" id="gallery-strip" data-limit="9"></div>
+      <div class="center" style="margin-top:38px">
+        <a href="gallery.html" class="btn btn-ghost">View the full gallery</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="section section-soft" id="reviews">
+    <div class="container">
+      <div class="sec-head center">
+        <p class="eyebrow">What agents say</p>
+        <h2>Built for how realtors actually work</h2>
+      </div>
+      <!-- REPLACE the names and brokerages below with real clients before this goes public. -->
+      <div class="quotes">
+        <div class="quote">
+          <div class="stars">★★★★★</div>
+          <p>Shot Thursday morning, photos were in my inbox before I woke up Friday. The listing went live a full day earlier than it would have with my old photographer.</p>
+          <div class="who"><div class="av">RA</div><div><b>Realtor name</b><span>Brokerage, Royal Oak</span></div></div>
+        </div>
+        <div class="quote">
+          <div class="stars">★★★★★</div>
+          <p>The drone shots are what sold my sellers on hiring me in the first place. Getting them at this price instead of as a $150 add on changed my whole listing budget.</p>
+          <div class="who"><div class="av">RB</div><div><b>Realtor name</b><span>Brokerage, Birmingham</span></div></div>
+        </div>
+        <div class="quote">
+          <div class="stars">★★★★★</div>
+          <p>I tried it because the first one was half off and there was nothing to lose. I have booked every listing since. The refund window has never come up because I have never needed it.</p>
+          <div class="who"><div class="av">RC</div><div><b>Realtor name</b><span>Brokerage, Grosse Pointe</span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section class="section" id="about">
+    <div class="container split">
+      <div class="stack">
+        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80" alt="Exterior real estate photograph" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80" alt="Portrait of the photographer" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1770938474431-d1192cac9642?auto=format&fit=crop&w=800&q=80" alt="Drone aerial of a property" loading="lazy">
+      </div>
+      <div>
+        <p class="eyebrow">About</p>
+        <h2>Hi, I am Angelo. I shoot houses.</h2>
+        <p class="lead">EZ Shots is a one person operation out of Metro Detroit. When you book, I am the person who answers the email, shows up at the property, edits the gallery and sends it back.</p>
+        <ul class="checklist">
+          <li><b>FAA Part 107 certified</b> and insured for commercial drone work.</li>
+          <li><b>Real estate only.</b> No weddings, no portraits, no split attention.</li>
+          <li><b>Local.</b> Everything inside the Wayne, Oakland and Macomb triangle is a same week booking.</li>
+        </ul>
+        <a href="about.html" class="btn btn-ghost">More about how I work</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section section-soft" id="faq">
+    <div class="container">
+      <div class="sec-head center">
+        <p class="eyebrow">Questions</p>
+        <h2>The things agents ask first</h2>
+      </div>
+      <div class="faq">
+        <details open>
+          <summary>How fast do I actually get the photos?</summary>
+          <div class="answer"><p>The average is about 24 hours, which usually means shot today, in your inbox tomorrow morning. The promise on paper is 72 hours. If a gallery is ever later than that, you do not pay for the shoot.</p></div>
+        </details>
+        <details>
+          <summary>What is the 50% off first shoot?</summary>
+          <div class="answer"><p>Any realtor who has not worked with EZ Shots before pays half price on their first booking. Listing Essentials becomes $75 and Listing Pro becomes $125. One per agent, and it applies to whichever package you pick.</p></div>
+        </details>
+        <details>
+          <summary>How does the refund guarantee work?</summary>
+          <div class="answer"><p>You get the gallery, you look at it, and if you are not happy you have 48 hours to say so. Full refund to the original card. That applies to the first shoot and to every shoot after it, so there is never a booking where you are stuck with photos you do not like. <a href="guarantee.html" style="color:var(--brand);font-weight:700">Full details here.</a></p></div>
+        </details>
+        <details>
+          <summary>Do I need to be at the property?</summary>
+          <div class="answer"><p>No. A lockbox code or a seller who can let me in is enough. Send any notes about rooms to prioritize or skip and I will follow them.</p></div>
+        </details>
+        <details>
+          <summary>Are the drone shots really included?</summary>
+          <div class="answer"><p>Yes, in both packages. Weather and airspace permitting, since Part 107 rules and controlled airspace near the Metro Detroit airports are real constraints. If aerials cannot be flown safely or legally that day, I reschedule that portion at no charge or discount the shoot.</p></div>
+        </details>
+        <details>
+          <summary>What sizes do the files come in?</summary>
+          <div class="answer"><p>Every gallery ships MLS sized JPEGs that upload without resizing, plus full resolution versions for print, flyers and social. Video comes as a horizontal cut and a vertical cut.</p></div>
+        </details>
+      </div>
+      <div class="center" style="margin-top:34px">
+        <a href="faq.html" class="btn btn-ghost">Read all the FAQs</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA band -->
+  <section class="cta-band">
+    <div class="container">
+      <h2>Your first shoot is $75.</h2>
+      <p>Half price to start, a full refund if you do not love it, and photos back by tomorrow morning. There is not much left to think about.</p>
+      <div class="btn-row center">
+        <a href="packages.html" class="btn btn-lg btn-white">Book a shoot</a>
+        <a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener" class="btn btn-lg btn-outline-white">Book a 10 minute call</a>
+      </div>
+      <p class="fine">Metro Detroit only. Offer applies to your first booking with EZ Shots.</p>
+    </div>
+  </section>
+
+  <!-- Contact -->
   <section class="section" id="contact">
     <div class="container contact-wrap">
       <div class="contact-info">
         <p class="eyebrow">Get in touch</p>
-        <h2>Questions? Ask away.</h2>
-        <p style="color:var(--muted)">For general questions and inquiries. Ready to book? <a href="packages.html" style="color:var(--clay);font-weight:600">See packages →</a> I reply within 24 hours.</p>
+        <h2>Tell me about the listing</h2>
+        <p style="color:var(--muted)">Address, square footage and when it needs to go live is enough to get a date on the calendar. I answer every message within 24 hours.</p>
         <div class="contact-item">
           <div class="ic">✉️</div>
           <div><b>Email</b><span>bigmoneygelo2@gmail.com</span></div>
         </div>
         <div class="contact-item">
+          <div class="ic">📞</div>
+          <div><b>Phone</b><span>(248) 555-0139</span></div>
+        </div>
+        <div class="contact-item">
           <div class="ic">📍</div>
-          <div><b>Service area</b><span>Serving Greater [Your City]</span></div>
+          <div><b>Service area</b><span>Metro Detroit: Wayne, Oakland, Macomb</span></div>
+        </div>
+        <div class="contact-item">
+          <div class="ic">🕘</div>
+          <div><b>Shooting hours</b><span>Monday to Saturday, 8am to 6pm</span></div>
         </div>
       </div>
 
@@ -184,28 +390,29 @@
           </div>
           <div class="field">
             <label for="phone">Phone</label>
-            <input id="phone" name="phone" type="tel" placeholder="(555) 123-4567" />
+            <input id="phone" name="phone" type="tel" placeholder="(248) 555-0139" />
           </div>
         </div>
         <div class="field">
           <label for="email">Email</label>
-          <input id="email" name="email" type="email" required placeholder="you@email.com" />
+          <input id="email" name="email" type="email" required placeholder="you@brokerage.com" />
         </div>
         <div class="field">
           <label for="package">Package</label>
           <select id="package" name="package">
-            <option>Essential - $199</option>
-            <option selected>Premium - $349</option>
+            <option>Listing Essentials, $150</option>
+            <option selected>Listing Pro, $250</option>
+            <option>First shoot, 50% off</option>
             <option>Not sure yet</option>
           </select>
         </div>
         <div class="field">
           <label for="message">Property details</label>
-          <textarea id="message" name="message" rows="4" required placeholder="Address, size, timeline..."></textarea>
+          <textarea id="message" name="message" rows="4" required placeholder="Address, square footage, when it needs to go live..."></textarea>
         </div>
-        <button type="submit" class="btn">Send Request</button>
+        <button type="submit" class="btn">Send request</button>
         <p class="form-status" role="status" aria-live="polite"></p>
-        <p class="form-note">New realtors: mention it's your first shoot for 50% off.</p>
+        <p class="form-note">First time working with EZ Shots? Say so and your shoot is half price.</p>
       </form>
     </div>
   </section>

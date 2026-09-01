@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contact - EZ Shots</title>
+  <title>Contact | Book a Shoot with EZ Shots</title>
+  <meta name="description" content="Book real estate photography in Metro Detroit. Send the address and timeline, get a date on the calendar. First shoot 50% off." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/styles.css" />
   <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 </head>
@@ -12,26 +14,50 @@
 
   <section class="page-head">
     <div class="container">
-      <p class="eyebrow">Get in touch</p>
-      <h1>Questions? Ask away.</h1>
+      <p class="eyebrow">Contact</p>
+      <h1>Tell me about the listing</h1>
+      <p class="lead">Address, square footage and when it needs to go live is enough. Every message gets an answer within 24 hours.</p>
     </div>
   </section>
+
+  <div class="offer-strip">
+    <div class="container">
+      <div class="offer-item"><span class="ico">🎁</span> First shoot 50% off: <b>$75</b> or <b>$125</b></div>
+      <div class="offer-item"><span class="ico">🛡️</span> <b>48 hour</b> full refund window</div>
+      <div class="offer-item"><span class="ico">⏱️</span> Gallery back in about <b>24 hours</b></div>
+    </div>
+  </div>
 
   <section class="section">
     <div class="container contact-wrap">
       <div class="contact-info">
-        <div style="background:var(--sand);border:1px solid var(--line);border-radius:var(--radius);padding:24px 22px;margin-bottom:24px;">
-          <b style="display:block;font-size:17px;color:var(--ink);margin-bottom:4px;">📅 Ready to book?</b>
-          <p style="margin:0 0 16px;font-size:15px;">Choose a package to buy now or set up a time to talk.</p>
-          <a href="packages.html" class="btn">See Packages</a>
+        <div class="contact-card">
+          <b>📅 Rather just book it?</b>
+          <p>Pick a package and pay, or grab a free 10 minute call and we will talk it through first.</p>
+          <div class="btn-row">
+            <a href="packages.html" class="btn">See packages</a>
+            <a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener" class="btn btn-ghost">Book a call</a>
+          </div>
         </div>
         <div class="contact-item">
           <div class="ic">✉️</div>
           <div><b>Email</b><span>bigmoneygelo2@gmail.com</span></div>
         </div>
         <div class="contact-item">
+          <div class="ic">📞</div>
+          <div><b>Phone and text</b><span>(248) 555-0139</span></div>
+        </div>
+        <div class="contact-item">
           <div class="ic">📍</div>
-          <div><b>Service area</b><span>Serving Greater [Your City] &amp; surrounding areas</span></div>
+          <div><b>Service area</b><span>Metro Detroit: Wayne, Oakland, Macomb</span></div>
+        </div>
+        <div class="contact-item">
+          <div class="ic">🕘</div>
+          <div><b>Shooting hours</b><span>Monday to Saturday, 8am to 6pm</span></div>
+        </div>
+        <div class="contact-item">
+          <div class="ic">⚡</div>
+          <div><b>Typical lead time</b><span>Most shoots scheduled within 48 hours</span></div>
         </div>
       </div>
 
@@ -43,34 +69,64 @@
           </div>
           <div class="field">
             <label for="phone">Phone</label>
-            <input id="phone" name="phone" type="tel" placeholder="(555) 123-4567" />
+            <input id="phone" name="phone" type="tel" placeholder="(248) 555-0139" />
           </div>
         </div>
         <div class="field">
           <label for="email">Email</label>
-          <input id="email" name="email" type="email" required placeholder="you@email.com" />
+          <input id="email" name="email" type="email" required placeholder="you@brokerage.com" />
         </div>
         <div class="field">
           <label for="package">Package</label>
           <select id="package" name="package">
-            <option>Essential - $199</option>
-            <option selected>Premium - $349</option>
+            <option>Listing Essentials, $150</option>
+            <option selected>Listing Pro, $250</option>
+            <option>First shoot, 50% off</option>
+            <option>Twilight or add ons</option>
+            <option>Commercial or vacant land</option>
             <option>Not sure yet</option>
           </select>
         </div>
         <div class="field">
           <label for="message">Property details</label>
-          <textarea id="message" name="message" rows="4" required placeholder="Address, size, timeline..."></textarea>
+          <textarea id="message" name="message" rows="5" required placeholder="Address, square footage, when it needs to go live, anything specific you want covered..."></textarea>
         </div>
-        <button type="submit" class="btn">Send Request</button>
+        <button type="submit" class="btn">Send request</button>
         <p class="form-status" role="status" aria-live="polite"></p>
-        <p class="form-note">New realtors: mention it's your first shoot for 50% off.</p>
+        <p class="form-note">First time working with EZ Shots? Mention it and your shoot is half price.</p>
       </form>
     </div>
   </section>
 
+  <section class="section section-soft">
+    <div class="container">
+      <div class="sec-head center">
+        <p class="eyebrow">Before you write</p>
+        <h2>Answers to the usual questions</h2>
+      </div>
+      <div class="faq">
+        <details open>
+          <summary>How soon can you shoot?</summary>
+          <div class="answer"><p>Most listings get on the calendar within 48 hours of the request, often sooner outside of spring. If it is urgent, say so in the message and I will tell you the earliest slot honestly.</p></div>
+        </details>
+        <details>
+          <summary>Do you need me at the property?</summary>
+          <div class="answer"><p>No. A lockbox code, a seller at home, or a listing partner letting me in all work. Send any notes about what to prioritize.</p></div>
+        </details>
+        <details>
+          <summary>What if the weather is bad?</summary>
+          <div class="answer"><p>Interiors happen regardless. If rain or wind blocks the aerials, I return for that portion at no charge or take it off the price.</p></div>
+        </details>
+        <details>
+          <summary>Do you shoot outside Metro Detroit?</summary>
+          <div class="answer"><p>Sometimes. Anything more than about 30 miles outside the area may carry a travel fee, quoted before you commit to anything.</p></div>
+        </details>
+      </div>
+      <div class="center" style="margin-top:32px"><a href="faq.html" class="btn btn-ghost">Read all the FAQs</a></div>
+    </div>
+  </section>
+
   <div id="site-footer"></div>
-  <script src="js/projects.js"></script>
   <script src="js/site.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script src="js/contact-form.js"></script>
