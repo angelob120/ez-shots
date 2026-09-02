@@ -8,9 +8,13 @@ This file is the memory between sessions. Read it at the start of every session 
   link, so today it has to be a manual invoice or a Stripe coupon.
 - **Real phone number.** `(248) 555-0139` is a placeholder used in `js/site.js`,
   `index.html` and `contact.html`. Replace it or remove the phone rows.
-- **Real photos, the rest of them.** The five portfolio covers are now real files in `img/`.
-  Still Unsplash stock: the `EZ_GALLERY` frames at the bottom of `js/projects.js` (gallery
-  page and the home page strip), the hero, and the section images in the page HTML.
+- **Real photos, the rest of them.** The five portfolio covers are now real files in `img/`,
+  and `js/projects.js` loads nothing from a stock library. Still Unsplash stock: the hero,
+  the portrait of the photographer on `about.html` and `index.html`, and the section images
+  in the page HTML.
+- **A photo of the owner.** He has one, a podium shot in a suit, but it was pasted into chat
+  rather than saved, so it never reached the repo. It replaces the stock portrait in two
+  places once the file exists: `about.html` and the home page about block.
 - **More portfolio shoots.** The portfolio is five entries because five photos were
   supplied. Each detail page therefore shows one frame. Send more per property and the
   `gallery` arrays fill out without any code change.
@@ -27,6 +31,28 @@ This file is the memory between sessions. Read it at the start of every session 
 - **No branch protection** is set on `main`. Optional: add protection on GitHub so production is only updated via the tested staging flow.
 
 ## Work Log (newest first)
+
+### 2026-09-01 - Gallery removed, page and all
+
+- The owner called the home page "A few frames" strip bad and asked for the gallery gone.
+  It was eighteen Unsplash frames of houses nobody shot, sitting under a portfolio that had
+  just become real photos, which is the worst possible order to read a page in.
+- Removed: the `A few frames` section on `index.html`, the `Individual frames` section on
+  `portfolio.html` that pointed at it, `gallery.html` itself, the `Photo gallery` footer link
+  in `js/site.js`, the `#gallery-strip` branch of `js/render.js`, the `window.EZ_GALLERY`
+  array and the `IMG()` stock helper in `js/projects.js`, and the now unused `.masonry`
+  rules in `css/styles.css`.
+- `p.gallery` on each project is a different thing and stays. It is the per property frame
+  list that `project.html` renders, and it holds real local files.
+- Gallery was a footer only link, never in the nav, so nothing in `js/site.js` `links` had to
+  change. Nothing else in the site linked to `gallery.html`.
+- The word "gallery" is still all over the copy and should stay. It means the delivered set
+  of photos a client receives, which is what the guarantee and the refund policy are written
+  about.
+- Verified with a grep for `gallery.html`, `EZ_GALLERY`, `gallery-strip`, `masonry` and
+  `IMG(` across the served files: zero hits. The only remaining hits are in the stale
+  `ez-shots/` duplicate folder, which is dockerignored and not served. `node --check` passes
+  on both scripts and `EZ_GALLERY` is now undefined at load.
 
 ### 2026-09-01 - Real photos on the portfolio, eight shoots cut to five
 

@@ -328,10 +328,6 @@ p  { margin: 0 0 16px; }
 .card .more { color: var(--brand); font-weight: 700; font-size: 14px; margin-top: 14px; display: inline-block; }
 
 /* ---------- Masonry gallery ---------- */
-.masonry { column-count: 3; column-gap: 18px; }
-.masonry img { width: 100%; margin: 0 0 18px; border-radius: var(--radius); box-shadow: var(--shadow); break-inside: avoid; }
-@media (max-width: 900px) { .masonry { column-count: 2; } }
-@media (max-width: 540px) { .masonry { column-count: 1; } }
 
 /* ---------- Split (image + text) ---------- */
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }

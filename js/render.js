@@ -1,5 +1,5 @@
-// Renders the portfolio grid and the gallery wherever their containers exist.
-// Containers: #portfolio-grid (optional data-limit), #gallery-strip (optional data-limit).
+// Renders the portfolio grid wherever its container exists.
+// Container: #portfolio-grid (optional data-limit).
 (function () {
   function esc(s) {
     return String(s == null ? "" : s)
@@ -25,16 +25,6 @@
           '<span class="more">View the shoot &rarr;</span>' +
         '</div>' +
       '</a>';
-    }).join("");
-  }
-
-  var strip = document.getElementById("gallery-strip");
-  if (strip) {
-    var glimit = parseInt(strip.getAttribute("data-limit") || "0", 10);
-    var imgs = window.EZ_GALLERY || [];
-    if (glimit > 0) imgs = imgs.slice(0, glimit);
-    strip.innerHTML = imgs.map(function (src) {
-      return '<img src="' + esc(src) + '" loading="lazy" alt="EZ Shots real estate photography, Metro Detroit">';
     }).join("");
   }
 })();

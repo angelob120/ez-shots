@@ -1,12 +1,6 @@
 // EZ Shots portfolio data. Edit content HERE, never in the HTML.
 // Each project's `id` is the URL: project.html?id=birmingham-colonial
-//
-// Portfolio covers are real files in /img. The gallery strip at the bottom of
-// this file is still Unsplash stock, which is what IMG() is for. When real
-// frames arrive, drop them in /img and replace those IMG() calls the same way.
-var IMG = function (id) {
-  return "https://images.unsplash.com/photo-" + id + "?auto=format&fit=crop&w=1400&q=80";
-};
+// Every image is a real file in /img. Nothing here loads from a stock library.
 
 window.EZ_PROJECTS = [
   {
@@ -84,26 +78,4 @@ window.EZ_PROJECTS = [
     services: ["Interior photos", "Exterior photos", "Drone aerials", "1 minute video", "Vertical cut"],
     gallery: ["img/troy-brick-colonial.jpg"]
   }
-];
-
-// Standalone frames for the gallery page and the home page strip.
-window.EZ_GALLERY = [
-  IMG("1600585154340-be6161a56a0c"),
-  IMG("1600566753086-00f18fb6b3ea"),
-  IMG("1512917774080-9991f1c4c750"),
-  IMG("1568605114967-8130f3a36994"),
-  IMG("1600607687939-ce8a6c25118c"),
-  IMG("1580216643062-cf460548a66a"),
-  IMG("1613490493576-7fde63acd811"),
-  IMG("1576941089067-2de3c901e126"),
-  IMG("1600210492486-724fe5c67fb0"),
-  IMG("1570129477492-45c003edd2be"),
-  IMG("1600047509807-ba8f99d2cdde"),
-  IMG("1616486338812-3dadae4b4ace"),
-  IMG("1770938474431-d1192cac9642"),
-  IMG("1600585152220-90363fe7e115"),
-  IMG("1765601296884-eb4fabe7fc2e"),
-  IMG("1600566753190-17f0baa2a6c3"),
-  IMG("1770936996689-e2a9d61a144f"),
-  IMG("1565402170291-8491f14678db")
 ];

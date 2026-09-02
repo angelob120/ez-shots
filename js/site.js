@@ -51,7 +51,6 @@
           '<h4>Work</h4>' +
           '<a href="services.html">Services</a>' +
           '<a href="portfolio.html">Portfolio</a>' +
-          '<a href="gallery.html">Photo gallery</a>' +
           '<a href="areas.html">Areas we serve</a>' +
           '<a href="about.html">About</a>' +
         '</div>' +
