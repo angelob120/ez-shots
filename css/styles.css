@@ -287,7 +287,10 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   padding: 32px 28px; box-shadow: var(--shadow); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 .vcard:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--line-2); }
-.vcard .ico {
+/* The markup writes .ic in some places and .ico in others. Twenty odd icon
+   tiles across five pages were rendering as a bare emoji with no tile
+   because of it. Accept both rather than chase every call site. */
+.vcard .ico, .vcard .ic {
   width: 46px; height: 46px; border-radius: 12px; background: var(--tint); color: var(--accent);
   display: grid; place-items: center; font-size: 21px; margin-bottom: 18px;
 }

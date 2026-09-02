@@ -56,7 +56,7 @@
           '<p>Real estate photography, video and FAA licensed drone work for realtors across Metro Detroit. MLS ready galleries delivered the next day on average.</p>' +
           '<div class="footer-contact">' +
             '<a href="mailto:bigmoneygelo2@gmail.com">bigmoneygelo2@gmail.com</a>' +
-            '<a href="tel:+12485550139">(248) 555-0139</a>' +
+            '<a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">Book a 10 minute call</a>' +
           '</div>' +
         '</div>' +
         '<div class="footer-col">' +
