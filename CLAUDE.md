@@ -26,31 +26,25 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
 
 ## Session protocol
 1. Start every session by reading `CLAUDE.md` and `PROJECT-STATE.md`.
-2. Do all work on the `staging` branch. `main` is production and is only updated after the owner tests staging.
+2. Do all work on the `staging` branch. `main` is production.
 3. Finish every session by appending a dated entry to the top of the Work Log in `PROJECT-STATE.md`: what changed, why, anything the next session would otherwise rediscover, and how you verified it.
-4. Never run git yourself. Do not `git add`, `git commit`, `git push`, or stage anything. Hand the owner paste-ready terminal commands instead (format below).
+4. Run git yourself and promote to production. The owner asked for this on 2026-09-01, it replaces the old "never run git, hand over commands" rule. Commit after every finished and verified change, not batched at the end of the session.
 
-## Git handover format
-End every session, even a one-line change, with two fenced blocks in this order. Each starts by cd-ing into the project so it runs from a fresh terminal. Remote is `ez-shots`.
-
-Commit to staging:
+## Git flow (run this, do not hand it over)
+Remote is `ez-shots`, not `origin`. After each finished change:
 
 ```
-cd "/Users/ab/Downloads/Code Projects/ez-shots" && git checkout staging && git add <files> && git commit -F- <<'MSG'
+git checkout staging && git add <files> && git commit -F- <<'MSG'
 Short imperative subject
 
 - what was done, as a bullet
 - another thing that was done
-- anything the owner must do by hand
 MSG
 git push ez-shots staging
-```
-
-Then promote to production after the owner tests staging:
-
-```
-cd "/Users/ab/Downloads/Code Projects/ez-shots" && git checkout main && git pull ez-shots main && git merge staging && git push ez-shots main
+git checkout main && git pull ez-shots main && git merge staging && git push ez-shots main
 git checkout staging && git merge main && git push ez-shots staging
 ```
+
+Always end back on `staging` with both branches level. Verify with `git log --oneline -5` and confirm `main` moved before reporting done.
 
 Commit message: short imperative subject, blank line, then `- ` bullets, one per line. No paragraphs, no `Co-Authored-By` or attribution trailer, no dashes of any kind (em or en) in the message.
