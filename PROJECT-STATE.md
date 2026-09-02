@@ -17,9 +17,40 @@ This file is the memory between sessions. Read it at the start of every session 
 - **Confirm the EmailJS Template ID.** The code uses `template_qlotxua`. The template that actually sends to the lead inbox is whichever of `template_qlotxua` / `template_ztl1ney` has its "To Email" set to angelobrown1000@gmail.com. Open both in the dashboard, confirm which one, and update `TEMPLATE_ID` if it is the other.
 - **Save the EmailJS template changes.** In the chosen template set Subject to `New lead from {{site_name}} - {{from_name}}` and include a `Site: {{site_name}}` line plus Name, Email, Phone, Message in the body, with "To Email" = angelobrown1000@gmail.com and "Reply To" = `{{reply_to}}`. Make sure the template contains these variables: `site_name`, `from_name`, `email_id`, `reply_to`, `phone`, `message`, `subject`. Click Save in the dashboard, template edits do not deploy from code.
 - **Create the `staging` branch.** The repo currently has only `main`. Create `staging` before doing branch-based work (command is in the git handover of the session below).
+- **Delete the `EMAILJS` variable on the Railway staging service.** It is what breaks
+  the build (`failed to solve: secret EMAILJS not found`). Railway -> EZ Shots -> staging
+  service -> Variables -> delete `EMAILJS`, then redeploy. Nothing in the site reads it.
 - **No branch protection** is set on `main`. Optional: add protection on GitHub so production is only updated via the tested staging flow.
 
 ## Work Log (newest first)
+
+### 2026-09-01 - Railway staging build failure traced to a stray EMAILJS service variable
+
+- Symptom: staging deploy `43aaa077` failed at Build > Build image with
+  `failed to solve: secret EMAILJS not found`. Build logs stop right after
+  `install mise packages: node`, so it never reached `npm install` or `npm run start`.
+- Cause is on the Railway side, not in this repo. Railpack mounts every Railway service
+  variable into the image build as a BuildKit secret. The failing deployment shows
+  "1 Variable" on its Details tab. That variable is named `EMAILJS` and its value does not
+  resolve (a `${{...}}` reference to a shared variable or another service that no longer
+  exists, or the variable was removed after the plan was generated), so BuildKit is asked
+  for a secret that is not there and the daemon aborts the build.
+- Verified the repo is clean: `grep -rniI EMAILJS` finds no environment variable use
+  anywhere in code, only the EmailJS SDK script tags and the client side `CONFIG` object in
+  `js/contact-form.js`. There is no `Dockerfile`, `railway.json`, `railway.toml`,
+  `railpack.json` or `nixpacks.toml` in the repo, so nothing here declares a build secret.
+  Nothing was changed in the site to fix this.
+- Fix for the owner: Railway -> EZ Shots -> staging service -> Variables, delete the
+  `EMAILJS` variable (this static site does not need it, EmailJS keys are publishable and
+  live in `js/contact-form.js`), then redeploy. If it is wanted for some later reason, set
+  it to a literal value rather than a reference.
+- Also noted: the build ran from a local snapshot upload (`railway up`), not from GitHub.
+  The commit shown, `43aaa077`, does not exist in this repo on any branch, local or remote,
+  where both `main` and `staging` sit at `93d9be9`. If GitHub deploys are wanted, connect
+  the service to `angelob120/ez-shots` and pin the staging environment to the `staging`
+  branch.
+- Railpack also warns there is no `package-lock.json`. Not the cause of this failure, but
+  committing a lockfile would make installs deterministic.
 
 ### 2026-09-01 - Full redesign around the 50% off and money back offer
 
