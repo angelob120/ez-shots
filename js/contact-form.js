@@ -115,10 +115,17 @@
         if (missing.length) {
           var el = form.elements.namedItem(missing[0]);
           if (el && el.focus) el.focus();
-          setStatus("error", "Please fill in " + missing.map(function (f) {
+          var names = missing.map(function (f) {
             var e2 = form.elements.namedItem(f);
             return e2 && e2.tagName ? labelFor(form, e2).toLowerCase() : f;
-          }).join(", ") + ".");
+          });
+          // "a, b and c" rather than "a, b, c". A validation message is read
+          // by someone who has already made a mistake, so it should not read
+          // like a machine listing columns.
+          var list = names.length > 1
+            ? names.slice(0, -1).join(", ") + " and " + names[names.length - 1]
+            : names[0];
+          setStatus("error", "Please fill in " + list + ".");
           return;
         }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
