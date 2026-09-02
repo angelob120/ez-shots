@@ -500,6 +500,33 @@ form.lead-form { display: grid; gap: 16px; background: var(--card); border: 1px 
 [data-theme="dark"] .form-status.error { color: #fca5a5; background: rgba(153,27,27,.25); border-color: rgba(153,27,27,.5); }
 button[type="submit"]:disabled { opacity: .65; cursor: not-allowed; transform: none; }
 
+/* ---------- Long form (intake) ---------- */
+.form-narrow { max-width: 760px; margin: 0 auto; }
+form.lead-form.stacked { padding: 0; background: none; border: none; box-shadow: none; gap: 0; }
+.form-block {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 30px 30px 32px; box-shadow: var(--shadow); margin-bottom: 22px;
+  display: grid; gap: 16px;
+}
+.form-block > .form-legend { margin: 0 0 2px; }
+.form-legend b { display: block; font-size: 18.5px; letter-spacing: -.02em; }
+.form-legend span { color: var(--muted); font-size: 14.5px; }
+.field .req { color: var(--accent); }
+.form-help { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+.row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.field-inline { display: flex; align-items: flex-start; gap: 11px; }
+.field-inline input[type="checkbox"] {
+  width: 19px; height: 19px; margin: 2px 0 0; accent-color: var(--brand); flex: none; cursor: pointer;
+}
+.field-inline label { font-size: 15px; font-weight: 600; cursor: pointer; margin: 0; }
+.field-inline label span { display: block; font-weight: 400; color: var(--muted); font-size: 13.5px; }
+.form-submit { display: grid; gap: 14px; justify-items: start; }
+.form-submit .btn { padding: 16px 34px; font-size: 16px; }
+@media (max-width: 640px) {
+  .row3 { grid-template-columns: 1fr; }
+  .form-block { padding: 24px 20px 26px; }
+}
+
 /* ---------- Legal ---------- */
 .legal { max-width: 780px; }
 .legal p, .legal li { color: var(--muted); font-size: 16px; }

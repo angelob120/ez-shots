@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shoot Details Form | EZ Shots Real Estate Photography</title>
+  <meta name="description" content="The short form EZ Shots clients fill in after booking a shoot. Property address, access, timing and anything specific you want in the photos." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="intake">
+  <div id="site-header"></div>
+
+  <section class="page-head" id="main">
+    <div class="container">
+      <p class="eyebrow">You are booked</p>
+      <h1>Tell me about the property</h1>
+      <p class="lead">Five minutes now saves a phone call later and gets your gallery back faster. Only the starred fields are required. Anything you do not know yet, leave blank and we will sort it out.</p>
+    </div>
+  </section>
+
+  <div class="offer-strip">
+    <div class="container">
+      <div class="offer-item"><span class="ico">📅</span> Most shoots land <b>within 48 hours</b> of this form</div>
+      <div class="offer-item"><span class="ico">⏱️</span> Gallery back in <b>about 24 hours</b></div>
+      <div class="offer-item"><span class="ico">🛡️</span> <b>48 hour</b> full refund after delivery</div>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="container form-narrow">
+
+      <form class="lead-form stacked" novalidate
+            data-required="name,email,phone,address,access"
+            data-subject="Shoot intake"
+            data-subject-field="address"
+            data-success="Got it. I will confirm your shoot time by email within a few hours, and I will text you the day before.">
+
+        <!-- Honeypot. Hidden from people, irresistible to bots. -->
+        <input type="text" name="_hp" tabindex="-1" autocomplete="off" aria-hidden="true"
+               style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
+
+        <div class="form-block">
+          <p class="form-legend"><b>Who you are</b><span>So I know whose listing this is and where to send the gallery.</span></p>
+          <div class="row2">
+            <div class="field">
+              <label for="name">Your name <span class="req">*</span></label>
+              <input id="name" name="name" type="text" autocomplete="name" placeholder="Jane Realtor" />
+            </div>
+            <div class="field">
+              <label for="brokerage">Brokerage</label>
+              <input id="brokerage" name="brokerage" type="text" placeholder="Keller Williams Birmingham" />
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="email">Email <span class="req">*</span></label>
+              <input id="email" name="email" type="email" autocomplete="email" placeholder="you@brokerage.com" />
+              <p class="form-help">The gallery link goes here.</p>
+            </div>
+            <div class="field">
+              <label for="phone">Mobile <span class="req">*</span></label>
+              <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="(248) 555-0139" />
+              <p class="form-help">I text on the way and if anything changes.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-block">
+          <p class="form-legend"><b>The property</b><span>Everything I need to show up at the right door with the right plan.</span></p>
+          <div class="field">
+            <label for="address">Full property address <span class="req">*</span></label>
+            <input id="address" name="address" data-label="Address" type="text" autocomplete="off" placeholder="123 Maple Ave, Birmingham, MI 48009" />
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="package">Package booked</label>
+              <select id="package" name="package">
+                <option>Listing Essentials, $150</option>
+                <option selected>Listing Pro, $250</option>
+                <option>First shoot, 50% off</option>
+                <option>Not sure, tell me what fits</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="status">Occupied, vacant or staged</label>
+              <select id="status" name="status" data-label="Property status">
+                <option>Occupied, seller still living there</option>
+                <option>Vacant and empty</option>
+                <option>Vacant and staged</option>
+                <option>Under construction or mid renovation</option>
+              </select>
+            </div>
+          </div>
+          <div class="row3">
+            <div class="field">
+              <label for="sqft">Approx square footage</label>
+              <input id="sqft" name="sqft" type="text" inputmode="numeric" placeholder="2,400" />
+            </div>
+            <div class="field">
+              <label for="beds">Beds and baths</label>
+              <input id="beds" name="beds" type="text" placeholder="4 bed, 2.5 bath" />
+            </div>
+            <div class="field">
+              <label for="mls">MLS number</label>
+              <input id="mls" name="mls" type="text" placeholder="If it is listed already" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-block">
+          <p class="form-legend"><b>When</b><span>Give me two options and I will confirm one today.</span></p>
+          <div class="row2">
+            <div class="field">
+              <label for="date1">First choice date</label>
+              <input id="date1" name="date1" type="date" />
+            </div>
+            <div class="field">
+              <label for="date2">Backup date</label>
+              <input id="date2" name="date2" type="date" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="timing">Best time of day</label>
+            <select id="timing" name="timing" data-label="Preferred time">
+              <option>Whatever light is best, you pick</option>
+              <option>Morning</option>
+              <option>Midday</option>
+              <option>Afternoon</option>
+              <option>Late day or golden hour</option>
+            </select>
+            <p class="form-help">Left to me I shoot when the front of the house gets the sun, which is usually the difference between a good exterior and a flat one.</p>
+          </div>
+          <div class="field">
+            <label for="deadline">When does it need to go live?</label>
+            <input id="deadline" name="deadline" data-label="Needs to go live" type="text" placeholder="Listing goes active Friday" />
+          </div>
+        </div>
+
+        <div class="form-block">
+          <p class="form-legend"><b>Getting in</b><span>The single most common reason a shoot gets delayed.</span></p>
+          <div class="field">
+            <label for="access">How do I get in? <span class="req">*</span></label>
+            <select id="access" name="access" data-label="Access">
+              <option value="">Choose one</option>
+              <option>Lockbox on the door</option>
+              <option>Seller will be home</option>
+              <option>You or a partner will meet me</option>
+              <option>Property is open or vacant and unlocked</option>
+              <option>Other, see notes</option>
+            </select>
+            <p class="form-help">Do not put a lockbox or gate code on this form. I will text you for it the morning of the shoot, so it is never sitting in an inbox.</p>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="parking">Parking or gate notes</label>
+              <input id="parking" name="parking" type="text" placeholder="Gated, call box #14" />
+            </div>
+            <div class="field">
+              <label for="pets">Pets on site</label>
+              <input id="pets" name="pets" type="text" placeholder="Dog crated in the garage" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-block">
+          <p class="form-legend"><b>The shoot itself</b><span>What sells this house, and what should stay out of frame.</span></p>
+          <div class="field">
+            <label for="features">What has to be in the photos?</label>
+            <textarea id="features" name="features" data-label="Must be in the photos" rows="3" placeholder="New kitchen, finished basement, the deck and the back yard, the primary bath"></textarea>
+          </div>
+          <div class="field">
+            <label for="skip">Anything to leave out?</label>
+            <input id="skip" name="skip" data-label="Leave out" type="text" placeholder="Unfinished third bedroom, neighbour's boat" />
+          </div>
+          <div class="field">
+            <label for="drone">Anything I should know about flying?</label>
+            <input id="drone" name="drone" data-label="Flying notes" type="text" placeholder="HOA rules, airport nearby, no fly requests" />
+            <p class="form-help">Aerials are included in both packages. I am FAA Part 107 licensed and I check the airspace before every shoot, so this is only for rules I cannot look up.</p>
+          </div>
+          <div class="field-inline">
+            <input id="twilight" name="twilight" data-label="Twilight" type="checkbox" value="Yes, wants twilight" />
+            <label for="twilight">I want twilight exteriors
+              <span>Shot in the twenty minutes after sunset. Second visit, so tell me now rather than after.</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-block">
+          <p class="form-legend"><b>Anything else</b><span>Tell me the thing you would say on the phone.</span></p>
+          <div class="field">
+            <label for="message">Notes</label>
+            <textarea id="message" name="message" rows="4" placeholder="Seller is nervous about the photos, wants the yard to look bigger than it is..."></textarea>
+          </div>
+        </div>
+
+        <div class="form-submit">
+          <button type="submit" class="btn btn-lg">Send my property details</button>
+          <p class="form-status" role="status" aria-live="polite"></p>
+          <p class="form-note">I read every one of these before the shoot. If something changes, email <a href="mailto:bigmoneygelo2@gmail.com" style="color:var(--accent);font-weight:700">bigmoneygelo2@gmail.com</a> and I will update it.</p>
+        </div>
+      </form>
+
+    </div>
+  </section>
+
+  <section class="section section-soft">
+    <div class="container narrow">
+      <div class="sec-head center">
+        <p class="eyebrow">What happens next</p>
+        <h2>From this form to your gallery</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="n">1</div>
+          <h3>I confirm the time</h3>
+          <p>By email, usually within a few hours, always the same day.</p>
+        </div>
+        <div class="step">
+          <div class="n">2</div>
+          <h3>I text before I come</h3>
+          <p>The day before and again when I am on the way. That is when I ask for the code.</p>
+        </div>
+        <div class="step">
+          <div class="n">3</div>
+          <h3>I shoot and edit</h3>
+          <p>About an hour on site. Editing happens that night, not next week.</p>
+        </div>
+        <div class="step">
+          <div class="n">4</div>
+          <h3>Gallery in your inbox</h3>
+          <p>About 24 hours later. Then 48 hours to tell me if it missed.</p>
+        </div>
+      </div>
+      <p class="pkg-note">Not booked yet? <a href="packages.html">Start here instead.</a></p>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/site.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="js/contact-form.js"></script>
+</body>
+</html>

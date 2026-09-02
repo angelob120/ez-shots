@@ -368,7 +368,13 @@
         </div>
       </div>
 
-      <form class="lead-form" novalidate>
+      <form class="lead-form" novalidate
+            data-required="name,email,message"
+            data-subject="New lead from EZ Shots"
+            data-success="Thanks. I will reply today, usually within a couple of hours.">
+        <!-- Honeypot. Hidden from people, irresistible to bots. -->
+        <input type="text" name="_hp" tabindex="-1" autocomplete="off" aria-hidden="true"
+               style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
         <div class="row2">
           <div class="field">
             <label for="name">Name</label>

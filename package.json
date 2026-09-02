@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "EZ Shots, real estate photography website for Metro Detroit realtors",
   "scripts": {
-    "start": "serve . -l ${PORT:-3000}"
+    "start": "serve . -l ${PORT:-3000}",
+    "check:forms": "node scripts/check-forms.mjs",
+    "test": "node scripts/check-forms.mjs"
   },
   "dependencies": {
     "serve": "^14.2.1"

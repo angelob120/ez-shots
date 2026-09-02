@@ -71,6 +71,7 @@
           '<a href="packages.html">Pricing</a>' +
           '<a href="guarantee.html">The guarantee</a>' +
           '<a href="faq.html">FAQ</a>' +
+          '<a href="intake.html">After you book</a>' +
           '<a href="contact.html">Contact</a>' +
           '<a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">Book a call</a>' +
         '</div>' +
