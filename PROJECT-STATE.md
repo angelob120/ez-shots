@@ -13,11 +13,6 @@ This file is the memory between sessions. Read it at the start of every session 
   "Photography Pictures NO VIDEO" ($150) and "Photography Pictures WITH VIDEO" ($250).
   The customer sees those strings on the checkout. Rename them to Listing Essentials
   and Listing Pro.
-- **Create the half price payment links, $75 and $125.** Until they exist the first
-  shoot cannot be bought in one click. The site now routes first timers to the contact
-  form and promises a half price invoice the same day, which is honest but slower.
-  Paste the two links and they become the primary button on both package cards, and
-  the manual invoice step disappears.
 - **Confirm the EmailJS Template ID, now a one click check.** Open the template that
   delivers to `wolvesmaneappointments@yahoo.com` (dashboard URL ends `/gowiejr`) and
   click its **Settings** tab, which shows that template's `template_...` id. The other
@@ -83,7 +78,45 @@ This file is the memory between sessions. Read it at the start of every session 
   Railway supplies `PORT` on its own. Also check Project Settings -> Shared Variables.
 - **No branch protection** is set on `main`. Optional: add protection on GitHub so production is only updated via the tested staging flow.
 
+## The four Stripe links, and what each one actually charges
+
+Opened and read on 2026-09-01 rather than trusted. If any of these change, open the
+link and check the amount before editing the button label. A button whose number does
+not match its checkout is the worst bug this site can have.
+
+| Button | Link ends | Charges |
+| --- | --- | --- |
+| Book your first shoot, $75 | `...FzaVa0q` | $75.00 |
+| Booked before? Pay $150 | `...BvaVa0n` | $150.00 |
+| Book your first shoot, $125 | `...93aVa0p` | $125.00 |
+| Booked before? Pay $250 | `...0VaVa0o` | $250.00 |
+
+All four still present as **Design Byte Agency**, selling "Photography Pictures NO
+VIDEO" and "WITH VIDEO". See Blocked above.
+
 ## Work Log (newest first)
+
+### 2026-09-01 (later still) - The first shoot can be bought in one click
+
+The owner created the two half price payment links. Opened both to confirm the amounts
+before wiring anything: `...FzaVa0q` charges $75.00 and `...93aVa0p` charges $125.00,
+matching Essentials and Pro. They are now the primary button on both package cards, on
+the home page and on the pricing page, and the full rate links moved to a secondary
+"Booked before?" row.
+
+That closes the gap found earlier the same day, where the page quoted $75 and the
+checkout asked for $150. All four price claims on the site now match a checkout amount
+that was actually read, not assumed. The table above records the mapping so the next
+session does not have to re-derive it.
+
+The invoice workaround is gone from the copy with it: the pricing note, the booking
+column and the FAQ answer all said or implied that you ask for the discount and get an
+invoice back. You do not, the price is on the button.
+
+Still branded Design Byte Agency, still selling "Photography Pictures NO VIDEO". Those
+are two fields in the Stripe dashboard and they are the last thing between a click and
+a payment.
+
 
 ### 2026-09-01 (later) - The checkout was contradicting the price, and the README was fiction
 
