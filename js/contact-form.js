@@ -87,6 +87,23 @@
       var subjectField = form.getAttribute("data-subject-field") || "";
       var successText = form.getAttribute("data-success") || "Thanks, I will be in touch shortly.";
 
+      // A pricing button can carry its package across to this form, so a ready
+      // buyer does not land on a blank select and have to re-choose the thing
+      // they just clicked. Matches on a substring so the link can say
+      // "essentials" rather than the whole option label.
+      (function preselectFromUrl() {
+        var want = new URLSearchParams(location.search).get("package");
+        if (!want) return;
+        var sel = form.elements.namedItem("package");
+        if (!sel || !sel.options) return;
+        for (var i = 0; i < sel.options.length; i++) {
+          if (sel.options[i].value.toLowerCase().indexOf(want.toLowerCase()) !== -1) {
+            sel.selectedIndex = i;
+            return;
+          }
+        }
+      })();
+
       function setStatus(type, text) {
         if (!status) return;
         status.className = "form-status show " + type;

@@ -337,9 +337,10 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .pkg li:last-child { border-bottom: none; }
 .pkg-cta { display: grid; gap: 9px; }
 .pkg-cta .btn { width: 100%; }
-.pkg-options { display: none; gap: 9px; }
-.pkg-cta.open .pkg-options { display: grid; }
-.pkg-cta.open .pkg-book { display: none; }
+/* Both routes are shown at once. Hiding them behind a "Book" button put an
+   extra click between a ready buyer and the checkout, at the one point on the
+   page where friction costs money. */
+.pkg-options { display: grid; gap: 9px; }
 .pkg-note { text-align: center; color: var(--muted); font-size: 14.5px; margin-top: 30px; }
 .pkg-note a { color: var(--accent); font-weight: 700; }
 

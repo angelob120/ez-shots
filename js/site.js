@@ -120,11 +120,6 @@
     });
   }
 
-  // Package "Book" button reveals Buy Now / Book a call
-  document.querySelectorAll(".pkg-book").forEach(function (b) {
-    b.addEventListener("click", function () { b.closest(".pkg-cta").classList.add("open"); });
-  });
-
   // Mobile menu. A drawer that only closes by pressing the same button again
   // is a trap on a phone: every other way out of it has to work too.
   var menuBtn = document.querySelector(".menu-btn");
