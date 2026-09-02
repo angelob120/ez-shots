@@ -13,16 +13,49 @@ This file is the memory between sessions. Read it at the start of every session 
 - **Real testimonials.** The three quotes on the home page are attributed to
   "Realtor name / Brokerage, city" on purpose. Put real names in or delete the section
   before launch. Do not ship invented client names.
-- **EmailJS Public Key.** `js/contact-form.js` has `PUBLIC_KEY: "__PASTE_EMAILJS_PUBLIC_KEY_HERE__"`. Paste the real key from EmailJS -> Account -> General -> API Keys. The form cannot send until this is done.
 - **Confirm the EmailJS Template ID.** The code uses `template_qlotxua`. The template that actually sends to the lead inbox is whichever of `template_qlotxua` / `template_ztl1ney` has its "To Email" set to angelobrown1000@gmail.com. Open both in the dashboard, confirm which one, and update `TEMPLATE_ID` if it is the other.
 - **Save the EmailJS template changes.** In the chosen template set Subject to `New lead from {{site_name}} - {{from_name}}` and include a `Site: {{site_name}}` line plus Name, Email, Phone, Message in the body, with "To Email" = angelobrown1000@gmail.com and "Reply To" = `{{reply_to}}`. Make sure the template contains these variables: `site_name`, `from_name`, `email_id`, `reply_to`, `phone`, `message`, `subject`. Click Save in the dashboard, template edits do not deploy from code.
-- **Create the `staging` branch.** The repo currently has only `main`. Create `staging` before doing branch-based work (command is in the git handover of the session below).
-- **Delete the `EMAILJS` variable on the Railway staging service.** It is what breaks
-  the build (`failed to solve: secret EMAILJS not found`). Railway -> EZ Shots -> staging
-  service -> Variables -> delete `EMAILJS`, then redeploy. Nothing in the site reads it.
+- **Delete all 5 Railway variables, in production and in staging.** They were
+  `EMAILJS.PUBLIC_KEY`, `PUBLIC_KEY="11"`, and empty `SERVICE_ID`, `SITE_NAME`, `TEMPLATE_ID`.
+  The dot in `EMAILJS.PUBLIC_KEY` is an illegal env var name and is what broke every build.
+  Nothing on the site reads any of them. The correct end state is zero variables you set,
+  Railway supplies `PORT` on its own. Also check Project Settings -> Shared Variables.
 - **No branch protection** is set on `main`. Optional: add protection on GitHub so production is only updated via the tested staging flow.
 
 ## Work Log (newest first)
+
+### 2026-09-01 - Railway build fixed at the source, Dockerfile added, EmailJS key live
+
+- Root cause of every failed deploy since 19:50, in both environments: a Railway variable
+  literally named `EMAILJS.PUBLIC_KEY`. A dot is not legal in an environment variable name,
+  so Railpack read it as a reference to a variable called `EMAILJS`, asked BuildKit for a
+  secret by that name, found none, and failed with `secret EMAILJS not found`. The earlier
+  guess in the entry below, that the value was a broken `${{...}}` reference, was wrong. It
+  was the name, not the value. Adding more variables made no difference because nothing in
+  the site reads any of them.
+- Added a `Dockerfile` so Railway builds with Docker instead of Railpack. Railpack is what
+  turns every service variable into a BuildKit secret, so a bad variable name can never
+  take the build down again. Node 22 alpine, `npm install --omit=dev`, `CMD npm start`.
+  Added `.dockerignore` so the image skips `.git`, `docs`, markdown, the stale `ez-shots/`
+  duplicate and the zip. Delete the Dockerfile to go back to Railpack.
+- Added `.gitignore` (`node_modules`, `.DS_Store`). The repo had none, so a local
+  `npm install` would have left the whole dependency tree stageable.
+- Committed `package-lock.json`, which Railpack had been warning about. The Dockerfile uses
+  `npm ci --omit=dev` so the image installs exactly what the lockfile pins.
+- Pasted the real EmailJS public key into `js/contact-form.js`, replacing the placeholder.
+  `TEMPLATE_ID` is still unconfirmed, see the item above.
+- `.claude/launch.json` now runs `npm run start` with `autoPort`, so the local preview uses
+  the same command and the same `$PORT` handling as the container instead of a hardcoded
+  `npx serve -l 3000`.
+- How verified: `node --check js/contact-form.js` passed. Started the site with `npm start`,
+  which picked up the assigned `$PORT` (53147) and proved the container CMD honours Railway's
+  injected port. `curl` returned 200 on `/`, `/index.html`, `/contact`, `/contact.html` and
+  `/project.html?id=birmingham-colonial`, so `serve.json` still survives the change. Loaded
+  `contact.html` in a browser: no console errors, the EmailJS SDK is defined, one
+  `form.lead-form` found with fields name, phone, email, package, message, and the served
+  `js/contact-form.js` carries the real key. Docker is installed locally but the daemon was
+  not running, so the image itself was not built here. Railway's build is the first real
+  test of the Dockerfile.
 
 ### 2026-09-01 - Railway staging build failure traced to a stray EMAILJS service variable
 

@@ -3,8 +3,9 @@
   "configurations": [
     {
       "name": "ez-shots",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", ".", "-l", "3000"],
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start"],
+      "autoPort": true,
       "port": 3000
     }
   ]

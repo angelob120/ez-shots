@@ -12,7 +12,7 @@
     // Confirm which in the EmailJS dashboard and set it here.
     TEMPLATE_ID: "template_qlotxua",
     // Paste from EmailJS -> Account -> General -> API Keys.
-    PUBLIC_KEY: "__PASTE_EMAILJS_PUBLIC_KEY_HERE__",
+    PUBLIC_KEY: "ki7V3klQWzRzeIMte",
     SITE_NAME: "EZ Shots"                     // hardcoded per site, do not change
   };
 

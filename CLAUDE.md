@@ -21,6 +21,11 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
 - EmailJS keys are publishable client-side keys and live in the `CONFIG` object at the top of `js/contact-form.js`, not in env files (this is a static site with no build step). The `PUBLIC_KEY` is a placeholder until the owner pastes the real one.
 - Nav links are hardcoded in `js/site.js`. Adding a page means adding it to the `links` array there (or the footer block below it), not just creating the file. Nav is Services, Portfolio, Pricing (`packages.html`), Guarantee, About, Contact. Gallery, FAQ and Areas live in the footer only.
 - `serve.json` is load bearing. Without `cleanUrls: false`, `serve` 301s `/project.html?id=x` to `/project` and drops the query string, which breaks every portfolio detail page in production. The rewrites in that file also serve `/index.html` at `/` and let `/services` resolve to `/services.html`. Do not delete it.
+- `Dockerfile` is load bearing. Railway builds with Docker because of it. Without it Railway
+  falls back to Railpack, which mounts every Railway service variable into the build as a
+  BuildKit secret, and on 2026-09-01 a variable named `EMAILJS.PUBLIC_KEY` (a dot is illegal
+  in an env var name) took every deploy down with `secret EMAILJS not found`. The site needs
+  no Railway variables at all, Railway supplies `PORT` itself.
 - Theme (light/dark) is set inline in each page's `<head>` before render to avoid a flash, and toggled in `js/site.js`. Keep both in sync if you touch theming.
 - Portfolio/gallery content is data in `js/projects.js`. Edit content there, not in the HTML.
 

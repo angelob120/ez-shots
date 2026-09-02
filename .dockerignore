@@ -1,0 +1,8 @@
+.git
+.claude
+node_modules
+docs
+*.md
+ez-shots
+ez-shots.zip
+.DS_Store
