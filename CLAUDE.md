@@ -27,7 +27,27 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   in an env var name) took every deploy down with `secret EMAILJS not found`. The site needs
   no Railway variables at all, Railway supplies `PORT` itself.
 - Theme (light/dark) is set inline in each page's `<head>` before render to avoid a flash, and toggled in `js/site.js`. Keep both in sync if you touch theming.
-- Portfolio/gallery content is data in `js/projects.js`. Edit content there, not in the HTML.
+- Portfolio content is data in `js/projects.js`. Edit content there, not in the HTML.
+  The standalone gallery was removed on 2026-09-01; `p.gallery` on a project is the
+  per property frame list and is a different thing.
+- **`--brand` fills a shape, `--accent` colours text.** They are the same value in
+  light mode and must not be in dark: a fill has to stay dark enough for white to sit
+  on it, text has to stay light enough to read on a near black page. One token doing
+  both is what made dark mode look wrong for months. New colour rules must pick the
+  right one, and `[data-theme="dark"]` must define every token that light defines.
+- **Forms: one handler, `js/contact-form.js`, for every `form.lead-form`.** Anything
+  that is not name, email, phone or message is folded into the email body as a
+  labelled line, because the EmailJS template has seven fixed variables and cannot
+  grow one per question. So **every field needs a `<label for>` or a `data-label`**,
+  or its answer arrives unnamed. Per form behaviour is declarative on the form
+  element: `data-required`, `data-subject`, `data-subject-field`, `data-success`.
+  Run `npm test` after touching any form; it catches the silent failures.
+- **Never add a lockbox or gate code field to any form.** They email in plain text
+  through a Gmail account and would sit in an inbox forever. `intake.html` says the
+  code gets texted on the morning of the shoot instead, and that is the design.
+- **Do not ship invented client names, quotes or phone numbers.** Both were live on
+  production and both were removed on 2026-09-01. If there is no real proof yet, say
+  so on the page; the honest version converts better than a caught fake.
 
 ## Session protocol
 1. Start every session by reading `CLAUDE.md` and `PROJECT-STATE.md`.

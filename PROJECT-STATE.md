@@ -6,8 +6,10 @@ This file is the memory between sessions. Read it at the start of every session 
 ## Blocked on a human
 - **Decide how the 50% first shoot discount gets charged.** There is no half price checkout
   link, so today it has to be a manual invoice or a Stripe coupon.
-- **Real phone number.** `(248) 555-0139` is a placeholder used in `js/site.js`,
-  `index.html` and `contact.html`. Replace it or remove the phone rows.
+- **Real phone number.** The placeholder `(248) 555-0139` was REMOVED on 2026-09-01,
+  it is in the reserved fictional 555-01xx block and was a live `tel:` link in every
+  footer. Those rows now point at the TidyCal 10 minute call. Send a real number and
+  it goes back into `js/site.js`, `index.html` and `contact.html`.
 - **Real photos, the rest of them.** The five portfolio covers are now real files in `img/`,
   and `js/projects.js` loads nothing from a stock library. Still Unsplash stock: the hero,
   the portrait of the photographer on `about.html` and `index.html`, and the section images
@@ -18,10 +20,41 @@ This file is the memory between sessions. Read it at the start of every session 
 - **More portfolio shoots.** The portfolio is five entries because five photos were
   supplied. Each detail page therefore shows one frame. Send more per property and the
   `gallery` arrays fill out without any code change.
-- **Real testimonials.** The three quotes on the home page are attributed to
-  "Realtor name / Brokerage, city" on purpose. Put real names in or delete the section
-  before launch. Do not ship invented client names.
-- **Confirm the EmailJS Template ID.** The code uses `template_qlotxua`. The template that actually sends to the lead inbox is whichever of `template_qlotxua` / `template_ztl1ney` has its "To Email" set to angelobrown1000@gmail.com. Open both in the dashboard, confirm which one, and update `TEMPLATE_ID` if it is the other.
+- **Real testimonials.** The three fake quotes were REMOVED on 2026-09-01 and replaced
+  with an honest "I do not have reviews yet" section built on the refund window, the $75
+  first shoot and the portfolio. When real clients exist, their quotes can go back in as
+  a `.quotes` block; the CSS for it is still in `styles.css`. Do not ship invented names.
+- **Confirm the EmailJS Template ID.** STILL OPEN and now blocking the intake form.
+  Screenshots on 2026-09-01 confirmed one template delivers to
+  `wolvesmaneappointments@yahoo.com` (a different project) and one to
+  `angelobrown1000@gmail.com`. The dashboard edit URLs use a different id than the
+  template list, so which of `template_qlotxua` / `template_ztl1ney` is the gmail one
+  could not be read off the screenshots. Open the gmail one, read its ID from the
+  Email Templates list, and set `TEMPLATE_ID` in `js/contact-form.js`. Sending to the
+  wrong one loses the lead silently, EmailJS still reports success.
+- **Set the template Subject to `{{subject}}` and fix its body.** Both templates ship
+  the EmailJS default, which opens `Hello {{to_name}},` and the site never sends a
+  `to_name`, so every email arrives addressed to nobody. Both Subject fields are also
+  hardcoded to `New message from {{from_name}}`, which makes a booking enquiry and a
+  20 field intake look identical in the inbox. Recommended body:
+
+  ```
+  {{subject}}
+
+  Site: {{site_name}}
+  Name: {{from_name}}
+  Email: {{email_id}}
+  Phone: {{phone}}
+
+  {{message}}
+  ```
+
+  One template serves both forms this way, which matters on a 200 send a month plan.
+- **The EmailJS private key was visible in a shared screenshot** on 2026-09-01.
+  The site does not use it, so nothing is broken. If that image went anywhere else,
+  hit Refresh Keys, but note that rotates the PUBLIC key too and
+  `js/contact-form.js` would need the new one.
+- **Old blocker, unchanged:** The code uses `template_qlotxua`. The template that actually sends to the lead inbox is whichever of `template_qlotxua` / `template_ztl1ney` has its "To Email" set to angelobrown1000@gmail.com. Open both in the dashboard, confirm which one, and update `TEMPLATE_ID` if it is the other.
 - **Save the EmailJS template changes.** In the chosen template set Subject to `New lead from {{site_name}} - {{from_name}}` and include a `Site: {{site_name}}` line plus Name, Email, Phone, Message in the body, with "To Email" = angelobrown1000@gmail.com and "Reply To" = `{{reply_to}}`. Make sure the template contains these variables: `site_name`, `from_name`, `email_id`, `reply_to`, `phone`, `message`, `subject`. Click Save in the dashboard, template edits do not deploy from code.
 - **Delete all 5 Railway variables, in production and in staging.** They were
   `EMAILJS.PUBLIC_KEY`, `PUBLIC_KEY="11"`, and empty `SERVICE_ID`, `SITE_NAME`, `TEMPLATE_ID`.
@@ -31,6 +64,69 @@ This file is the memory between sessions. Read it at the start of every session 
 - **No branch protection** is set on `main`. Optional: add protection on GitHub so production is only updated via the tested staging flow.
 
 ## Work Log (newest first)
+
+### 2026-09-01 - Nav rebuilt, dark mode fixed at the token level, intake form added
+
+**Dark mode.** The root cause was one token doing two jobs. `--brand` filled shapes
+that carry white text AND coloured text sitting on the page background, and in dark
+those need opposite lightness, so whichever way the value went half the site was
+wrong. Split `--accent` out for foreground use (26 rules moved). Dark `--brand` is
+now `#2f6fe6`, giving white on it 4.63:1 where `#3b82f6` gave 3.2:1.
+
+The dark palette was also flat: `--bg`, `--surface`, `--card` and `--navy` sat within
+eight hex points, so cards, soft sections and the footer melted together and the
+footer at `#060d19` read as a hole cut in the page. Rebuilt around elevation,
+bg < surface < card, with navy panels ABOVE the page and a `--panel-line` hairline,
+since a shadow does nothing on a dark ground. Every text pair in both themes clears
+WCAG AA now, checked numerically.
+
+**Nav.** The Book a shoot button lived inside `.nav-links`, which collapses at 940px,
+so the only button on the site that takes money was hidden behind a hamburger on
+every phone. Moved to the header tools where it survives. Also: emoji glyphs replaced
+with inline SVG that inherits text colour, active link gets a bar not just a shade,
+drawer closes on Escape / outside click / link press / leaving the breakpoint, drawer
+hangs off `top: 100%` rather than a magic 76px, skip link plus `id="main"` on all 14
+pages, focus-visible ring everywhere.
+
+**Intake form.** New `intake.html`, noindex, linked from the footer as "After you book"
+and from the Buy now timeline on `packages.html`. 23 fields in five blocks.
+`js/contact-form.js` was rewritten so any field that is not name/email/phone/message
+is folded into the message body as a labelled line in form order. That is the whole
+trick: the EmailJS template has seven fixed variables and cannot grow one per
+question, so a 23 field intake and a 4 field enquiry share one template and one 200 a
+month quota. Per form behaviour is now declarative on the form element:
+`data-required`, `data-subject`, `data-subject-field`, `data-success`.
+
+Deliberately **no lockbox or gate code field**. The form emails in plain text through
+a Gmail account; a code entered there would sit in an inbox forever. The page says it
+will be texted the morning of the shoot instead. Do not add one back.
+
+**New check.** `scripts/check-forms.mjs`, wired to `npm test`. It catches a field with
+no label (it would reach the inbox unnamed), a duplicate name or id, a `data-required`
+naming a field that does not exist, a missing honeypot and a missing status element.
+Every one of those fails silently in a browser and drops an answer.
+
+**Copy.** Two things were actively costing conversions and both were live on
+production. Three five star testimonials signed "Realtor name / Brokerage, city",
+replaced with an honest "no reviews yet" section built on the refund window and the
+$75 first shoot. And `(248) 555-0139`, a reserved fictional number, wired as a real
+`tel:` link in every footer; those rows now point at the TidyCal call. Also dropped an
+unsourced "aerials sell faster" claim, stopped the pricing page CTA sending a ready
+buyer away from its own Stripe links, and unified four different reply time promises
+into one.
+
+**Bug found while reading.** The stylesheet defines `.vcard .ico` and the markup writes
+`class="ic"` in about twenty places across five pages, so those icon tiles rendered as
+bare emoji with no blue tile. Fixed in CSS by accepting both, rather than chasing
+every call site.
+
+**Verified:** `npm test` passes on all three forms, a rendered sample intake email
+reads correctly end to end, every internal link across all 14 pages resolves, no em or
+en dashes in any served file, CSS braces balance, both scripts pass `node --check`, and
+both palettes were audited numerically for AA contrast and elevation separation.
+**Not verified in a browser** - the preview pane in this session is pinned to a
+different project root and will not launch this server, so the nav and dark mode have
+not been seen rendered. Worth an eyeball with `npm start` before trusting the layout.
 
 ### 2026-09-01 - Gallery removed, page and all
 
