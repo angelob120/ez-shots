@@ -8,8 +8,12 @@ This file is the memory between sessions. Read it at the start of every session 
   link, so today it has to be a manual invoice or a Stripe coupon.
 - **Real phone number.** `(248) 555-0139` is a placeholder used in `js/site.js`,
   `index.html` and `contact.html`. Replace it or remove the phone rows.
-- **Real photos.** Every image is Unsplash stock. Drop real files in an `img/` folder and
-  swap the `IMG(...)` calls in `js/projects.js` plus the hero and section images.
+- **Real photos, the rest of them.** The five portfolio covers are now real files in `img/`.
+  Still Unsplash stock: the `EZ_GALLERY` frames at the bottom of `js/projects.js` (gallery
+  page and the home page strip), the hero, and the section images in the page HTML.
+- **More portfolio shoots.** The portfolio is five entries because five photos were
+  supplied. Each detail page therefore shows one frame. Send more per property and the
+  `gallery` arrays fill out without any code change.
 - **Real testimonials.** The three quotes on the home page are attributed to
   "Realtor name / Brokerage, city" on purpose. Put real names in or delete the section
   before launch. Do not ship invented client names.
@@ -23,6 +27,36 @@ This file is the memory between sessions. Read it at the start of every session 
 - **No branch protection** is set on `main`. Optional: add protection on GitHub so production is only updated via the tested staging flow.
 
 ## Work Log (newest first)
+
+### 2026-09-01 - Real photos on the portfolio, eight shoots cut to five
+
+- The owner supplied five exterior photos. Converted them to JPEG with `sips` at quality 66
+  (1448 x 1086, 265KB to 498KB each) and put them in a new `img/` folder. Source PNGs were
+  about 2.9MB apiece, too heavy to ship.
+- Rewrote `window.EZ_PROJECTS` in `js/projects.js` from eight entries to five, one per real
+  photo, each matched to a house that actually looks like the story next to it: Birmingham
+  brick colonial, Royal Oak craftsman, Rochester Hills new build farmhouse, Northville
+  twilight estate, Troy brick colonial. `cover` and `gallery` are local `img/...` paths.
+- Dropped `grosse-pointe-waterfront`, `detroit-riverfront-loft`, `ferndale-ranch` and
+  `troy-townhome`, and renamed `royal-oak-bungalow` to `royal-oak-craftsman`. Reason: a real
+  photo beside three stock ones reads worse than five real ones, and reusing one photo for
+  two different properties on a photography portfolio is the one lie a visitor can spot.
+  The dropped copy is in git at 32ecd7c if any of it is wanted back.
+- Each project now has a one image `gallery`. That renders fine: `.gallery img:first-child`
+  is full width at 16/9, so a single frame reads as a hero rather than a lonely tile.
+- `pkg: "Listing Pro + twilight"` became `Listing Pro`. The uncommitted pricing pass in the
+  working tree removes add ons and size tiers, and a package name with a `+` in it
+  contradicts it. Twilight stays in the services list and in `services.html`, it is included
+  work now rather than an upsell.
+- `portfolio.html`: stat 8 becomes 5, the "13 Metro Detroit cities" stat relabelled "cities
+  served" so it does not read as a count of shoots on the page, and the lead and the meta
+  description no longer promise a lakefront or a Detroit loft that is no longer shown.
+- `EZ_GALLERY` is untouched and still stock. That is the gallery page, not the portfolio,
+  and it was out of scope for this change.
+- Verified by loading `js/projects.js` in node: five unique ids, every `cover` and `gallery`
+  path exists on disk and starts with a JPEG magic number, every project carries drone
+  aerials so the "100%" stat still holds, and no page or doc still references a dropped id.
+  Not verified in a browser, the CSS was not touched.
 
 ### 2026-09-01 - Railway build fixed at the source, Dockerfile added, EmailJS key live
 
