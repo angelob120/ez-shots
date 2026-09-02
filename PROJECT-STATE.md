@@ -4,6 +4,26 @@
 This file is the memory between sessions. Read it at the start of every session along with `CLAUDE.md`. At the end of every session, append a new dated entry to the top of the Work Log describing what changed and anything the next session would otherwise have to rediscover. "Blocked on a human" lists things only the owner can do (accounts, keys, DNS, deploy clicks). Detailed per-area status lives in `docs/site.md`.
 
 ## Blocked on a human
+- **The Stripe checkout is branded "Design Byte Agency".** Confirmed on 2026-09-01 by
+  opening both payment links. A realtor clicks Buy on ezshots and lands on a card form
+  for a company they have never heard of. That reads as a phishing page, and it is the
+  most likely single reason a click does not become a payment. Fix in the Stripe
+  dashboard, Settings, Business details, public business name, set it to EZ Shots.
+- **Both Stripe products use internal shorthand as the customer facing name.**
+  "Photography Pictures NO VIDEO" ($150) and "Photography Pictures WITH VIDEO" ($250).
+  The customer sees those strings on the checkout. Rename them to Listing Essentials
+  and Listing Pro.
+- **Create the half price payment links, $75 and $125.** Until they exist the first
+  shoot cannot be bought in one click. The site now routes first timers to the contact
+  form and promises a half price invoice the same day, which is honest but slower.
+  Paste the two links and they become the primary button on both package cards, and
+  the manual invoice step disappears.
+- **Confirm the EmailJS Template ID, now a one click check.** Open the template that
+  delivers to `wolvesmaneappointments@yahoo.com` (dashboard URL ends `/gowiejr`) and
+  click its **Settings** tab, which shows that template's `template_...` id. The other
+  id is the gmail one, and that is what `TEMPLATE_ID` in `js/contact-form.js` must be.
+  The list view and the edit URL use different ids, which is why three rounds of
+  screenshots could not settle it.
 - **Decide how the 50% first shoot discount gets charged.** There is no half price checkout
   link, so today it has to be a manual invoice or a Stripe coupon.
 - **Real phone number.** The placeholder `(248) 555-0139` was REMOVED on 2026-09-01,
@@ -64,6 +84,53 @@ This file is the memory between sessions. Read it at the start of every session 
 - **No branch protection** is set on `main`. Optional: add protection on GitHub so production is only updated via the tested staging flow.
 
 ## Work Log (newest first)
+
+### 2026-09-01 (later) - The checkout was contradicting the price, and the README was fiction
+
+**The find that mattered.** Opened both Stripe payment links rather than trusting the
+markup. Essentials charges $150 and Pro charges $250, while the card directly above
+each button promised "Your first shoot: $75" and "$125". So the entire site headline,
+the announcement bar, the hero, the guarantee page, led a first time realtor to a card
+form asking for double the number they had just been quoted. Worse, both checkouts are
+branded **Design Byte Agency** with product names "Photography Pictures NO VIDEO" and
+"WITH VIDEO". Whatever the copy does upstream, that page was undoing it.
+
+Fixed on the site side, which is the half that lives in this repo: the first shoot is
+now the primary button on both cards and routes to the contact form, where the half
+price invoice actually comes from today. The Stripe links stay, relabelled "Booked
+before? Pay $150" and "Pay $250", so the number on the button matches the number on the
+card form. The Stripe branding and the missing $75 and $125 links are in Blocked above.
+
+**Also removed the reveal step.** `.pkg-book` was a button whose only job was to hide
+two other buttons. That is an extra click between a ready buyer and a checkout, at the
+one place on the page where friction costs money. Both routes now show at once, and the
+dead handler came out of `js/site.js`.
+
+**Pricing clicks now carry context.** `contact.html?package=Essentials` preselects the
+matching option, so a buyer who just clicked a package does not land on a blank select
+and have to choose it again. Substring match, so the link stays readable.
+
+**README was actively misleading.** It described a FormSubmit backend (it has been
+EmailJS for a while), listed `gallery.html` (deleted earlier the same day), and told
+the reader to update a phone number that is no longer in the site. Rewritten around
+what a new reader actually needs: the page table, where the moving parts live, the one
+form handler and its label requirement, the brand versus accent split, and a section
+naming the two files that look deletable and are not, `serve.json` and `Dockerfile`.
+
+**Verified rather than assumed.** Ran the nav drawer through open, Escape, outside
+click and link press at 375px, and confirmed the Book a shoot button survives the
+940px collapse. Confirmed the dark palette resolves to the elevation ramp it was meant
+to (`--bg` #0b1220 < `--surface` #121d31 < `--card` #16223a) and that nav text on the
+page ground is 8.5:1. Stubbed `emailjs.send` and submitted both forms: all 22 intake
+fields arrive labelled and in form order, `reply_to` is the realtor so Reply works,
+the subject carries the property address, empty submits are blocked and the honeypot
+absorbs a bot without telling it that it failed. Validation now reads "name, email and
+property details" rather than joining the list with commas.
+
+**Not changed, deliberately.** The Stripe links themselves. Creating payment links and
+renaming a Stripe business are account actions, and guessing at either would be worse
+than the honest routing that is there now.
+
 
 ### 2026-09-01 - Nav rebuilt, dark mode fixed at the token level, intake form added
 
