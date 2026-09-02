@@ -269,16 +269,6 @@ p  { margin: 0 0 16px; }
 .pkg-note { text-align: center; color: var(--muted); font-size: 14.5px; margin-top: 30px; }
 .pkg-note a { color: var(--brand); font-weight: 700; }
 
-/* Add-ons */
-.addons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.addon {
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm);
-  padding: 20px 22px; display: flex; justify-content: space-between; align-items: center; gap: 14px;
-}
-.addon b { font-size: 15.5px; display: block; }
-.addon span { color: var(--muted); font-size: 13.5px; }
-.addon .cost { color: var(--brand); font-weight: 800; font-size: 17px; white-space: nowrap; }
-
 /* Comparison table */
 .compare { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; font-size: 15px; }
 .compare th, .compare td { padding: 15px 18px; text-align: left; border-bottom: 1px solid var(--line); }
@@ -500,7 +490,7 @@ button[type="submit"]:disabled { opacity: .65; cursor: not-allowed; transform: n
 }
 @media (max-width: 940px) {
   .section { padding: 74px 0; }
-  .cards-3, .cards-4, .quotes, .g-grid, .steps, .addons { grid-template-columns: repeat(2, 1fr); }
+  .cards-3, .cards-4, .quotes, .g-grid, .steps { grid-template-columns: repeat(2, 1fr); }
   .grid { grid-template-columns: repeat(2, 1fr); }
   .split, .promise, .contact-wrap { grid-template-columns: 1fr; gap: 36px; }
   .promise { padding: 40px 32px; }
@@ -524,7 +514,7 @@ button[type="submit"]:disabled { opacity: .65; cursor: not-allowed; transform: n
 @media (max-width: 720px) {
   .hero { padding: 76px 0 68px; }
   .hero-trust { gap: 20px 28px; }
-  .cards-3, .cards-4, .quotes, .g-grid, .steps, .addons, .grid, .pkg-grid, .cards-2 { grid-template-columns: 1fr; }
+  .cards-3, .cards-4, .quotes, .g-grid, .steps, .grid, .pkg-grid, .cards-2 { grid-template-columns: 1fr; }
   .pkg-grid { max-width: 420px; margin: 0 auto; }
   .gallery { grid-template-columns: 1fr; }
   .gallery img:first-child { aspect-ratio: 3/2; }
