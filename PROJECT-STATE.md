@@ -96,6 +96,50 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-09-10 - The guarantee is now "you do not pay, plus $20", and the 48 hour window is gone
+
+The owner reworded the offer. It used to be "50% off the first shoot and a 48 hour full
+refund window". It is now "50% off the first shoot, and if you are not happy you do not
+pay and you get $20 cash on top". Both changes were deliberate and both were confirmed
+by the owner mid session:
+
+- The **48 hour claim window is removed everywhere**, on purpose. The owner's reasoning:
+  the promise is about whether the client is happy, not about beating a clock, so a
+  deadline works against the thing being promised. Do not put it back. `refund.html`
+  section 1 now says in as many words that no deadline applies.
+- The **$20 applies to every gallery, forever**, not just the first shoot, same as the
+  old refund window did. It is paid once per gallery, alongside that gallery's refund.
+- Because Stripe charges up front, "you do not pay" is never left as a bare claim. Every
+  place it appears, the next clause says the money goes back on the original card. That
+  was the owner's follow up point and it is why the copy reads the way it does.
+- The **$20 is not paid on a shoot that was already free** under the 72 hour delivery
+  guarantee, since no money was taken. Stated in `refund.html` section 1 so the two
+  promises cannot be stacked into a $20 payout on a free shoot.
+
+Changed in 14 files: `js/site.js` (announce bar and the footer badge), `index.html`
+(meta, hero trust row, offer strip, guarantee block and its four key list, the no
+reviews card, the FAQ answer, the closing CTA), `guarantee.html` (h1, promise two,
+the why block, four FAQ entries including a new "Why $20 on top" one, the CTA),
+`refund.html` (short version callout and sections 1 and 2), `terms.html` (section 6),
+`packages.html` (meta, lead, offer strip, a second comparison table row for the $20,
+the booking steps, the CTA), plus `contact.html`, `about.html`, `services.html`,
+`faq.html`, `portfolio.html`, `project.html`, `intake.html`, `README.md`.
+`CLAUDE.md` and `docs/site.md` now carry the new offer as the spec.
+
+**The 48 hour strings that are still in the repo are all scheduling lead time**, not the
+guarantee: "most shoots scheduled within 48 hours" in `contact.html` (twice),
+`index.html`, `faq.html` and `intake.html`. Leave them.
+
+Verified: `npm test` passes (three lead forms still wire up), no em or en dashes anywhere
+in the tree, and the site was rendered at 800px and at 375px. Checked the announce bar,
+the hero trust row, the offer strips, the guarantee promise cards and the two new pricing
+table rows. No element overflows its container and the table still scrolls inside its own
+wrapper on mobile.
+
+**Still open for the owner:** the Stripe half price links and the branding blockers above
+are unchanged by this. Nothing in the payment flow mentions the $20, so if a client claims
+it, it is a manual send.
+
 ### 2026-09-01 (later still) - The first shoot can be bought in one click
 
 The owner created the two half price payment links. Opened both to confirm the amounts

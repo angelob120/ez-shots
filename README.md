@@ -25,7 +25,7 @@ Serves on `http://localhost:3000`. `npm test` runs the form checks described bel
 | `index.html` | Home. Hero, services, packages, portfolio, lead form |
 | `services.html` | What is included in a shoot |
 | `packages.html` | Pricing, the two packages, Stripe buy links |
-| `guarantee.html` | The offer in full: half price first shoot, 48 hour refund |
+| `guarantee.html` | The offer in full: half price first shoot, no payment plus $20 if you are not happy |
 | `portfolio.html` | Project grid, built from `js/projects.js` |
 | `project.html` | Project detail, loads one project by `?id=` |
 | `about.html` | The photographer |

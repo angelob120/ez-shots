@@ -6,7 +6,8 @@ One plan file is enough for a site this small. Mark items done in place as they 
 Real estate photography for realtors in Metro Detroit (Wayne, Oakland, Macomb). The
 offer the whole site is built around:
 - First shoot 50% off. $150 becomes $75, $250 becomes $125.
-- 48 hour full refund window on every delivered gallery, first shoot and every one after.
+- Not happy with a delivered gallery means you do not pay: full refund plus $20 cash, on
+  every gallery, first shoot and every one after, with no deadline on the request.
 - Average delivery about 24 hours, hard ceiling 72 hours or the shoot is free.
 - Drone aerials included in both packages, not sold as an add on.
 

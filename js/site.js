@@ -34,7 +34,7 @@
     '<div class="announce">' +
       '<b>First shoot 50% off</b> for Metro Detroit realtors' +
       '<span class="dot hide-sm">|</span>' +
-      '<span class="hide-sm">Full refund for 48 hours after every gallery</span>' +
+      '<span class="hide-sm">Not happy? You do not pay, and I send you $20</span>' +
       '<span class="dot">|</span>' +
       '<a href="guarantee.html">See how it works</a>' +
     '</div>' +
@@ -82,8 +82,8 @@
             '<span>Licensed and insured for commercial drone flight.</span>' +
           '</div>' +
           '<div class="footer-badge">' +
-            '<b>48 hour refund window</b>' +
-            '<span>Not happy with the gallery? Full refund, every shoot.</span>' +
+            '<b>Not happy, you do not pay</b>' +
+            '<span>Every dollar back plus $20 cash, on any shoot.</span>' +
           '</div>' +
         '</div>' +
       '</div>' +

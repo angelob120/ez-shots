@@ -6,7 +6,9 @@ EZ Shots is a static marketing and portfolio website for a real estate photograp
 ## The offer the site sells
 Everything on the site points at one offer. Do not water it down or contradict it in copy:
 - First shoot 50% off. Listing Essentials $150 becomes $75, Listing Pro $250 becomes $125.
-- 48 hour full refund window on every delivered gallery, the first one and every one after.
+- If the client is not happy with a delivered gallery they do not pay for it: full refund
+  plus $20 cash on top. Every gallery, the first one and every one after, with no deadline
+  on the request. Never reintroduce a claim window, it was removed deliberately on 2026-09-10.
 - Average delivery about 24 hours, hard ceiling 72 hours or the shoot is free.
 - Drone aerials are included in both packages, never sold as an add on.
 The full wording lives on `guarantee.html` and is restated formally on `refund.html`. If one changes, change both.
