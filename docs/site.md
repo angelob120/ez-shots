@@ -65,5 +65,9 @@ offer the whole site is built around:
   `ezshots.org`**, named in the outreach message in `docs/plan.md`. It has to resolve to
   this site before automated outreach starts pointing agents at it. There are no
   canonical or Open Graph URL tags on any page yet; add them once it is live.
-- Note: `CLAUDE.md`, `PROJECT-STATE.md` and `docs/` are served publicly as static files.
-  Move them out of the deploy root if that matters.
+- Note, corrected 2026-09-11: `CLAUDE.md`, `PROJECT-STATE.md` and `docs/` are **not** served
+  by the site. `.dockerignore` excludes `docs` and `*.md`, so the Docker build Railway uses
+  never copies them into the image. The older warning here said the opposite and predated
+  the Dockerfile.
+- They are public anyway, because `angelob120/ez-shots` is a public GitHub repo. That is the
+  reason the personal money section of `docs/plan.md` is held back rather than committed.

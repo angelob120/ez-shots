@@ -481,33 +481,23 @@ interested leads. Do not invent work.
 
 # Personal money system
 
-**Chase** is the serious money: bills, necessary expenses, business and life
-transportation, transfers. Do not mentally spend the displayed balance.
+Held back from this file on purpose. `angelob120/ez-shots` is a **public** repository, and
+the personal money system is account structure, weekly spending limits, savings balances
+and reserve targets. That is the one part of the plan that does not belong in a public
+repo, so it was left out when the plan was committed on 2026-09-11.
 
-**Cash App** is the casual consumption limit. Start at $100 per week, normal maximum $100
-to $150 per week. When it hits $0, casual spending stops. Never rescue it early.
-
-**Optional driving** starts at $20 to $30 per week. Necessary business driving, including
-photography appointments, is separate.
-
-**Credit union** is the vault: emergency fund, protected savings, Miami reserve later. Do
-not raid it for normal spending.
-
-**Credit cards** are payment tools, not money. Full statement autopay, normal balance
-returns to $0, no casual food, no random purchases without existing cash, no treating
-available credit as income.
+The rules it contains are unchanged and still apply: Chase is the serious money, Cash App
+is the casual consumption limit, the credit union is the vault, credit cards are payment
+tools and not money, and the weekly routine is bills, taxes, savings goal, one Cash App
+refill, driving allowance, then stop moving money around. The governing line is the one
+worth keeping in your head anyway:
 
 > IF I DO NOT HAVE THE CASH, I DO NOT HAVE THE MONEY.
 
-Weekly money routine: check required bills, reserve taxes, protect the current savings
-goal, refill Cash App once, fund the optional driving allowance, then stop moving money
-around.
-
-Investing buckets, in order: taxes, business reserve, emergency fund, car and move cash,
-investments, real estate fund. **Never invest buckets 1 to 4.** Before the Michigan move,
-focus on cash stability. After a stable move, begin simple diversified investing.
-
----
+Put the full section back here the moment the repo is private, or keep it somewhere that
+is not a git remote. The same question applies to what is still in this file: the Michigan
+bills figure in Gate 2, the savings targets in Gate 3, and the rent and reserve numbers in
+the Miami gate are all public as written.
 
 # Current status
 

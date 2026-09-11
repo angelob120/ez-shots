@@ -161,6 +161,22 @@ deployed. They are written up in full at the bottom of `docs/plan.md`:
 No site copy, markup, styles or scripts were changed, on purpose. Everything the plan
 implies for the pages is either owner blocked or deliberately deferred.
 
+**The personal money system section of the plan was deliberately not committed.** This
+repo is public. Checked on 2026-09-11 through the GitHub API, `visibility: public`, so
+account structure, weekly spending limits, savings balances and reserve targets would have
+been world readable. `docs/plan.md` carries a placeholder at that heading explaining what
+is missing and why, and the operating rules survive in summary. The full section is the
+owner's to place somewhere that is not a public git remote, or to restore here once the
+repo is private. Note that the rest of the file is still public as written: the Michigan
+bills figure in Gate 2, the savings targets in Gate 3, and the rent and reserve numbers in
+the Miami gate.
+
+Corrected while checking that: `docs/site.md` claimed `CLAUDE.md`, `PROJECT-STATE.md` and
+`docs/` are served publicly as static files. They are not. `.dockerignore` excludes `docs`
+and `*.md`, so the Docker build never copies them into the image. That warning predated the
+Dockerfile added on 2026-09-01 and has been wrong since. The exposure is GitHub, not the
+website.
+
 Verified: `npm test` passes, three lead forms still wire up. `git ls-files | xargs grep`
 finds no em dash or en dash in any tracked file outside the stale `ez-shots/` extract,
 which predates the rule and is untouched. Every file referenced above exists.
