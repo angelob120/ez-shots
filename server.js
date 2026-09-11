@@ -1,40 +1,61 @@
 // EZ Shots server.
 //
-// The site is still static HTML. This process exists for the two things a
-// static file cannot do:
+// The site is still static HTML. This process exists for the things a static
+// file cannot do:
 //   1. Hold the live prices, checkout links and availability, so the owner can
 //      change a price on the site instead of editing code and redeploying.
 //   2. Hold the Stripe secret key, so the CUSTOMER'S BROWSER NEVER DECIDES WHAT
 //      A SHOOT COSTS. The browser sends a package id, the server looks the
 //      price up in its own config and creates the Checkout Session.
-//
-// Node built ins only, on purpose. The one dependency this repo had was `serve`,
-// and the static rules it applied (serve.json) are reimplemented below, because
-// the booking flow needs an API sitting in front of the same files.
+//   3. Own the calendar. GET /api/availability is the only thing that says
+//      what can be booked, and POST /api/book is the only thing that takes a
+//      slot, inside a database transaction, so two agents cannot both get the
+//      same 1:00 PM. See server/availability.js and server/db.js.
 //
 // ENV
-//   PORT                Railway sets this. 3000 locally.
-//   DATA_DIR            where the live config is written. Default ./data.
-//                       ON RAILWAY THIS MUST BE A MOUNTED VOLUME, otherwise the
-//                       container filesystem resets on every deploy and every
-//                       price the owner set goes back to config.json.
-//   ADMIN_PASSWORD      required to use /admin. Unset means admin is off, and
-//                       there is no default password, ever.
-//   ADMIN_SECRET        optional, signs the session cookie. Derived from the
-//                       password when unset, which logs everyone out whenever
-//                       the password changes. That is the right behaviour.
-//   STRIPE_SECRET_KEY   optional. When set, checkout is a Session created here
-//                       with a server side price. When unset, the booking page
-//                       falls back to the payment links in the config.
-//   SITE_URL            optional, the public origin used to build Stripe's
-//                       return URLs. Worked out from the request when unset.
+//   PORT                   Railway sets this. 3000 locally.
+//   DATABASE_URL           the Railway Postgres. Config and bookings live there.
+//                          Without it the site still serves, prices come from
+//                          DATA_DIR or the seed config.json, and online booking
+//                          is off: the booking page says so.
+//   DATA_DIR               where the config file goes when there is no
+//                          database. Default ./data. Kept for a laptop, not for
+//                          production, which has the database.
+//   ADMIN_PASSWORD         required to use /admin. Unset means admin is off, and
+//                          there is no default password, ever.
+//   ADMIN_SECRET           optional, signs the session cookie. Derived from the
+//                          password when unset, which logs everyone out whenever
+//                          the password changes. That is the right behaviour.
+//   STRIPE_SECRET_KEY      optional. When set, checkout is a Session created
+//                          here with a server side price and the booking is
+//                          confirmed by Stripe. When unset, the booking page
+//                          falls back to the payment links in the config and
+//                          the owner marks bookings paid by hand in admin.
+//   STRIPE_WEBHOOK_SECRET  optional, from the Stripe dashboard once an endpoint
+//                          for /api/stripe/webhook exists. Without it the
+//                          booking is confirmed when the customer lands on the
+//                          success page, which is the same server side read of
+//                          the session, only it depends on the browser coming
+//                          back. Set it and that dependency goes away.
+//   SITE_URL               optional, the public origin used to build Stripe's
+//                          return URLs. Worked out from the request when unset.
+//   TZ                     the business timezone. Defaulted below to Detroit so
+//                          "8:00 AM" means 8 in the morning in Michigan even on
+//                          a Railway box that thinks it is in UTC.
 "use strict";
+
+// Before anything touches a Date. Node reads TZ when it first needs it.
+process.env.TZ = process.env.TZ || "America/Detroit";
 
 const http = require("node:http");
 const fs = require("node:fs");
 const fsp = require("node:fs/promises");
 const path = require("node:path");
 const crypto = require("node:crypto");
+
+const avail = require("./server/availability");
+const stripe = require("./server/stripe");
+const { Db } = require("./server/db");
 
 const ROOT = __dirname;
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -44,12 +65,22 @@ const SEED_CONFIG = path.join(ROOT, "config.json");
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 const ADMIN_SECRET = process.env.ADMIN_SECRET || (ADMIN_PASSWORD ? "s:" + ADMIN_PASSWORD : "");
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || "";
+const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 const SESSION_HOURS = 12;
+
+// How long a slot stays held while the customer pays. A Checkout Session is
+// told to expire at 30 minutes, the shortest Stripe allows, and the hold
+// outlives it by a little so the expiry webhook finds it still there. With
+// payment links nothing can confirm a payment on its own, so the hold lasts a
+// day and the owner marks it paid in admin, or it lapses.
+const HOLD_SESSION_MS = 32 * 60 * 1000;
+const HOLD_LINK_MS = 24 * 3600 * 1000;
+const STRIPE_EXPIRES_SEC = 30 * 60 + 60;
 
 // Files that live in the repo but must not be served. docs/site.md noted that
 // the working notes were publicly readable on the old static deploy. They are
 // not any more.
-const PRIVATE = [/^\/?\.git/, /^\/?\.claude/, /^\/?node_modules/, /^\/?data\//,
+const PRIVATE = [/^\/?\.git/, /^\/?\.claude/, /^\/?node_modules/, /^\/?data\//, /^\/?server\//,
   /\.md$/i, /^\/?server\.js$/, /^\/?package(-lock)?\.json$/, /^\/?Dockerfile$/, /^\/?scripts\//];
 
 const TYPES = {
@@ -64,33 +95,43 @@ const TYPES = {
 };
 
 // ---------------------------------------------------------------------------
-// Config store
+// Config store: the database when there is one, a file in DATA_DIR when not.
 // ---------------------------------------------------------------------------
+let db = null;
 let cache = null;
 
 async function readConfig() {
   if (cache) return cache;
-  try {
-    cache = JSON.parse(await fsp.readFile(LIVE_CONFIG, "utf8"));
-  } catch {
-    cache = JSON.parse(await fsp.readFile(SEED_CONFIG, "utf8"));
+  let cfg = null;
+  if (db) cfg = await db.getConfig();
+  if (!cfg) {
+    try { cfg = JSON.parse(await fsp.readFile(LIVE_CONFIG, "utf8")); }
+    catch { cfg = JSON.parse(await fsp.readFile(SEED_CONFIG, "utf8")); }
   }
-  return cache;
+  validate(cfg);
+  cache = cfg;
+  return cfg;
 }
 
 async function writeConfig(cfg) {
-  await fsp.mkdir(DATA_DIR, { recursive: true });
-  // Write then rename, so a crash mid write cannot leave a half a price list
-  // on disk for the booking page to read.
-  const tmp = LIVE_CONFIG + ".tmp";
-  await fsp.writeFile(tmp, JSON.stringify(cfg, null, 2));
-  await fsp.rename(tmp, LIVE_CONFIG);
+  if (db) {
+    await db.setConfig(cfg);
+  } else {
+    await fsp.mkdir(DATA_DIR, { recursive: true });
+    // Write then rename, so a crash mid write cannot leave half a price list
+    // on disk for the booking page to read.
+    const tmp = LIVE_CONFIG + ".tmp";
+    await fsp.writeFile(tmp, JSON.stringify(cfg, null, 2));
+    await fsp.rename(tmp, LIVE_CONFIG);
+  }
   cache = cfg;
 }
 
 // Anything that reaches this from the admin page has been typed by a person
 // into a form, so it is checked rather than trusted. A price that arrives as
-// the string "one fifty" must not become NaN on the pricing page.
+// the string "one fifty" must not become NaN on the pricing page. It also runs
+// over the config on the way in, so an old file missing a newer field gets the
+// default rather than undefined.
 function validate(cfg) {
   const errs = [];
   if (!cfg || !Array.isArray(cfg.packages) || !cfg.packages.length) {
@@ -121,25 +162,31 @@ function validate(cfg) {
   });
 
   const a = cfg.availability || (cfg.availability = {});
+  // The hours are what the admin page builds the per day lists from. The
+  // lists are what the calendar uses.
+  const h = a.hours && typeof a.hours === "object" ? a.hours : {};
+  a.hours = {
+    start: avail.normalize(h.start) || "8:00 AM",
+    end: avail.normalize(h.end) || "8:00 PM",
+    every: Math.max(15, Math.min(480, Math.round(Number(h.every)) || 120))
+  };
+  if (avail.minutesOf(a.hours.end) < avail.minutesOf(a.hours.start)) errs.push("Hours: the end has to come after the start.");
   a.week = a.week && typeof a.week === "object" ? a.week : {};
-  for (let d = 0; d < 7; d++) {
-    const list = Array.isArray(a.week[String(d)]) ? a.week[String(d)] : [];
-    a.week[String(d)] = list.map(s => String(s).trim()).filter(s => /^\d{1,2}:\d{2}\s*(AM|PM)$/i.test(s));
-  }
+  for (let d = 0; d < 7; d++) a.week[String(d)] = avail.cleanList(a.week[String(d)]);
   for (const f of ["blocked", "overrides"]) {
     const o = a[f] && typeof a[f] === "object" ? a[f] : {};
     a[f] = {};
     for (const k of Object.keys(o)) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(k)) { errs.push(`${f}: "${k}" is not a YYYY-MM-DD date.`); continue; }
-      a[f][k] = f === "blocked" ? String(o[k] || "Blocked")
-        : (Array.isArray(o[k]) ? o[k].map(String).filter(s => /^\d{1,2}:\d{2}\s*(AM|PM)$/i.test(s)) : []);
+      if (!avail.isKey(k)) { errs.push(`${f}: "${k}" is not a real YYYY-MM-DD date.`); continue; }
+      a[f][k] = f === "blocked" ? String(o[k] || "Blocked").slice(0, 200) : avail.cleanList(o[k]);
     }
   }
-  const nums = { minNoticeHours: [0, 720, 24], maxAdvanceDays: [1, 365, 45], daysShown: [1, 60, 10] };
+  const nums = { minNoticeHours: [0, 720, 24], maxAdvanceDays: [1, 365, 28], maxPerDay: [1, 50, 5], lookBusy: [0, 90, 0] };
   for (const [k, [lo, hi, def]] of Object.entries(nums)) {
     const v = Number(a[k]);
     a[k] = Number.isFinite(v) ? Math.min(hi, Math.max(lo, Math.round(v))) : def;
   }
+  delete a.daysShown;
   return errs;
 }
 
@@ -208,7 +255,7 @@ function json(res, code, obj, headers = {}) {
   send(res, code, JSON.stringify(obj), { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...headers });
 }
 
-function body(req, limit = 200 * 1024) {
+function raw(req, limit = 200 * 1024) {
   return new Promise((resolve, reject) => {
     let n = 0;
     const chunks = [];
@@ -217,12 +264,15 @@ function body(req, limit = 200 * 1024) {
       if (n > limit) { reject(new Error("too big")); req.destroy(); return; }
       chunks.push(c);
     });
-    req.on("end", () => {
-      try { resolve(chunks.length ? JSON.parse(Buffer.concat(chunks).toString("utf8")) : {}); }
-      catch { reject(new Error("bad json")); }
-    });
+    req.on("end", () => resolve(Buffer.concat(chunks)));
     req.on("error", reject);
   });
+}
+
+async function body(req, limit) {
+  const buf = await raw(req, limit);
+  if (!buf.length) return {};
+  try { return JSON.parse(buf.toString("utf8")); } catch { throw new Error("bad json"); }
 }
 
 function origin(req) {
@@ -231,15 +281,33 @@ function origin(req) {
   return proto + "://" + (req.headers.host || "localhost:" + PORT);
 }
 
-// Stripe wants form encoded bodies with bracketed keys.
-function formEncode(obj, prefix = "", out = []) {
-  for (const [k, v] of Object.entries(obj)) {
-    const key = prefix ? `${prefix}[${k}]` : k;
-    if (v === undefined || v === null || v === "") continue;
-    if (typeof v === "object") formEncode(v, key, out);
-    else out.push(encodeURIComponent(key) + "=" + encodeURIComponent(String(v)));
-  }
-  return out.join("&");
+function str(v, max) { return String(v == null ? "" : v).trim().slice(0, max); }
+
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+function longDate(key) {
+  const d = avail.dateOf(key);
+  return DAYS[d.getDay()] + ", " + MONTHS[d.getMonth()] + " " + d.getDate();
+}
+
+// What a customer is allowed to see of their own booking. No internal notes,
+// no Stripe ids.
+function publicBooking(b) {
+  if (!b) return null;
+  return {
+    id: b.id, status: b.status, date: b.date, time: b.time, when: longDate(b.date) + " at " + b.time,
+    package: b.packageName, amount: b.amount, firstShoot: b.firstShoot, paid: b.paid,
+    name: b.name, email: b.email, phone: b.phone, brokerage: b.brokerage,
+    address: b.address, size: b.size, occupancy: b.occupancy, access: b.access,
+    accessNotes: b.accessNotes, notes: b.notes, token: b.token
+  };
+}
+
+// "held" is the stored status; whether the hold still stands is a matter of
+// the clock, and the admin page wants the answer, not the arithmetic.
+function stateOf(b, now = Date.now()) {
+  if (b.status === "held" && (!b.expiresAt || Date.parse(b.expiresAt) <= now)) return "expired";
+  return b.status;
 }
 
 // ---------------------------------------------------------------------------
@@ -292,24 +360,341 @@ async function serveStatic(req, res, pathname) {
 }
 
 // ---------------------------------------------------------------------------
+// Bookings
+// ---------------------------------------------------------------------------
+async function takenNow(av, now) {
+  return db.takenByDate(avail.keyOf(now), avail.keyOf(avail.window(av, now)), now);
+}
+
+// Paid, as far as Stripe is concerned. Both the webhook and the success page
+// end up here, and the second caller finds it already confirmed.
+async function confirmFromSession(session, source) {
+  if (!db || !session || session.payment_status !== "paid") return null;
+  const id = (session.metadata && session.metadata.booking_id) || session.client_reference_id || "";
+  let b = await db.bySession(session.id);
+  if (!b && id) b = await db.find(id);
+  if (!b) return null;
+  if (b.status === "confirmed") return b;
+  try {
+    const c = await db.confirm(b.id, {
+      stripeSessionId: session.id,
+      stripePaymentIntent: typeof session.payment_intent === "string" ? session.payment_intent : null,
+      stripeCustomerId: typeof session.customer === "string" ? session.customer : null,
+      status: "confirmed"
+    });
+    console.log(`[ez-shots] ${c.id} confirmed by the ${source}`);
+    return c;
+  } catch (e) {
+    // The only way here is the unique index refusing a second confirmed
+    // booking on the slot, which means two people paid for one time. Say so
+    // loudly rather than lose either.
+    console.error(`[ez-shots] COULD NOT CONFIRM ${b.id} on ${b.date} ${b.time}, paid twice?`, e.message);
+    return b;
+  }
+}
+
+async function book(req, res) {
+  if (!db) return json(res, 503, { error: "Online booking is not switched on yet. Email me and I will book you in." });
+  const cfg = await readConfig();
+  const av = cfg.availability;
+  const b = await body(req).catch(() => null);
+  if (!b) return json(res, 400, { error: "That did not arrive as valid JSON." });
+
+  const pkg = cfg.packages.find(p => p.id === b.packageId && p.active !== false);
+  if (!pkg) return json(res, 400, { error: "Pick a package first." });
+  const first = b.firstShoot !== false;
+  const link = first ? pkg.checkoutFirst : pkg.checkoutFull;
+  if (!STRIPE_KEY && !link) return json(res, 503, { error: "No checkout is set up for that package yet." });
+
+  const date = str(b.date, 10);
+  const time = avail.normalize(b.time);
+  const name = str(b.name, 120), email = str(b.email, 200), phone = str(b.phone, 40), address = str(b.address, 300);
+  if (!avail.isKey(date) || !time) return json(res, 400, { error: "Pick a day and a time." });
+  if (name.length < 2) return json(res, 400, { error: "Please enter your name." });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json(res, 400, { error: "That email address does not look right. Please check it." });
+  if (phone.replace(/\D/g, "").length < 7) return json(res, 400, { error: "Please enter a mobile number I can text." });
+  if (address.length < 6) return json(res, 400, { error: "Please enter the property address." });
+
+  const now = new Date();
+
+  // A retry after a failed email, a back button from Stripe, a double tap:
+  // the same person asking for the same slot gets the hold they already have,
+  // not "that time was just booked" because of their own hold.
+  const r = b.resume && typeof b.resume === "object" ? b.resume : null;
+  if (r && r.id && r.token) {
+    const old = await db.find(str(r.id, 20));
+    if (old && old.token === str(r.token, 64) && old.status === "held") {
+      const same = old.date === date && old.time === time && old.packageId === pkg.id && old.firstShoot === first;
+      if (same && stateOf(old, now.getTime()) === "held" && old.checkoutUrl) {
+        return json(res, 200, { id: old.id, token: old.token, url: old.checkoutUrl, mode: old.checkoutMode, expiresAt: old.expiresAt, resumed: true });
+      }
+      await db.release(old.id, now);
+    }
+  }
+
+  const taken = await takenNow(av, now);
+  const verdict = avail.why(av, taken, date, time, now);
+  if (verdict === "closed") return json(res, 409, { error: "That time is not open for booking. Pick another time.", taken: true });
+  if (verdict !== "ok") return json(res, 409, { error: "That time was just booked. Pick another available time.", taken: true });
+
+  const fields = {
+    date, time, startsAt: avail.slotAt(date, time),
+    packageId: pkg.id, packageName: pkg.name, firstShoot: first,
+    amount: first ? pkg.firstPrice : pkg.price, listPrice: pkg.price,
+    name, email, phone, brokerage: str(b.brokerage, 120), address,
+    size: str(b.size, 60), occupancy: str(b.occupancy, 60), access: str(b.access, 60),
+    accessNotes: str(b.accessNotes, 500), notes: str(b.notes, 2000),
+    checkoutMode: STRIPE_KEY ? "session" : "link", checkoutUrl: STRIPE_KEY ? "" : link
+  };
+  const held = await db.hold(fields, STRIPE_KEY ? HOLD_SESSION_MS : HOLD_LINK_MS, now);
+  if (!held) return json(res, 409, { error: "That time was just booked. Pick another available time.", taken: true });
+
+  const reply = { id: held.id, token: held.token, expiresAt: held.expiresAt };
+  if (!STRIPE_KEY) return json(res, 200, Object.assign(reply, { url: link, mode: "link" }));
+
+  const site = origin(req);
+  const payload = {
+    mode: "payment",
+    success_url: site + "/booked.html?session_id={CHECKOUT_SESSION_ID}",
+    cancel_url: site + "/book.html",
+    client_reference_id: held.id,
+    customer_email: email,
+    customer_creation: "always",
+    expires_at: Math.floor(now.getTime() / 1000) + STRIPE_EXPIRES_SEC,
+    "line_items[0][quantity]": 1,
+    "line_items[0][price_data][currency]": "usd",
+    "line_items[0][price_data][unit_amount]": Math.round(held.amount * 100),
+    "line_items[0][price_data][product_data][name]": pkg.name + (first ? " (first shoot, half price)" : ""),
+    "line_items[0][price_data][product_data][description]":
+      [address, longDate(date), time].join(", ").slice(0, 500),
+    metadata: {
+      booking_id: held.id,
+      package: pkg.name,
+      package_id: pkg.id,
+      first_shoot: first ? "yes" : "no",
+      address: address.slice(0, 400),
+      shoot_date: longDate(date),
+      shoot_time: time
+    }
+  };
+
+  try {
+    const s = await stripe.createSession(STRIPE_KEY, payload, held.id);
+    await db.update(held.id, { checkoutMode: "session", checkoutUrl: s.url, stripeSessionId: s.id }, now);
+    return json(res, 200, Object.assign(reply, { url: s.url, mode: "session" }));
+  } catch (e) {
+    console.error("[ez-shots] Stripe session failed:", e.message);
+    // A Stripe outage must not cost a booking. The payment link still works,
+    // and the hold is stretched to the link timing since nothing can now
+    // confirm it automatically.
+    if (link) {
+      const u = await db.update(held.id, { checkoutMode: "link", checkoutUrl: link, expiresAt: new Date(now.getTime() + HOLD_LINK_MS) }, now);
+      return json(res, 200, Object.assign(reply, { url: link, mode: "link-fallback", expiresAt: u.expiresAt }));
+    }
+    await db.release(held.id, now);
+    return json(res, 502, { error: "Checkout could not be created. Try again in a minute." });
+  }
+}
+
+// The success page. Stripe is asked directly whether the session was paid, so
+// a query string cannot claim a booking that was never paid for, and the
+// booking is confirmed here if the webhook has not done it already.
+async function session(req, res, url) {
+  const id = url.searchParams.get("id") || "";
+  if (!STRIPE_KEY || !/^cs_[A-Za-z0-9_]+$/.test(id)) return json(res, 404, { error: "No session." });
+  let s;
+  try { s = await stripe.getSession(STRIPE_KEY, id); }
+  catch (e) {
+    console.error("[ez-shots] session lookup failed:", e.message);
+    return json(res, 502, { error: "Could not read that session." });
+  }
+  if (s.payment_status !== "paid") return json(res, 404, { error: "Not a paid session." });
+  const b = await confirmFromSession(s, "success page");
+  return json(res, 200, {
+    paid: true,
+    amount: (s.amount_total || 0) / 100,
+    email: (s.customer_details && s.customer_details.email) || "",
+    package: (s.metadata && s.metadata.package) || "",
+    address: (s.metadata && s.metadata.address) || "",
+    date: (s.metadata && s.metadata.shoot_date) || "",
+    time: (s.metadata && s.metadata.shoot_time) || "",
+    booking: publicBooking(b)
+  });
+}
+
+// Stripe calling back. The signature is checked against the raw bytes, and
+// anything that is not one of the four session events is acknowledged and
+// ignored, which is what Stripe wants: a 200 means "got it, stop retrying".
+async function webhook(req, res) {
+  const buf = await raw(req, 1024 * 1024).catch(() => null);
+  if (!buf) return json(res, 400, { error: "Bad body." });
+  if (!WEBHOOK_SECRET) {
+    console.error("[ez-shots] webhook received but STRIPE_WEBHOOK_SECRET is not set");
+    return json(res, 503, { error: "Webhook secret not configured." });
+  }
+  if (!stripe.verifySignature(WEBHOOK_SECRET, req.headers["stripe-signature"], buf)) {
+    return json(res, 400, { error: "Bad signature." });
+  }
+  let ev;
+  try { ev = JSON.parse(buf.toString("utf8")); } catch { return json(res, 400, { error: "Bad JSON." }); }
+  const obj = (ev.data && ev.data.object) || {};
+  const id = (obj.metadata && obj.metadata.booking_id) || obj.client_reference_id || "";
+  try {
+    if (ev.type === "checkout.session.completed" || ev.type === "checkout.session.async_payment_succeeded") {
+      await confirmFromSession(obj, "webhook");
+    } else if ((ev.type === "checkout.session.expired" || ev.type === "checkout.session.async_payment_failed") && db && id) {
+      const b = await db.find(id);
+      if (b && b.status === "held") { await db.release(b.id); console.log(`[ez-shots] ${b.id} released, session ${ev.type}`); }
+    }
+  } catch (e) {
+    console.error("[ez-shots] webhook handling failed:", e.message);
+    return json(res, 500, { error: "Handling failed, retry." });
+  }
+  return json(res, 200, { received: true });
+}
+
+// The customer's own view of a booking, by the token in their manage link.
+async function manage(req, res, url) {
+  if (!db) return json(res, 404, { error: "No booking." });
+  const tok = url.searchParams.get("t") || "";
+  const b = /^[a-f0-9]{32}$/.test(tok) ? await db.byToken(tok) : null;
+  if (!b) return json(res, 404, { error: "That link does not match a booking." });
+  const now = new Date();
+  const state = stateOf(b, now.getTime());
+  const out = publicBooking(b);
+  out.state = state;
+  out.canCancel = (state === "confirmed" || state === "held") && Date.parse(b.startsAt) > now.getTime();
+  if (req.method === "GET") return json(res, 200, { booking: out });
+  if (req.method === "POST" && url.pathname === "/api/manage/cancel") {
+    if (!out.canCancel) return json(res, 400, { error: "This booking can no longer be cancelled here. Email me and I will sort it." });
+    const c = await db.cancel(b.id, "customer", now);
+    console.log(`[ez-shots] ${b.id} cancelled by the customer`);
+    return json(res, 200, { booking: Object.assign(publicBooking(c), { state: "cancelled", canCancel: false }) });
+  }
+  return json(res, 405, { error: "No." });
+}
+
+// An .ics the phone's calendar app opens straight from the success page.
+async function ics(req, res, url) {
+  const tok = url.searchParams.get("t") || "";
+  const b = db && /^[a-f0-9]{32}$/.test(tok) ? await db.byToken(tok) : null;
+  if (!b) return send(res, 404, "Not found", { "content-type": "text/plain" });
+  const start = new Date(b.startsAt);
+  const end = new Date(start.getTime() + 90 * 60 * 1000);
+  const stamp = d => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const esc = s => String(s || "").replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/[,;]/g, m => "\\" + m);
+  const lines = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//EZ Shots//Booking//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    "UID:" + b.id + "@ezshots.org",
+    "DTSTAMP:" + stamp(new Date()),
+    "DTSTART:" + stamp(start),
+    "DTEND:" + stamp(end),
+    "SUMMARY:" + esc("EZ Shots photo shoot, " + b.address),
+    "LOCATION:" + esc(b.address),
+    "DESCRIPTION:" + esc(b.packageName + ". Booking " + b.id + ". Manage: " + origin(req) + "/manage.html?t=" + b.token),
+    "END:VEVENT", "END:VCALENDAR"
+  ];
+  return send(res, 200, lines.join("\r\n") + "\r\n", {
+    "content-type": "text/calendar; charset=utf-8",
+    "content-disposition": `attachment; filename="ez-shots-${b.id}.ics"`,
+    "cache-control": "no-store"
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Admin bookings
+// ---------------------------------------------------------------------------
+async function adminBookings(req, res) {
+  if (!db) return json(res, 503, { error: "No database, so there are no bookings to show." });
+  const cfg = await readConfig();
+  const now = new Date();
+  const today = avail.keyOf(now);
+  const from = avail.keyOf(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 60));
+  const to = avail.keyOf(new Date(now.getFullYear(), now.getMonth(), now.getDate() + Math.max(120, cfg.availability.maxAdvanceDays)));
+  const list = (await db.list(from, to)).map(b => Object.assign(b, { state: stateOf(b, now.getTime()), when: longDate(b.date) }));
+
+  // The six numbers at the top of the plan's admin home, worked out from what
+  // is confirmed. Revenue is by shoot date, so a month reads as what the
+  // month's shoots are worth.
+  const confirmed = list.filter(b => b.state === "confirmed");
+  const monthKey = today.slice(0, 7);
+  const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+  const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
+  const inWeek = b => b.date >= avail.keyOf(weekStart) && b.date <= avail.keyOf(weekEnd);
+  const month = confirmed.filter(b => b.date.slice(0, 7) === monthKey);
+  const revenue = month.reduce((s, b) => s + b.amount, 0);
+  const repeats = await db.query(
+    "SELECT count(*) AS n FROM (SELECT lower(email) FROM bookings WHERE status = 'confirmed' GROUP BY lower(email) HAVING count(*) > 1) t");
+  const stats = {
+    today: confirmed.filter(b => b.date === today).length,
+    week: confirmed.filter(inWeek).length,
+    month: month.length,
+    revenue,
+    ticket: month.length ? Math.round(revenue / month.length) : 0,
+    repeat: Number(repeats.rows[0].n)
+  };
+  return json(res, 200, { today, now: now.toISOString(), stripe: !!STRIPE_KEY, stats, bookings: list });
+}
+
+async function adminBooking(req, res, id) {
+  if (!db) return json(res, 503, { error: "No database." });
+  const b = await db.find(id);
+  if (!b) return json(res, 404, { error: "No such booking." });
+  const p = await body(req).catch(() => ({}));
+  const now = new Date();
+  let out = b;
+  if (p.action === "confirm") {
+    if (b.status === "confirmed") return json(res, 200, { booking: b });
+    const other = await db.clash(b.date, b.time, b.id, now);
+    if (other) return json(res, 409, { error: `That slot has since gone to ${other}. Cancel that one first, or move this booking by email.` });
+    out = await db.confirm(b.id, { checkoutMode: b.checkoutMode || "manual" }, now);
+  } else if (p.action === "cancel") {
+    out = await db.cancel(b.id, "owner", now);
+  } else if (p.action === "note") {
+    out = await db.update(b.id, { internalNotes: str(p.note, 4000) }, now);
+  } else {
+    return json(res, 400, { error: "Unknown action." });
+  }
+  return json(res, 200, { booking: Object.assign(out, { state: stateOf(out, now.getTime()), when: longDate(out.date) }) });
+}
+
+// ---------------------------------------------------------------------------
 // Routes
 // ---------------------------------------------------------------------------
-async function api(req, res, pathname) {
+async function api(req, res, url) {
+  const pathname = url.pathname;
   const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket.remoteAddress || "?";
 
-  // What the booking page reads. Public on purpose: prices and payment links
-  // are on the pricing page anyway. Nothing secret is in here.
+  // What every page reads. Public on purpose: prices and payment links are on
+  // the pricing page anyway. The calendar is NOT in here, it has its own
+  // endpoint below, because it depends on what has been booked.
   if (pathname === "/api/config" && req.method === "GET") {
     const cfg = await readConfig();
     return json(res, 200, {
       packages: cfg.packages,
-      availability: cfg.availability,
-      serverCheckout: !!STRIPE_KEY
+      availability: { minNoticeHours: cfg.availability.minNoticeHours, maxAdvanceDays: cfg.availability.maxAdvanceDays },
+      serverCheckout: !!STRIPE_KEY,
+      bookings: !!db
     });
   }
 
+  // The calendar, worked out here and nowhere else.
+  if (pathname === "/api/availability" && req.method === "GET") {
+    if (!db) return json(res, 503, { error: "Online booking is not switched on yet." });
+    const cfg = await readConfig();
+    const now = new Date();
+    return json(res, 200, avail.calendar(cfg.availability, await takenNow(cfg.availability, now), now));
+  }
+
+  if (pathname === "/api/book" && req.method === "POST") return book(req, res);
+  if (pathname === "/api/session" && req.method === "GET") return session(req, res, url);
+  if (pathname === "/api/stripe/webhook" && req.method === "POST") return webhook(req, res);
+  if (pathname === "/api/manage" || pathname === "/api/manage/cancel") return manage(req, res, url);
+  if (pathname === "/api/ics" && req.method === "GET") return ics(req, res, url);
+
   if (pathname === "/api/admin/session" && req.method === "GET") {
-    return json(res, 200, { enabled: !!ADMIN_PASSWORD, authed: authed(req), stripe: !!STRIPE_KEY });
+    return json(res, 200, { enabled: !!ADMIN_PASSWORD, authed: authed(req), stripe: !!STRIPE_KEY, webhook: !!WEBHOOK_SECRET, bookings: !!db });
   }
 
   if (pathname === "/api/admin/login" && req.method === "POST") {
@@ -333,115 +718,24 @@ async function api(req, res, pathname) {
     return json(res, 200, { ok: true }, { "set-cookie": "ez_admin=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0" });
   }
 
-  if (pathname === "/api/admin/config") {
+  if (pathname.startsWith("/api/admin/")) {
     if (!authed(req)) return json(res, 401, { error: "Sign in first." });
-    if (req.method === "GET") return json(res, 200, await readConfig());
-    if (req.method === "PUT") {
-      const b = await body(req).catch(() => null);
-      if (!b) return json(res, 400, { error: "That did not arrive as valid JSON." });
-      const errs = validate(b);
-      if (errs.length) return json(res, 400, { error: errs.join(" ") });
-      await writeConfig(b);
-      return json(res, 200, { ok: true, config: b });
-    }
-  }
 
-  // What the success page shows. Stripe is the only record a booking has until
-  // the bookings table exists, so the confirmation reads it back rather than
-  // trusting a query string: anyone can type ?paid=yes into a URL.
-  if (pathname === "/api/session" && req.method === "GET") {
-    const id = new URL(req.url, "http://x").searchParams.get("id") || "";
-    if (!STRIPE_KEY || !/^cs_[A-Za-z0-9_]+$/.test(id)) return json(res, 404, { error: "No session." });
-    try {
-      const r = await fetch("https://api.stripe.com/v1/checkout/sessions/" + encodeURIComponent(id), {
-        headers: { authorization: "Bearer " + STRIPE_KEY }
-      });
-      const d = await r.json();
-      if (!r.ok || d.payment_status !== "paid") return json(res, 404, { error: "Not a paid session." });
-      return json(res, 200, {
-        paid: true,
-        amount: (d.amount_total || 0) / 100,
-        email: (d.customer_details && d.customer_details.email) || "",
-        package: (d.metadata && d.metadata.package) || "",
-        address: (d.metadata && d.metadata.address) || "",
-        date: (d.metadata && d.metadata.shoot_date) || "",
-        time: (d.metadata && d.metadata.shoot_time) || ""
-      });
-    } catch (e) {
-      console.error("[ez-shots] session lookup failed:", e.message);
-      return json(res, 502, { error: "Could not read that session." });
-    }
-  }
-
-  // Checkout. The browser sends a package id and nothing else that touches
-  // money. The price comes out of the server's own config.
-  if (pathname === "/api/checkout" && req.method === "POST") {
-    const cfg = await readConfig();
-    const b = await body(req).catch(() => ({}));
-    const pkg = cfg.packages.find(p => p.id === b.packageId && p.active !== false);
-    if (!pkg) return json(res, 400, { error: "Unknown package." });
-
-    // The AMOUNT is the server's decision: it comes out of the config here and
-    // the browser never sends a number. WHICH of the two prices applies is not,
-    // because "has this person booked before" cannot be answered without a
-    // customers table. So a returning agent who wants to pay half can get half
-    // by asking for it. That is exactly as true of the two public payment links
-    // on the pricing page today, so it is not a new hole, but it is the reason
-    // the bookings and customers tables are phase one in the roadmap.
-    const first = b.firstShoot !== false;
-    const amount = first ? pkg.firstPrice : pkg.price;
-    const link = first ? pkg.checkoutFirst : pkg.checkoutFull;
-
-    if (!STRIPE_KEY) {
-      if (!link) return json(res, 503, { error: "No checkout is set up for that package yet." });
-      return json(res, 200, { url: link, mode: "link" });
-    }
-
-    const site = origin(req);
-    const payload = {
-      mode: "payment",
-      success_url: site + "/booked.html?session_id={CHECKOUT_SESSION_ID}",
-      cancel_url: site + "/book.html",
-      customer_creation: "always",
-      "line_items[0][quantity]": 1,
-      "line_items[0][price_data][currency]": "usd",
-      "line_items[0][price_data][unit_amount]": Math.round(amount * 100),
-      "line_items[0][price_data][product_data][name]":
-        pkg.name + (first ? " (first shoot, half price)" : ""),
-      "line_items[0][price_data][product_data][description]":
-        [b.address, b.date, b.time].filter(Boolean).join(", ").slice(0, 500) || pkg.blurb || pkg.name,
-      metadata: {
-        package: pkg.name,
-        package_id: pkg.id,
-        first_shoot: first ? "yes" : "no",
-        address: String(b.address || "").slice(0, 400),
-        shoot_date: String(b.date || "").slice(0, 60),
-        shoot_time: String(b.time || "").slice(0, 30)
+    if (pathname === "/api/admin/config") {
+      if (req.method === "GET") return json(res, 200, await readConfig());
+      if (req.method === "PUT") {
+        const b = await body(req).catch(() => null);
+        if (!b) return json(res, 400, { error: "That did not arrive as valid JSON." });
+        const errs = validate(b);
+        if (errs.length) return json(res, 400, { error: errs.join(" ") });
+        await writeConfig(b);
+        return json(res, 200, { ok: true, config: b });
       }
-    };
-
-    try {
-      const r = await fetch("https://api.stripe.com/v1/checkout/sessions", {
-        method: "POST",
-        headers: {
-          authorization: "Bearer " + STRIPE_KEY,
-          "content-type": "application/x-www-form-urlencoded"
-        },
-        body: formEncode(payload)
-      });
-      const data = await r.json();
-      if (!r.ok || !data.url) {
-        console.error("[ez-shots] Stripe session failed:", data && data.error && data.error.message);
-        // A Stripe outage must not cost a booking. The payment link still works.
-        if (link) return json(res, 200, { url: link, mode: "link-fallback" });
-        return json(res, 502, { error: "Checkout could not be created." });
-      }
-      return json(res, 200, { url: data.url, mode: "session" });
-    } catch (e) {
-      console.error("[ez-shots] Stripe request threw:", e.message);
-      if (link) return json(res, 200, { url: link, mode: "link-fallback" });
-      return json(res, 502, { error: "Checkout could not be created." });
     }
+
+    if (pathname === "/api/admin/bookings" && req.method === "GET") return adminBookings(req, res);
+    const m = /^\/api\/admin\/bookings\/(EZ-\d{6})$/.exec(pathname);
+    if (m && req.method === "PATCH") return adminBooking(req, res, m[1]);
   }
 
   return json(res, 404, { error: "No such endpoint." });
@@ -455,17 +749,50 @@ const server = http.createServer((req, res) => {
 
   const done = p => p.catch(err => {
     console.error("[ez-shots]", err);
-    if (!res.headersSent) send(res, 500, "Server error", { "content-type": "text/plain" });
+    if (!res.headersSent) json(res, 500, { error: "Something went wrong on the server. Try again in a minute." });
   });
 
-  if (url.pathname.startsWith("/api/")) return done(api(req, res, url.pathname));
+  if (url.pathname.startsWith("/api/")) return done(api(req, res, url));
   if (req.method !== "GET" && req.method !== "HEAD") return send(res, 405, "Method not allowed", { "content-type": "text/plain" });
   return done(serveStatic(req, res, url.pathname));
 });
 
+// The database is joined after the site is already serving, and joined again
+// every fifteen seconds until it answers. A Postgres that is still coming up
+// after a deploy, or a bad DATABASE_URL, must not take the brochure and the
+// prices down with it: the pages serve, and the booking page says online
+// booking is off until the database is there.
+async function connectDb(url) {
+  const d = new Db(url);
+  try {
+    await d.migrate();
+    // First boot against an empty database: carry whatever config was on disk
+    // across, so a price set on the old file store is not lost.
+    if (!(await d.getConfig())) {
+      await d.setConfig(await readConfig());
+      console.log("[ez-shots] seeded the config into the database");
+    }
+  } catch (e) {
+    await d.close().catch(() => {});
+    throw e;
+  }
+  db = d;
+  cache = null;
+  console.log("[ez-shots] postgres connected, online booking ON");
+}
+
+function keepConnecting(url) {
+  connectDb(url).catch(e => {
+    console.error("[ez-shots] postgres not reachable, retrying in 15s:", e.message);
+    setTimeout(() => keepConnecting(url), 15000);
+  });
+}
+
 server.listen(PORT, () => {
-  console.log(`[ez-shots] listening on ${PORT}`);
-  console.log(`[ez-shots] config dir ${DATA_DIR}`);
+  console.log(`[ez-shots] listening on ${PORT}, timezone ${process.env.TZ}`);
   console.log(`[ez-shots] admin ${ADMIN_PASSWORD ? "on" : "OFF (set ADMIN_PASSWORD)"}` +
-    `, stripe ${STRIPE_KEY ? "server side sessions" : "payment links"}`);
+    `, stripe ${STRIPE_KEY ? "server side sessions" : "payment links"}` +
+    `, webhook ${WEBHOOK_SECRET ? "on" : "off"}`);
+  if (process.env.DATABASE_URL) keepConnecting(process.env.DATABASE_URL);
+  else console.log(`[ez-shots] no DATABASE_URL: config from ${DATA_DIR}, online booking OFF`);
 });

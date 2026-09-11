@@ -16,7 +16,11 @@
     <div class="container">
       <p class="eyebrow">Owner only</p>
       <h1>Prices and availability</h1>
-      <p class="lead">What you change here is what the booking page charges. Nothing needs a deploy.</p>
+      <p class="lead">What you change here is what the booking page charges and offers. Nothing needs a deploy.</p>
+      <nav class="admin-nav" aria-label="Admin">
+        <a href="admin-bookings.html">Bookings</a>
+        <a href="admin.html" aria-current="page">Settings</a>
+      </nav>
     </div>
   </section>
 
@@ -56,6 +60,7 @@
       <div id="admin-panel" hidden>
         <div class="admin-bar">
           <span id="admin-mode" class="admin-pill"></span>
+          <span id="admin-store" class="admin-pill"></span>
           <button type="button" class="btn btn-ghost" id="logout-btn">Sign out</button>
         </div>
 
@@ -66,8 +71,31 @@
         </div>
 
         <div class="form-block">
-          <p class="form-legend"><b>Bookable days</b><span>Times you are willing to start a shoot, per weekday. Leave a day empty to close it.</span></p>
+          <p class="form-legend"><b>Hours</b><span>The start times a shoot can have. These build the pills below; tap a pill to turn one time off for that day.</span></p>
+          <div class="row3">
+            <div class="field">
+              <label for="hours-start">First shoot of the day</label>
+              <select id="hours-start"></select>
+            </div>
+            <div class="field">
+              <label for="hours-end">Last shoot of the day</label>
+              <select id="hours-end"></select>
+            </div>
+            <div class="field">
+              <label for="hours-every">How far apart</label>
+              <select id="hours-every"></select>
+            </div>
+          </div>
+          <button type="button" class="btn btn-ghost" id="apply-hours">Apply these hours to every open day</button>
+        </div>
+
+        <div class="form-block">
+          <p class="form-legend"><b>Bookable days</b><span>Untick a day to close it. Tap a time to take it off that day only.</span></p>
           <div id="week-editor"></div>
+        </div>
+
+        <div class="form-block">
+          <p class="form-legend"><b>Booking window and capacity</b><span>The calendar on the booking page follows these.</span></p>
           <div class="row3">
             <div class="field">
               <label for="minNotice">Minimum notice, hours</label>
@@ -77,12 +105,18 @@
             <div class="field">
               <label for="maxAdvance">Book how far ahead, days</label>
               <input id="maxAdvance" type="number" min="1" max="365" />
+              <p class="form-help">28 is four weeks.</p>
             </div>
             <div class="field">
-              <label for="daysShown">Days offered at once</label>
-              <input id="daysShown" type="number" min="1" max="60" />
-              <p class="form-help">How many open days the picker shows.</p>
+              <label for="maxPerDay">Most shoots in a day</label>
+              <input id="maxPerDay" type="number" min="1" max="50" />
+              <p class="form-help">The day closes once it has this many.</p>
             </div>
+          </div>
+          <div class="field">
+            <label for="lookBusy">Look busy: <output id="lookBusy-out" for="lookBusy"></output></label>
+            <input id="lookBusy" type="range" min="0" max="90" step="5" />
+            <p class="form-help">Hides a share of the open times so the calendar reads as in demand rather than wide open. Always the same times for everyone, never a day's last time, and a hidden time comes back as real bookings fill the day. It does not stop anyone booking, it only changes what is shown.</p>
           </div>
         </div>
 
@@ -121,6 +155,7 @@
 
   <div id="site-footer"></div>
   <script src="js/site.js"></script>
+  <script src="js/admin-core.js"></script>
   <script src="js/admin.js"></script>
 </body>
 </html>

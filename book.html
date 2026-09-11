@@ -45,17 +45,21 @@
             data-required="name,email,phone,address,date,time"
             data-subject="New booking"
             data-subject-field="address"
-            data-success="Got it. Sending you to the payment page now.">
+            data-sending="Booking your shoot..."
+            data-success="Your time is held. Sending you to the payment page now.">
 
         <!-- Honeypot. Hidden from people, irresistible to bots. -->
         <input type="text" name="_hp" tabindex="-1" autocomplete="off" aria-hidden="true"
                style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
 
-        <!-- Set by js/booking.js so the email says exactly what was bought. -->
+        <!-- Set by js/booking.js so the email says exactly what was bought.
+             The booking number is filled in once the server has held the slot,
+             which happens after the button is pressed and before the email. -->
         <input type="hidden" id="package" name="package" data-label="Package" />
         <input type="hidden" id="packageprice" name="packageprice" data-label="Price" />
         <input type="hidden" id="date" name="date" data-label="Shoot date" />
         <input type="hidden" id="time" name="time" data-label="Shoot time" />
+        <input type="hidden" id="booking" name="booking" data-label="Booking" />
 
         <!-- ============ STEP 1 ============ -->
         <div class="book-step" data-step="1">
@@ -132,12 +136,16 @@
           </div>
 
           <h2 class="book-q">Pick a day</h2>
-          <div class="day-grid" id="day-options"></div>
+          <div id="next-open"></div>
+          <!-- Painted by js/booking.js from GET /api/availability. Only days
+               with an open time are buttons; the rest are numbers. -->
+          <div class="cal" id="calendar"><p class="form-help">Loading the calendar...</p></div>
+          <p class="form-help">Four weeks out. A day with no button is closed or full.</p>
 
           <div id="time-block" hidden>
             <h2 class="book-q">Pick a time</h2>
             <div class="time-grid" id="time-options"></div>
-            <p class="form-help">About an hour on site for Essentials, an hour and a half with video. I confirm the exact time by email the same day.</p>
+            <p class="form-help">About an hour on site for Essentials, an hour and a half with video. Your time is held the moment you book and it is yours once the payment goes through.</p>
           </div>
         </div>
 
@@ -206,8 +214,8 @@
       <div class="steps">
         <div class="step">
           <div class="n">1</div>
-          <h3>Receipt, then confirmation</h3>
-          <p>Stripe emails the receipt straight away. I confirm your time the same day.</p>
+          <h3>Your time is yours</h3>
+          <p>The slot is held while you pay and booked the moment the payment goes through. Stripe emails the receipt straight away.</p>
         </div>
         <div class="step">
           <div class="n">2</div>

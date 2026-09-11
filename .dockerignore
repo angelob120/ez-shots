@@ -6,3 +6,5 @@ docs
 ez-shots
 ez-shots.zip
 .DS_Store
+.env
+data

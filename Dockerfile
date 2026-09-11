@@ -1,8 +1,13 @@
-# EZ Shots is a static site. This Dockerfile exists so Railway builds with Docker
-# instead of Railpack. Railpack mounts every Railway service variable into the
-# build as a BuildKit secret, and one malformed variable name there took down
-# every deploy. Docker builds do not do that. See PROJECT-STATE.md, 2026-09-01.
+# EZ Shots is a static site plus a small Node server. This Dockerfile exists so
+# Railway builds with Docker instead of Railpack. Railpack mounts every Railway
+# service variable into the build as a BuildKit secret, and one malformed
+# variable name there took down every deploy. Docker builds do not do that.
+# See PROJECT-STATE.md, 2026-09-01.
 FROM node:22-alpine
+
+# The business runs on Detroit time and so does every date in the server.
+# server.js defaults this too; here it is set before Node even starts.
+ENV TZ=America/Detroit
 
 WORKDIR /app
 

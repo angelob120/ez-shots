@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bookings | EZ Shots</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="admin">
+  <div id="site-header"></div>
+
+  <section class="page-head" id="main">
+    <div class="container">
+      <p class="eyebrow">Owner only</p>
+      <h1>Bookings</h1>
+      <p class="lead">Where you are going, who booked you, what they bought and whether they paid.</p>
+      <nav class="admin-nav" aria-label="Admin">
+        <a href="admin-bookings.html" aria-current="page">Bookings</a>
+        <a href="admin.html">Settings</a>
+      </nav>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container form-narrow">
+
+      <div id="admin-boot"><p class="form-help">Checking...</p></div>
+
+      <div id="admin-off" hidden>
+        <div class="form-block">
+          <p class="form-legend"><b>Admin is not switched on</b><span>Nothing here can load yet.</span></p>
+          <p>This page needs the EZ Shots server running with an <code>ADMIN_PASSWORD</code> set and a <code>DATABASE_URL</code> for the bookings. On Railway that is Variables on the ez-shots service.</p>
+        </div>
+      </div>
+
+      <div id="admin-login" hidden>
+        <form class="admin-form" id="login-form">
+          <div class="form-block">
+            <p class="form-legend"><b>Sign in</b><span>One password, yours, from the Railway variables.</span></p>
+            <div class="field">
+              <label for="admin-password">Password</label>
+              <input id="admin-password" type="password" autocomplete="current-password" />
+            </div>
+            <div class="form-submit">
+              <button type="submit" class="btn">Sign in</button>
+              <p class="form-status" id="login-status" role="status" aria-live="polite"></p>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div id="admin-panel" hidden>
+        <div class="admin-bar">
+          <span id="admin-mode" class="admin-pill"></span>
+          <button type="button" class="btn btn-ghost" id="refresh-btn">Refresh</button>
+          <button type="button" class="btn btn-ghost" id="logout-btn">Sign out</button>
+        </div>
+
+        <!-- The six numbers from the plan. Filled by js/admin-bookings.js. -->
+        <div class="stat-grid" id="stats"></div>
+
+        <div class="form-block" id="attention-block" hidden>
+          <p class="form-legend"><b>Needs attention</b><span id="attention-sub"></span></p>
+          <div id="attention"></div>
+        </div>
+
+        <div class="form-block">
+          <p class="form-legend"><b>Today</b><span id="today-sub"></span></p>
+          <div id="today"></div>
+        </div>
+
+        <div class="form-block">
+          <p class="form-legend"><b>Upcoming</b><span id="upcoming-sub"></span></p>
+          <div class="field">
+            <label for="search">Find a booking</label>
+            <input id="search" type="search" placeholder="Address, name, email or phone" autocomplete="off" />
+          </div>
+          <div id="upcoming"></div>
+        </div>
+
+        <details class="form-block admin-past">
+          <summary><b>Past and cancelled</b><span id="past-sub"></span></summary>
+          <div id="past"></div>
+        </details>
+
+        <p class="form-status" id="list-status" role="status" aria-live="polite"></p>
+      </div>
+
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/site.js"></script>
+  <script src="js/admin-core.js"></script>
+  <script src="js/admin-bookings.js"></script>
+</body>
+</html>

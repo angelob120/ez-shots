@@ -1,5 +1,5 @@
 {
-  "_comment": "EZ Shots live config: packages, prices, checkout links, availability. This file in the repo is the DEFAULT. On a deploy with the server running, admin.html writes a copy into DATA_DIR and that copy wins from then on. Edit this file only to change what a fresh install starts with.",
+  "_comment": "EZ Shots live config: packages, prices, checkout links, availability. This file in the repo is the DEFAULT. With DATABASE_URL set the server copies it into Postgres on first boot and admin.html edits the copy there. Without a database it is copied into DATA_DIR instead. Edit this file only to change what a fresh install starts with.",
   "packages": [
     {
       "id": "essentials",
@@ -39,19 +39,21 @@
     }
   ],
   "availability": {
+    "hours": { "start": "8:00 AM", "end": "8:00 PM", "every": 120 },
     "week": {
       "0": [],
-      "1": ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM"],
-      "2": ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM"],
-      "3": ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM"],
-      "4": ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM"],
-      "5": ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM"],
-      "6": ["9:00 AM", "11:00 AM", "1:00 PM"]
+      "1": ["8:00 AM", "10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM", "8:00 PM"],
+      "2": ["8:00 AM", "10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM", "8:00 PM"],
+      "3": ["8:00 AM", "10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM", "8:00 PM"],
+      "4": ["8:00 AM", "10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM", "8:00 PM"],
+      "5": ["8:00 AM", "10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM", "8:00 PM"],
+      "6": ["8:00 AM", "10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM", "6:00 PM", "8:00 PM"]
     },
     "blocked": {},
     "overrides": {},
     "minNoticeHours": 24,
-    "maxAdvanceDays": 45,
-    "daysShown": 10
+    "maxAdvanceDays": 28,
+    "maxPerDay": 5,
+    "lookBusy": 40
   }
 }

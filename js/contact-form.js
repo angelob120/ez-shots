@@ -22,6 +22,17 @@
 //                   the booking flow to hand off to Stripe checkout. It is read
 //                   at submit time, not at load, because booking.js rewrites it
 //                   every time the package or the first shoot answer changes.
+//   data-sending    what the button says while the send is in flight
+//                   (default "Sending...")
+//
+// ONE HOOK, for the booking form. A page may set `form.beforeSend` to a
+// function that returns a promise. It runs after validation and before the
+// email, and if it rejects, the message is shown and nothing is sent. The
+// booking page uses it to take the slot on the server first, so the email
+// only ever goes out for a booking that exists. If that hook has succeeded
+// and the email then fails, the browser still follows data-redirect: the
+// booking is already recorded, and a broken email service must not stand
+// between a customer and the payment page.
 (function () {
   // ------------------------------------------------------------------
   // CONFIG (these are publishable client-side keys, safe to ship)
@@ -90,6 +101,16 @@
       var subjectPrefix = form.getAttribute("data-subject") || ("New lead from " + CONFIG.SITE_NAME);
       var subjectField = form.getAttribute("data-subject-field") || "";
       var successText = form.getAttribute("data-success") || "Thanks, I will be in touch shortly.";
+      var sendingText = form.getAttribute("data-sending") || "Sending...";
+
+      // The label to put back after a failed send. booking.js rewrites the
+      // button as the price changes and records the current wording here, so
+      // a failure does not reset it to what the HTML said at load.
+      function restoreButton() {
+        if (!btn) return;
+        btn.disabled = false;
+        btn.textContent = btn.getAttribute("data-label") || btnLabel;
+      }
 
       // A pricing button can carry its package across to this form, so a ready
       // buyer does not land on a blank select and have to re-choose the thing
@@ -156,19 +177,23 @@
 
         // Fold every non core field into the message, in form order, so a
         // twenty question intake arrives readable in a template that only
-        // knows about {{message}}.
-        var extras = [];
-        var seen = {};
-        Array.prototype.forEach.call(form.elements, function (el) {
-          if (!el.name || CORE.indexOf(el.name) !== -1 || seen[el.name]) return;
-          if (el.type === "submit" || el.type === "button") return;
-          seen[el.name] = true;
-          var v = valueOf(form, el.name);
-          if (v) extras.push(labelFor(form, el) + ": " + v);
-        });
-
-        var body = extras.length ? extras.join("\n") : "";
-        if (message) body = body ? body + "\n\nNotes:\n" + message : message;
+        // knows about {{message}}. Built at send time rather than here,
+        // because the beforeSend hook below may fill a hidden field (the
+        // booking number) that belongs in the email.
+        function buildMessage() {
+          var extras = [];
+          var seen = {};
+          Array.prototype.forEach.call(form.elements, function (el) {
+            if (!el.name || CORE.indexOf(el.name) !== -1 || seen[el.name]) return;
+            if (el.type === "submit" || el.type === "button") return;
+            seen[el.name] = true;
+            var v = valueOf(form, el.name);
+            if (v) extras.push(labelFor(form, el) + ": " + v);
+          });
+          var body = extras.length ? extras.join("\n") : "";
+          if (message) body = body ? body + "\n\nNotes:\n" + message : message;
+          return body;
+        }
 
         var subject = subjectPrefix;
         var tail = subjectField ? valueOf(form, subjectField) : name;
@@ -180,7 +205,7 @@
           email_id: email,
           reply_to: email,
           phone: phone,
-          message: body,
+          message: "",
           subject: subject
         };
 
@@ -189,33 +214,52 @@
           return;
         }
 
-        if (btn) { btn.disabled = true; btn.textContent = "Sending..."; }
-        setStatus("pending", "Sending...");
+        if (btn) { btn.disabled = true; btn.textContent = sendingText; }
+        setStatus("pending", sendingText);
 
-        emailjs.send(CONFIG.SERVICE_ID, CONFIG.TEMPLATE_ID, params).then(
-          function () {
-            // Read now, not at load: booking.js rewrites this attribute as the
-            // package and the price change.
-            var redirect = form.getAttribute("data-redirect");
-            if (redirect) {
-              // Do not reset. The browser is leaving for checkout, and a reset
-              // form is what they would come back to on the back button.
+        // Read at send time, not at load: booking.js rewrites this attribute
+        // as the package and the price change.
+        function leave() {
+          var redirect = form.getAttribute("data-redirect");
+          if (!redirect) return false;
+          // Do not reset. The browser is leaving for checkout, and a reset
+          // form is what they would come back to on the back button.
+          setStatus("success", successText);
+          if (btn) btn.textContent = "Opening checkout...";
+          window.setTimeout(function () { window.location.href = redirect; }, 600);
+          return true;
+        }
+
+        function sendEmail() {
+          params.message = buildMessage();
+          emailjs.send(CONFIG.SERVICE_ID, CONFIG.TEMPLATE_ID, params).then(
+            function () {
+              if (leave()) return;
+              form.reset();
+              form.querySelectorAll(".pkg-cta.open").forEach(function (n) { n.classList.remove("open"); });
               setStatus("success", successText);
-              if (btn) btn.textContent = "Opening checkout...";
-              window.setTimeout(function () { window.location.href = redirect; }, 600);
-              return;
+              restoreButton();
+            },
+            function (err) {
+              console.error("[EZ Shots] EmailJS send failed:", err);
+              // A booking that the server already holds goes on to payment
+              // regardless. Everything else has no record but this email, so
+              // it has to be said.
+              if (leave()) return;
+              setStatus("error", "Sorry, something went wrong. Please email bigmoneygelo2@gmail.com or try again.");
+              restoreButton();
             }
-            form.reset();
-            form.querySelectorAll(".pkg-cta.open").forEach(function (n) { n.classList.remove("open"); });
-            setStatus("success", successText);
-            if (btn) { btn.disabled = false; btn.textContent = btnLabel; }
-          },
-          function (err) {
-            console.error("[EZ Shots] EmailJS send failed:", err);
-            setStatus("error", "Sorry, something went wrong. Please email bigmoneygelo2@gmail.com or try again.");
-            if (btn) { btn.disabled = false; btn.textContent = btnLabel; }
-          }
-        );
+          );
+        }
+
+        if (typeof form.beforeSend === "function") {
+          Promise.resolve().then(function () { return form.beforeSend(); }).then(sendEmail, function (err) {
+            setStatus("error", (err && err.message) || "Sorry, that did not go through. Please try again.");
+            restoreButton();
+          });
+        } else {
+          sendEmail();
+        }
       });
     });
   });

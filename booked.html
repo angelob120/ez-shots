@@ -20,9 +20,15 @@
         </div>
         <h1>You are booked.</h1>
         <div class="book-summary" id="booked-summary" hidden></div>
-        <p class="lead">Stripe has emailed your receipt. I confirm the exact shoot time by email the same day, and I text you the day before and again when I am on the way.</p>
+        <p class="lead">Your time is locked in. Stripe has emailed your receipt, and I text you the day before and again when I am on the way.</p>
+        <!-- Shown once the booking is read back from the server: the .ics for
+             the phone's calendar and the private link to view or cancel. -->
+        <div class="btn-row center" id="booked-actions" hidden>
+          <a href="#" class="btn" id="booked-ics">Add to calendar</a>
+          <a href="#" class="btn btn-ghost" id="booked-manage">Manage booking</a>
+        </div>
         <div class="btn-row center">
-          <a href="intake.html" class="btn">Tell me about the property</a>
+          <a href="intake.html" class="btn btn-ghost">Tell me about the property</a>
           <a href="index.html" class="btn btn-ghost">Back to the site</a>
         </div>
         <p class="form-note" style="margin-top:22px">Two minutes on the property details form saves a phone call and gets the gallery back faster. Anything to change? Email <a href="mailto:bigmoneygelo2@gmail.com" style="color:var(--accent);font-weight:700">bigmoneygelo2@gmail.com</a>.</p>

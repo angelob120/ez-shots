@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your booking | EZ Shots</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="manage">
+  <div id="site-header"></div>
+
+  <section class="page-head" id="main">
+    <div class="container">
+      <p class="eyebrow">Your booking</p>
+      <h1 id="manage-title">Loading your booking...</h1>
+      <p class="lead" id="manage-lead">One moment.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container narrow">
+      <!-- Filled by js/manage.js from /api/manage?t=TOKEN. The token is the
+           only key, so the link is the booking: do not forward it. -->
+      <div class="form-block" id="manage-block" hidden>
+        <div class="book-summary" id="manage-summary" style="margin-top:0"></div>
+        <div class="btn-row" id="manage-actions">
+          <a href="#" class="btn" id="manage-ics">Add to calendar</a>
+          <button type="button" class="btn btn-ghost" id="manage-cancel" hidden>Cancel this booking</button>
+        </div>
+        <p class="form-help">Need a different day or time? Email <a href="mailto:bigmoneygelo2@gmail.com">bigmoneygelo2@gmail.com</a> with your booking number and I will move it. Cancelled bookings that were paid are refunded to the same card, in full, within a couple of days.</p>
+        <p class="form-status" id="manage-status" role="status" aria-live="polite"></p>
+      </div>
+      <div class="form-block" id="manage-missing" hidden>
+        <p class="form-legend"><b>That link does not match a booking</b><span>It may have been copied short.</span></p>
+        <p>Open the link from your confirmation again, or email <a href="mailto:bigmoneygelo2@gmail.com">bigmoneygelo2@gmail.com</a> with the property address and I will find it.</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/site.js"></script>
+  <script src="js/manage.js"></script>
+</body>
+</html>

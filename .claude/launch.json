@@ -4,7 +4,7 @@
     {
       "name": "ez-shots",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "start"],
+      "runtimeArgs": ["run", "dev"],
       "autoPort": true,
       "port": 3000
     }

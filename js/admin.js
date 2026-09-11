@@ -4,20 +4,16 @@
 // whole thing back. No partial updates, no field level API, because with one
 // user and one config a last write wins is the right amount of machinery.
 //
-// The server validates everything again on the way in. Nothing here is a
-// security control: a person who can reach /api/admin/config has already
-// signed in, and a person who has not gets a 401 whatever this file does.
+// The server validates everything again on the way in. Signing in, signing
+// out and the panels live in js/admin-core.js, shared with the bookings page.
 (function () {
-  var boot = document.getElementById("admin-boot");
-  var off = document.getElementById("admin-off");
-  var login = document.getElementById("admin-login");
-  var panel = document.getElementById("admin-panel");
-  if (!boot) return;
+  var A = window.EZAdmin;
+  var el = A.el, esc = A.esc, status = A.status, api = A.api;
+  if (!el("admin-boot")) return;
 
   var DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   var cfg = null;
-
-  function el(id) { return document.getElementById(id); }
+  var session = null;
 
   // Unsaved changes are the one way this page can lose work, so they are said
   // out loud on the bar and guarded on the way out of the tab. The Save button
@@ -37,26 +33,30 @@
     e.preventDefault();
     e.returnValue = "";
   });
-  function show(node) {
-    [boot, off, login, panel].forEach(function (n) { n.hidden = n !== node; });
+
+  // ----------------------------------------------------------------
+  // Times. Small copies of the server's helpers, so a pill can be built
+  // without a round trip. The server spells every time the same way on the
+  // way in whatever happens here.
+  // ----------------------------------------------------------------
+  function minutesOf(s) {
+    var m = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(String(s || "").trim());
+    if (!m) return null;
+    var h = parseInt(m[1], 10) % 12 + (/pm/i.test(m[3]) ? 12 : 0);
+    return h * 60 + parseInt(m[2], 10);
   }
-  function esc(s) {
-    return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
-    });
+  function labelOf(mins) {
+    var h24 = Math.floor(mins / 60) % 24, m = mins % 60;
+    return (h24 % 12 || 12) + ":" + (m < 10 ? "0" + m : m) + " " + (h24 < 12 ? "AM" : "PM");
   }
-  function status(node, type, text) {
-    node.className = "form-status show " + type;
-    node.textContent = text;
+  function range(start, end, every) {
+    var a = minutesOf(start), b = minutesOf(end), out = [];
+    if (a === null || b === null) return out;
+    for (var t = a; t <= b; t += every) out.push(labelOf(t));
+    return out;
   }
-  function api(url, opts) {
-    return fetch(url, Object.assign({ headers: { "content-type": "application/json" } }, opts))
-      .then(function (r) {
-        return r.json().catch(function () { return {}; }).then(function (d) {
-          if (!r.ok) throw new Error(d.error || "Request failed (" + r.status + ")");
-          return d;
-        });
-      });
+  function sortTimes(list) {
+    return list.slice().sort(function (x, y) { return minutesOf(x) - minutesOf(y); });
   }
 
   // ----------------------------------------------------------------
@@ -130,45 +130,109 @@
   // When the server holds a Stripe key it creates the charge itself and the
   // links stop being the thing that takes the money. Saying so here is the
   // difference between a stale link being harmless and it being a wrong charge.
-  var serverStripe = false;
   function paintStripeNotes() {
+    var on = session && session.stripe;
     document.querySelectorAll(".admin-stripe-note").forEach(function (n) {
-      n.textContent = serverStripe
+      n.textContent = on
         ? "Stripe is connected on the server, so the price above is what gets charged and these links are only the backup if Stripe is unreachable."
         : "No Stripe key on the server yet, so these links are what actually takes the money. The price above has to match what the link charges.";
-      n.classList.toggle("warn", !serverStripe);
+      n.classList.toggle("warn", !on);
     });
   }
 
   // ----------------------------------------------------------------
-  // Availability
+  // Hours and the week
   // ----------------------------------------------------------------
+  var HOUR_CHOICES = range("5:00 AM", "11:00 PM", 30);
+  var EVERY_CHOICES = [[60, "Every hour"], [90, "Every hour and a half"], [120, "Every 2 hours"], [180, "Every 3 hours"]];
+
+  function fillSelect(sel, choices, current) {
+    sel.innerHTML = choices.map(function (c) {
+      var v = Array.isArray(c) ? c[0] : c, t = Array.isArray(c) ? c[1] : c;
+      return '<option value="' + esc(v) + '"' + (String(v) === String(current) ? " selected" : "") + ">" + esc(t) + "</option>";
+    }).join("");
+  }
+
+  // The times offered as pills: what the hours generate, plus anything a day
+  // already has outside them, so an odd time set by hand is never lost.
+  function master() {
+    var h = cfg.availability.hours;
+    var set = range(h.start, h.end, Number(h.every) || 120);
+    for (var d = 0; d < 7; d++) {
+      (cfg.availability.week[String(d)] || []).forEach(function (t) { if (set.indexOf(t) === -1) set.push(t); });
+    }
+    return sortTimes(set);
+  }
+
+  // What a day had before it was switched off, so switching it back on does
+  // not mean rebuilding the list.
+  var memo = {};
+
   function paintWeek() {
     var wrap = el("week-editor");
+    var times = master();
     wrap.innerHTML = "";
     for (var d = 0; d < 7; d++) {
       (function (d) {
-        var times = (cfg.availability.week[String(d)] || []).join(", ");
+        var list = cfg.availability.week[String(d)] || [];
         var row = document.createElement("div");
-        row.className = "admin-day";
-        row.innerHTML = '<span class="admin-day-name">' + DAYS[d] + "</span>" +
-          '<input type="text" value="' + esc(times) + '" placeholder="Closed" aria-label="' + DAYS[d] + ' start times" />';
-        var input = row.querySelector("input");
-        input.addEventListener("input", function () {
-          cfg.availability.week[String(d)] = parseTimes(input.value);
+        row.className = "admin-day" + (list.length ? "" : " off");
+        row.innerHTML =
+          '<label class="admin-day-name"><input type="checkbox"' + (list.length ? " checked" : "") + ' aria-label="' + DAYS[d] + ' open" /> ' + DAYS[d] + "</label>" +
+          '<div class="admin-slots" role="group" aria-label="' + DAYS[d] + ' start times">' +
+            times.map(function (t) {
+              return '<button type="button" class="slot-pill' + (list.indexOf(t) !== -1 ? " on" : "") + '" data-t="' + esc(t) + '" aria-pressed="' + (list.indexOf(t) !== -1) + '">' + esc(t) + "</button>";
+            }).join("") +
+          "</div>";
+        row.querySelector("input").addEventListener("change", function (e) {
+          if (e.target.checked) {
+            cfg.availability.week[String(d)] = (memo[d] && memo[d].length) ? memo[d] : range(cfg.availability.hours.start, cfg.availability.hours.end, Number(cfg.availability.hours.every) || 120);
+          } else {
+            memo[d] = cfg.availability.week[String(d)];
+            cfg.availability.week[String(d)] = [];
+          }
           dirty(true);
+          paintWeek();
         });
-        row.classList.toggle("off", !times);
+        row.querySelectorAll(".slot-pill").forEach(function (b) {
+          b.addEventListener("click", function () {
+            var t = b.getAttribute("data-t");
+            var cur = cfg.availability.week[String(d)] || [];
+            cfg.availability.week[String(d)] = cur.indexOf(t) === -1 ? sortTimes(cur.concat([t])) : cur.filter(function (x) { return x !== t; });
+            dirty(true);
+            paintWeek();
+          });
+        });
         wrap.appendChild(row);
       })(d);
     }
   }
 
-  function parseTimes(v) {
-    return String(v).split(",").map(function (s) { return s.trim().toUpperCase().replace(/\s+/g, " "); })
-      .filter(function (s) { return /^\d{1,2}:\d{2} (AM|PM)$/.test(s); });
+  function readHours() {
+    cfg.availability.hours = {
+      start: el("hours-start").value,
+      end: el("hours-end").value,
+      every: Number(el("hours-every").value)
+    };
   }
 
+  function paintHours() {
+    var h = cfg.availability.hours;
+    fillSelect(el("hours-start"), HOUR_CHOICES, h.start);
+    fillSelect(el("hours-end"), HOUR_CHOICES, h.end);
+    fillSelect(el("hours-every"), EVERY_CHOICES, h.every);
+  }
+
+  function paintBusy() {
+    var v = Number(el("lookBusy").value) || 0;
+    var n = master().length || 7;
+    var hide = Math.floor(n * v / 100);
+    el("lookBusy-out").textContent = v + "%" + (v ? ", about " + hide + " of " + n + " times hidden on a full day" : ", off");
+  }
+
+  // ----------------------------------------------------------------
+  // Days off and one off days
+  // ----------------------------------------------------------------
   function paintDates() {
     var b = el("blocked-editor");
     var keys = Object.keys(cfg.availability.blocked).sort();
@@ -204,71 +268,85 @@
     });
   }
 
+  function parseTimes(v) {
+    return sortTimes(String(v).split(",").map(function (s) {
+      var m = minutesOf(s);
+      return m === null ? "" : labelOf(m);
+    }).filter(Boolean));
+  }
+
   // ----------------------------------------------------------------
   // Load and save
   // ----------------------------------------------------------------
   function paintAll() {
     paintPackages();
+    paintHours();
     paintWeek();
     paintDates();
     el("minNotice").value = cfg.availability.minNoticeHours;
     el("maxAdvance").value = cfg.availability.maxAdvanceDays;
-    el("daysShown").value = cfg.availability.daysShown;
-    el("admin-mode").textContent = serverStripe
+    el("maxPerDay").value = cfg.availability.maxPerDay;
+    el("lookBusy").value = cfg.availability.lookBusy;
+    paintBusy();
+    var mode = el("admin-mode");
+    mode.textContent = session.stripe
       ? "Stripe connected, prices charged from this page"
       : "Stripe payment links, no API key yet";
-    el("admin-mode").classList.toggle("warn", !serverStripe);
+    mode.classList.toggle("warn", !session.stripe);
+    var store = el("admin-store");
+    store.textContent = session.bookings ? "Bookings on" : "No database, bookings off";
+    store.classList.toggle("warn", !session.bookings);
   }
 
   function loadConfig() {
     return api("/api/admin/config").then(function (d) {
       cfg = d;
       cfg.availability = cfg.availability || {};
+      cfg.availability.hours = cfg.availability.hours || { start: "8:00 AM", end: "8:00 PM", every: 120 };
       cfg.availability.week = cfg.availability.week || {};
       cfg.availability.blocked = cfg.availability.blocked || {};
       cfg.availability.overrides = cfg.availability.overrides || {};
       paintAll();
       dirty(false);
-      show(panel);
     });
   }
 
   function save() {
     var s = el("save-status");
+    readHours();
     cfg.availability.minNoticeHours = Number(el("minNotice").value);
     cfg.availability.maxAdvanceDays = Number(el("maxAdvance").value);
-    cfg.availability.daysShown = Number(el("daysShown").value);
+    cfg.availability.maxPerDay = Number(el("maxPerDay").value);
+    cfg.availability.lookBusy = Number(el("lookBusy").value);
     status(s, "pending", "Saving...");
     api("/api/admin/config", { method: "PUT", body: JSON.stringify(cfg) }).then(function (d) {
       cfg = d.config;
       paintAll();
       dirty(false);
-      status(s, "success", "Saved. Every page on the site is using these now.");
+      status(s, "success", "Saved. The booking page and every price on the site are using these now.");
     }).catch(function (e) {
       status(s, "error", e.message);
     });
   }
 
   // ----------------------------------------------------------------
-  el("login-form").addEventListener("submit", function (e) {
-    e.preventDefault();
-    var s = el("login-status");
-    status(s, "pending", "Checking...");
-    api("/api/admin/login", { method: "POST", body: JSON.stringify({ password: el("admin-password").value }) })
-      .then(function () {
-        el("admin-password").value = "";
-        return loadConfig();
-      })
-      .catch(function (err) { status(s, "error", err.message); });
-  });
-
-  el("logout-btn").addEventListener("click", function () {
-    api("/api/admin/logout", { method: "POST" }).then(function () { show(login); });
-  });
-
   el("save-btn").addEventListener("click", save);
-  ["minNotice", "maxAdvance", "daysShown"].forEach(function (id) {
+  ["minNotice", "maxAdvance", "maxPerDay"].forEach(function (id) {
     el(id).addEventListener("input", function () { dirty(true); });
+  });
+  el("lookBusy").addEventListener("input", function () { paintBusy(); dirty(true); });
+  ["hours-start", "hours-end", "hours-every"].forEach(function (id) {
+    el(id).addEventListener("change", function () { readHours(); paintWeek(); paintBusy(); dirty(true); });
+  });
+  el("apply-hours").addEventListener("click", function () {
+    readHours();
+    var h = cfg.availability.hours;
+    var list = range(h.start, h.end, Number(h.every) || 120);
+    for (var d = 0; d < 7; d++) {
+      if ((cfg.availability.week[String(d)] || []).length) cfg.availability.week[String(d)] = list.slice();
+    }
+    dirty(true);
+    paintWeek();
   });
 
   el("add-package").addEventListener("click", function () {
@@ -302,15 +380,8 @@
     paintDates();
   });
 
-  // Boot: ask the server whether admin exists at all, and whether this browser
-  // is already signed in.
-  fetch("/api/admin/session", { headers: { accept: "application/json" } })
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (d) {
-      if (!d || !d.enabled) return show(off);
-      serverStripe = !!d.stripe;
-      if (d.authed) return loadConfig();
-      show(login);
-    })
-    .catch(function () { show(off); });
+  A.boot(function (s) {
+    session = s;
+    return loadConfig();
+  });
 })();
