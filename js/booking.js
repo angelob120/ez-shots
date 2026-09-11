@@ -44,6 +44,11 @@
     return new Date(date.getFullYear(), date.getMonth(), date.getDate(), h, parseInt(m[2], 10), 0, 0);
   }
 
+  // "Monday, September 14 at 9:00 AM" was wrapping with the AM alone on the next
+  // line. Only the displayed copy gets the hard space, never the stored value,
+  // which has to stay a plain "9:00 AM" for the email and for slot matching.
+  function nb(s) { return String(s).replace(/ (AM|PM)\b/g, "\u00a0$1"); }
+
   function longDate(date) {
     return DAYS[date.getDay()] + ", " + MONTHS[date.getMonth()] + " " + date.getDate();
   }
@@ -204,7 +209,7 @@
   function paintBar() {
     var bits = [];
     if (state.pkg) bits.push(state.pkg.name);
-    if (state.day) bits.push(longDate(state.day.date) + (state.slot ? " at " + state.slot : ""));
+    if (state.day) bits.push(longDate(state.day.date) + (state.slot ? " at " + nb(state.slot) : ""));
     var addr = (form.elements.namedItem("address").value || "").trim();
     if (addr) bits.push(addr);
     barLine.textContent = bits.join("  |  ") || "Pick a package to start";
@@ -232,7 +237,7 @@
     if (!summary || !state.pkg) return;
     var rows = [
       ["What", state.pkg.name],
-      ["When", state.day ? longDate(state.day.date) + (state.slot ? " at " + state.slot : "") : "Not picked yet"],
+      ["When", state.day ? longDate(state.day.date) + (state.slot ? " at " + nb(state.slot) : "") : "Not picked yet"],
       ["Where", (form.elements.namedItem("address").value || "").trim() || "Not entered yet"]
     ];
     var lines = rows.map(function (r) {
