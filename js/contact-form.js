@@ -18,6 +18,10 @@
 //   data-subject-field  a field name whose value is appended to the subject,
 //                   so the inbox says which property an intake is for
 //   data-success    the message shown after a successful send
+//   data-redirect   where to send the browser once the email is away, used by
+//                   the booking flow to hand off to Stripe checkout. It is read
+//                   at submit time, not at load, because booking.js rewrites it
+//                   every time the package or the first shoot answer changes.
 (function () {
   // ------------------------------------------------------------------
   // CONFIG (these are publishable client-side keys, safe to ship)
@@ -190,6 +194,17 @@
 
         emailjs.send(CONFIG.SERVICE_ID, CONFIG.TEMPLATE_ID, params).then(
           function () {
+            // Read now, not at load: booking.js rewrites this attribute as the
+            // package and the price change.
+            var redirect = form.getAttribute("data-redirect");
+            if (redirect) {
+              // Do not reset. The browser is leaving for checkout, and a reset
+              // form is what they would come back to on the back button.
+              setStatus("success", successText);
+              if (btn) btn.textContent = "Opening checkout...";
+              window.setTimeout(function () { window.location.href = redirect; }, 600);
+              return;
+            }
             form.reset();
             form.querySelectorAll(".pkg-cta.open").forEach(function (n) { n.classList.remove("open"); });
             setStatus("success", successText);

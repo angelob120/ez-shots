@@ -1,6 +1,8 @@
 // Shared announcement bar, header and footer, injected into every page.
 // Set the active page with: <body data-page="portfolio">
-// Adding a page means adding it to `links` (nav) or `footerLinks` below.
+// Adding a page means adding it to `links` (nav) or the footer block below.
+// book.html is deliberately NOT a nav row: it is the header CTA button, so the
+// booking link is the one thing on the page that never reads as a menu item.
 (function () {
   var page = document.body.getAttribute("data-page") || "";
 
@@ -43,7 +45,7 @@
       '<nav class="nav-links" id="nav-links" aria-label="Main">' + nav + '</nav>' +
       '<div class="nav-tools">' +
         '<button type="button" class="icon-btn theme-toggle" aria-label="Switch between light and dark theme">' + ICON.sun + ICON.moon + '</button>' +
-        '<a href="packages.html" class="btn nav-cta">Book a shoot</a>' +
+        '<a href="book.html" class="btn nav-cta">Book a shoot</a>' +
         '<button type="button" class="icon-btn menu-btn" aria-label="Menu" aria-controls="nav-links" aria-expanded="false">' + ICON.menu + ICON.close + '</button>' +
       '</div>' +
     '</div></header>';
@@ -68,6 +70,7 @@
         '</div>' +
         '<div class="footer-col">' +
           '<h4>Booking</h4>' +
+          '<a href="book.html">Book a shoot</a>' +
           '<a href="packages.html">Pricing</a>' +
           '<a href="guarantee.html">The guarantee</a>' +
           '<a href="faq.html">FAQ</a>' +

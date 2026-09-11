@@ -31,9 +31,27 @@ for (const file of readdirSync(".").filter(f => f.endsWith(".html")).sort()) {
     console.log(`\n${file}  (${names.length} fields, requires: ${required.join(", ")})`);
 
     // 1. Duplicate names silently collapse into a RadioNodeList and the
-    //    handler reads the wrong value off it.
-    const dupes = names.filter((n, i) => names.indexOf(n) !== i);
-    if (dupes.length) fail(file, `duplicate field name(s): ${[...new Set(dupes)].join(", ")}`);
+    //    handler reads the wrong value off it. Radios are the one legitimate
+    //    case: a group SHARES a name on purpose, and valueOf() in the handler
+    //    reads the checked value straight off the RadioNodeList. So a repeated
+    //    name is only a bug when the controls are not all radios.
+    const byName = {};
+    for (const c of controls) {
+      const n = c.attrs.match(/name="([^"]+)"/)[1];
+      (byName[n] ||= []).push(c);
+    }
+    const dupes = Object.keys(byName).filter(n => byName[n].length > 1 &&
+      !byName[n].every(c => /type="radio"/.test(c.attrs)));
+    if (dupes.length) fail(file, `duplicate field name(s): ${dupes.join(", ")}`);
+
+    // A radio group with no value= on a member sends an empty string, which
+    // reads to the handler as "not answered" and can never satisfy a required.
+    for (const [n, group] of Object.entries(byName)) {
+      if (group.length < 2 || !group.every(c => /type="radio"/.test(c.attrs))) continue;
+      if (!group.every(c => /\svalue="[^"]+"/.test(c.attrs))) {
+        fail(file, `radio group "${n}" has a member with no value, it would submit blank`);
+      }
+    }
 
     // 2. Duplicate ids break every <label for>, which is what the handler
     //    reads to name a field in the email.

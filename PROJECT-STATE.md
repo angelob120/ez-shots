@@ -4,6 +4,22 @@
 This file is the memory between sessions. Read it at the start of every session along with `CLAUDE.md`. At the end of every session, append a new dated entry to the top of the Work Log describing what changed and anything the next session would otherwise have to rediscover. "Blocked on a human" lists things only the owner can do (accounts, keys, DNS, deploy clicks). Detailed per-area status lives in `docs/site.md`.
 
 ## Blocked on a human
+- **Set three Railway variables, or admin and the booking flow run half blind.**
+  `ADMIN_PASSWORD` (any password you pick, admin.html is dead without it and there
+  is deliberately no default), then a Railway **volume mounted at `/data`** with
+  `DATA_DIR=/data`. Without the volume every price you set in admin goes back to
+  the shipped default on the next deploy, silently, because the container
+  filesystem resets. Optional third: `STRIPE_SECRET_KEY`.
+- **The Stripe API key you mentioned on 2026-09-11.** Paste the secret key into
+  Railway as `STRIPE_SECRET_KEY` and nothing else needs doing: the server starts
+  creating Checkout Sessions itself, with the price read from its own config, and
+  the payment links drop back to being the fallback for a Stripe outage. Use the
+  live key, not the test one, and never put it in a file in this repo.
+- **Prose prices on the marketing pages are still hardcoded.** Changing a price in
+  admin changes the booking page and the checkout, and does NOT change the
+  sentences on `index.html`, `packages.html`, `services.html`, `faq.html`,
+  `guarantee.html`, `contact.html`, `about.html` or `intake.html`. Until those are
+  bound to the config, a price change is two jobs. Worth fixing next.
 - **The Stripe checkout is branded "Design Byte Agency".** Confirmed on 2026-09-01 by
   opening both payment links. A realtor clicks Buy on ezshots and lands on a card form
   for a company they have never heard of. That reads as a phishing page, and it is the
@@ -95,6 +111,78 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-09-11 - Booking flow, a server, and prices the owner can change on the site
+
+The owner handed over `ezshots_website_upgrade_plan.md`, a full plan for self
+serve booking plus an admin operating system, and then said two things mid
+session that decided the architecture: **"i should be able to set prices on the
+site its self"** and **"i will add stripe api links for this"**. Both need a
+server. A static page can only remember a price on the one device that typed it,
+and a Stripe secret key can never sit in client side JavaScript. So the site is
+no longer purely static.
+
+**What shipped**
+
+- `book.html`, the three screen flow from the plan. Package, then property and
+  time, then contact and pay. One `<form class="lead-form booking">`, so the
+  whole booking reaches the inbox through the existing `js/contact-form.js`
+  rather than growing a second handler. `js/booking.js` does only what that
+  handler cannot.
+- `server.js`, Node built ins only, no new dependency. It replaces `serve` as
+  `npm start` and reimplements the `serve.json` rules, including `cleanUrls`
+  staying off, which is what keeps `/project.html?id=x` working. It also stops
+  serving `CLAUDE.md`, `PROJECT-STATE.md`, `docs/` and `scripts/`, which the old
+  static deploy was handing to anyone who asked.
+- `config.json` is now the one source for packages, prices, checkout links and
+  availability. `admin.html` edits it, the server validates and writes it to
+  `DATA_DIR`, `js/config.js` is what the pages read it through. There is
+  deliberately no second copy of the prices in the JavaScript: a hardcoded
+  fallback is how a stale price ends up on screen months later with nobody able
+  to say where it came from.
+- `/api/checkout` creates a Stripe Checkout Session server side when
+  `STRIPE_SECRET_KEY` is set, with the amount read from the server's own config.
+  The browser only ever sends a package id. With no key set, or if Stripe is
+  unreachable, it falls back to the existing payment links, so a Stripe outage
+  cannot cost a booking.
+- `booked.html`, the confirmation, reads the paid session back from Stripe
+  through `/api/session` rather than trusting `?session_id`. A page that prints
+  "Paid $125" because the URL said so is a page anyone can screenshot.
+- The package buttons on `index.html` and `packages.html` now go to the booking
+  flow instead of jumping straight to Stripe with no property, date or time
+  attached. The header CTA points at `book.html`.
+
+**Two things in the plan that were not followed, on purpose**
+
+- The plan prices the packages at $200 and $300 under new names. The site charges
+  $150 and $250. The site is right, the offer in `CLAUDE.md` is the spec, and the
+  plan was written with example numbers. Flagged to the owner in session.
+- The plan's booking notes placeholder invites a gate code. `CLAUDE.md` forbids a
+  lockbox or code field anywhere, so the access notes field says the code gets
+  texted the morning of the shoot, same as `intake.html`.
+
+**The honest limit: a slot is not held.** There is no bookings table, so two
+agents can pick the same 1 PM and both get through. Every line of copy on the
+page is written to match that: it says the exact time is confirmed by email the
+same day, and it never claims the calendar is locked. Do not "tidy" that copy
+into a promise the code cannot keep. `docs/booking-roadmap.md` lists what is
+built against the plan and what is not, in the order worth building, with the
+bookings table first because everything else leans on it.
+
+`scripts/check-forms.mjs` learned about radio groups: a shared name is a bug for
+text inputs and correct for radios, and it now also catches a radio with no
+`value`, which would submit blank and could never satisfy a required field.
+
+Verified: `npm test` passes with four lead forms. The server was run and driven
+end to end at 375px, choosing Listing Pro, filling the property, picking Tuesday
+Sep 15 at 1:00 PM and reaching the last screen with the summary reading $250
+less $125 and the submit button carrying the right Stripe link. Availability was
+checked against the clock: Saturday Sep 12 correctly disappears because all three
+of its slots fall inside the 24 hour notice window, and Sundays never appear.
+Admin was signed into, a price was changed to $165, saved, read back from
+`/api/config` as 165, then set back to 150. A bad price was rejected with a
+readable message. Every page on the site returns 200 through the new server and
+`/CLAUDE.md` returns 404. No em or en dashes in any file touched.
 
 ### 2026-09-10 - The guarantee is now "you do not pay, plus $20", and the 48 hour window is gone
 

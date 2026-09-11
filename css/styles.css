@@ -632,3 +632,220 @@ form.lead-form.stacked { padding: 0; background: none; border: none; box-shadow:
   form.lead-form { padding: 24px 20px; }
   .row2 { grid-template-columns: 1fr; }
 }
+
+/* ==========================================================================
+   Booking flow (book.html)
+   One obvious action per screen, big tap targets, a summary bar that never
+   leaves the thumb. Everything here is sized for a phone first: the desktop
+   rules widen it, not the other way round.
+   ========================================================================== */
+form.booking { background: none; border: none; box-shadow: none; padding: 0; gap: 0; }
+.book-section { padding-top: 26px; }
+.book-step[hidden] { display: none; }
+.book-step { display: grid; gap: 14px; }
+.book-q { font-size: 26px; letter-spacing: -.02em; margin: 16px 0 2px; }
+.book-step > .book-q:first-child { margin-top: 0; }
+.book-foot { margin-top: 6px; }
+
+/* Progress. Three words, not a wizard. */
+.book-crumbs { display: flex; gap: 8px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap; }
+.book-crumb {
+  display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700;
+  color: var(--muted); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 7px 15px 7px 7px;
+}
+.book-crumb b {
+  width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--bg); border: 1px solid var(--line); font-size: 12.5px; color: var(--muted);
+}
+.book-crumb.on { color: var(--ink); border-color: var(--line-2); background: var(--tint); }
+.book-crumb.on b { background: var(--brand); border-color: var(--brand); color: #fff; }
+.book-crumb.done b { background: var(--brand-dk); border-color: var(--brand-dk); color: #fff; }
+[data-theme="dark"] .book-crumb.done b { color: var(--navy); }
+
+/* Question plus a row of answers. The input is hidden and the label is the
+   target, so the whole pill is tappable and the checked state is just CSS. */
+.opt-q { font-size: 15px; font-weight: 700; margin: 6px 0 -4px; }
+.opt-row { display: flex; flex-wrap: wrap; gap: 9px; }
+.opt-row input[type="radio"] { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.opt-row label {
+  display: inline-block; cursor: pointer; font-size: 14.5px; font-weight: 600; margin: 0;
+  padding: 11px 17px; min-height: 44px; line-height: 22px;
+  background: var(--card); color: var(--ink);
+  border: 1.5px solid var(--line); border-radius: 999px;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.opt-row label:hover { border-color: var(--line-2); background: var(--surface); }
+.opt-row input:checked + label { background: var(--brand); border-color: var(--brand); color: #fff; }
+.opt-row input:focus-visible + label { box-shadow: var(--ring); }
+
+/* Package cards. The whole card is the button. */
+.pkg-pick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.pkg-pick {
+  position: relative; cursor: pointer; background: var(--card); border: 2px solid var(--line);
+  border-radius: var(--radius); padding: 26px 24px 24px; box-shadow: var(--shadow);
+  transition: border-color .15s, transform .15s, box-shadow .15s;
+}
+.pkg-pick:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--line-2); }
+.pkg-pick.on { border-color: var(--brand); box-shadow: var(--shadow-md); }
+.pkg-pick:focus-visible { outline: none; box-shadow: var(--ring); }
+.pkg-pick h3 { font-size: 21px; margin: 0 0 4px; letter-spacing: -.02em; }
+.pkg-pick-blurb { color: var(--muted); font-size: 14.5px; margin: 0 0 14px; }
+.pkg-pick-price { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
+.pkg-pick-now { font-size: 40px; font-weight: 900; letter-spacing: -.04em; line-height: 1; }
+.pkg-pick-was { color: var(--muted); font-size: 18px; font-weight: 700; text-decoration: line-through; }
+.pkg-pick ul { list-style: none; padding: 0; margin: 0 0 20px; }
+.pkg-pick li { position: relative; padding: 5px 0 5px 25px; font-size: 14.5px; color: var(--muted); }
+.pkg-pick li::before {
+  content: "✓"; position: absolute; left: 0; top: 5px; color: var(--accent); font-weight: 800;
+}
+.pkg-pick-btn { display: block; width: 100%; text-align: center; pointer-events: none; }
+.pkg-pick-badge {
+  position: absolute; top: -11px; right: 20px; background: var(--brand); color: #fff;
+  font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  padding: 5px 12px; border-radius: 999px;
+}
+
+/* Days and times. Only bookable ones are rendered, so nothing is greyed out:
+   a disabled button on a phone reads as a broken button. */
+.day-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; }
+.day-btn, .time-btn {
+  font-family: inherit; cursor: pointer; background: var(--card); color: var(--ink);
+  border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+  transition: border-color .15s, background .15s, color .15s;
+}
+.day-btn { display: grid; gap: 2px; padding: 12px 6px; min-height: 62px; text-align: center; }
+.day-btn b { font-size: 14.5px; font-weight: 800; }
+.day-btn span { font-size: 12.5px; color: var(--muted); }
+.day-btn:hover, .time-btn:hover { border-color: var(--line-2); background: var(--surface); }
+.day-btn.on, .time-btn.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+.day-btn.on span { color: rgba(255,255,255,.8); }
+.time-grid { display: flex; flex-wrap: wrap; gap: 9px; }
+.time-btn { padding: 13px 22px; min-height: 48px; font-size: 15.5px; font-weight: 700; }
+
+/* No surprises block. */
+.book-summary {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px 20px; margin: 24px 0 18px;
+}
+.sum-row { display: flex; justify-content: space-between; gap: 18px; padding: 6px 0; font-size: 14.5px; }
+.sum-row span { color: var(--muted); flex: none; }
+.sum-row b { text-align: right; font-weight: 700; }
+.sum-total { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 12px; font-size: 17px; }
+.sum-total b { font-size: 22px; font-weight: 900; letter-spacing: -.02em; }
+
+/* The bar follows the thumb rather than the page. */
+.book-bar {
+  position: sticky; bottom: 0; z-index: 40; margin-top: 26px;
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px;
+  background: var(--header-bg); backdrop-filter: saturate(180%) blur(12px);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 16px; box-shadow: var(--shadow-md);
+}
+.book-bar-text { min-width: 0; display: grid; }
+.book-bar-line {
+  font-size: 13.5px; font-weight: 600; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.book-bar-price { font-size: 20px; font-weight: 900; letter-spacing: -.02em; }
+.book-bar-price:empty { display: none; }
+.book-bar-actions { display: flex; gap: 10px; align-items: center; }
+.book-bar-actions .btn { white-space: nowrap; }
+.book-bar-actions [hidden] { display: none; }
+.book-bar .form-status { grid-column: 1 / -1; }
+
+@media (max-width: 720px) {
+  .pkg-pick-grid { grid-template-columns: 1fr; }
+  .book-q { font-size: 22px; }
+  .day-grid { grid-template-columns: repeat(3, 1fr); }
+  .book-crumb { font-size: 12px; padding: 5px 12px 5px 5px; }
+  .book-crumb b { width: 21px; height: 21px; font-size: 11.5px; }
+  .book-bar { grid-template-columns: 1fr; gap: 10px; padding: 12px 14px; }
+  .book-bar-text { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .book-bar-actions .btn { flex: 1; justify-content: center; text-align: center; }
+  .book-bar-actions .btn-lg { padding: 15px 20px; font-size: 16px; }
+}
+
+/* ==========================================================================
+   Admin settings (admin.html). Owner only, one screen, phone sized.
+   ========================================================================== */
+.admin-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
+.admin-pill {
+  font-size: 12.5px; font-weight: 700; padding: 7px 14px; border-radius: 999px;
+  background: var(--tint); color: var(--accent); border: 1px solid var(--line-2);
+}
+.admin-pill.warn { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+[data-theme="dark"] .admin-pill.warn { background: rgba(146,64,14,.28); color: #fcd34d; border-color: rgba(146,64,14,.6); }
+.admin-bar .btn { margin-left: auto; }
+
+.admin-card {
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 20px;
+  margin-bottom: 16px; background: var(--surface); display: grid; gap: 12px;
+}
+.admin-card-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.admin-card-head b { font-size: 17px; letter-spacing: -.02em; }
+.admin-toggle { font-size: 13px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 7px; cursor: pointer; }
+.admin-toggle input { width: 18px; height: 18px; accent-color: var(--brand); cursor: pointer; }
+.admin-x {
+  margin-left: auto; font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+  background: none; border: 1px solid var(--line); color: var(--muted);
+  border-radius: 999px; padding: 6px 13px;
+}
+.admin-x:hover { border-color: #ef4444; color: #ef4444; }
+
+.a-field { display: block; }
+.a-field span { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+.a-field input, .a-field textarea {
+  width: 100%; padding: 11px 13px; border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+  font-size: 15px; font-family: inherit; background: var(--bg); color: var(--ink);
+}
+.a-field textarea { resize: vertical; }
+.a-field input:focus, .a-field textarea:focus { outline: none; border-color: var(--brand); box-shadow: var(--ring); }
+.form-help.warn { color: #92400e; font-weight: 600; }
+[data-theme="dark"] .form-help.warn { color: #fcd34d; }
+
+.admin-day { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 12px; margin-bottom: 9px; }
+.admin-day-name { font-size: 14px; font-weight: 700; }
+.admin-day.off .admin-day-name { color: var(--muted); font-weight: 600; }
+.admin-day input {
+  width: 100%; padding: 10px 13px; border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+  font-size: 14.5px; font-family: inherit; background: var(--bg); color: var(--ink);
+}
+.admin-day input:focus { outline: none; border-color: var(--brand); box-shadow: var(--ring); }
+
+.admin-row {
+  display: flex; align-items: center; gap: 12px; padding: 11px 14px; margin-bottom: 8px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+}
+.admin-row b { font-size: 14.5px; flex: none; }
+.admin-row span { color: var(--muted); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-add { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.admin-add input {
+  flex: 1 1 150px; padding: 11px 13px; border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+  font-size: 14.5px; font-family: inherit; background: var(--bg); color: var(--ink);
+}
+.admin-add input:focus { outline: none; border-color: var(--brand); box-shadow: var(--ring); }
+.admin-save { display: grid; gap: 14px; justify-items: start; }
+.admin-form { display: grid; gap: 0; }
+
+@media (max-width: 720px) {
+  .admin-day { grid-template-columns: 92px 1fr; gap: 9px; }
+  .admin-bar .btn { margin-left: 0; }
+}
+
+/* ---------- Booking confirmation (booked.html) ---------- */
+.booked-card {
+  text-align: center; background: var(--card); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 48px 36px; box-shadow: var(--shadow);
+}
+.booked-card h1 { font-size: 38px; letter-spacing: -.03em; margin: 0 0 18px; }
+.booked-card .book-summary { text-align: left; max-width: 420px; margin: 0 auto 22px; }
+.booked-check {
+  width: 68px; height: 68px; margin: 0 auto 22px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--brand); color: #fff;
+}
+.booked-check svg { width: 34px; height: 34px; }
+@media (max-width: 720px) {
+  .booked-card { padding: 36px 22px; }
+  .booked-card h1 { font-size: 30px; }
+}

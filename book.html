@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book a Shoot | EZ Shots Real Estate Photography, Metro Detroit</title>
+  <meta name="description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Pick a package, tell me the property, pick a day and time, pay, done. First shoot 50% off." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="book">
+  <div id="site-header"></div>
+
+  <section class="page-head book-head" id="main">
+    <div class="container">
+      <p class="eyebrow">Book a shoot</p>
+      <h1>Pick. Schedule. Pay. Done.</h1>
+      <p class="lead">Three screens, about a minute. No call, no account, no waiting to hear back on price.</p>
+    </div>
+  </section>
+
+  <div class="container">
+    <ol class="book-crumbs">
+      <li class="book-crumb on"><b>1</b> Package</li>
+      <li class="book-crumb"><b>2</b> Property and time</li>
+      <li class="book-crumb"><b>3</b> Contact and pay</li>
+    </ol>
+  </div>
+
+  <section class="section book-section">
+    <div class="container">
+
+      <form class="lead-form booking" novalidate
+            data-required="name,email,phone,address,date,time"
+            data-subject="New booking"
+            data-subject-field="address"
+            data-success="Got it. Sending you to the payment page now.">
+
+        <!-- Honeypot. Hidden from people, irresistible to bots. -->
+        <input type="text" name="_hp" tabindex="-1" autocomplete="off" aria-hidden="true"
+               style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
+
+        <!-- Set by js/booking.js so the email says exactly what was bought. -->
+        <input type="hidden" id="package" name="package" data-label="Package" />
+        <input type="hidden" id="packageprice" name="packageprice" data-label="Price" />
+        <input type="hidden" id="date" name="date" data-label="Shoot date" />
+        <input type="hidden" id="time" name="time" data-label="Shoot time" />
+
+        <!-- ============ STEP 1 ============ -->
+        <div class="book-step" data-step="1">
+          <p class="opt-q">Is this your first shoot with EZ Shots?</p>
+          <div class="opt-row" role="group" aria-label="First shoot with EZ Shots">
+            <input type="radio" id="first-yes" name="firstshoot" value="First shoot, half price" data-label="First shoot" checked />
+            <label for="first-yes">First time, 50% off</label>
+            <input type="radio" id="first-no" name="firstshoot" value="Booked before, full price" data-label="First shoot" />
+            <label for="first-no">I have booked before</label>
+          </div>
+
+          <h2 class="book-q">What do you need for this listing?</h2>
+          <div class="pkg-pick-grid" id="package-options">
+            <p class="form-help">Loading packages...</p>
+          </div>
+          <p class="form-help book-foot">Drone aerials are in both. One flat rate whatever the square footage. If the gallery is not what you wanted you do not pay, and I send you $20 on top.</p>
+        </div>
+
+        <!-- ============ STEP 2 ============ -->
+        <div class="book-step" data-step="2" hidden>
+          <h2 class="book-q">Where are we shooting?</h2>
+
+          <div class="field">
+            <label for="address">Property address <span class="req">*</span></label>
+            <input id="address" name="address" data-label="Address" type="text"
+                   autocomplete="street-address" placeholder="123 Maple Ave, Birmingham, MI 48009" />
+            <p class="form-help">Street, city and ZIP. Metro Detroit is covered as standard, further out may carry a travel fee and I will tell you before the shoot.</p>
+          </div>
+
+          <p class="opt-q">Roughly how big is the home?</p>
+          <div class="opt-row" role="group" aria-label="Home size">
+            <input type="radio" id="size-1" name="size" value="Under 1,500 sq ft" data-label="Home size" />
+            <label for="size-1">Under 1,500</label>
+            <input type="radio" id="size-2" name="size" value="1,500 to 2,500 sq ft" data-label="Home size" />
+            <label for="size-2">1,500 to 2,500</label>
+            <input type="radio" id="size-3" name="size" value="2,500 to 4,000 sq ft" data-label="Home size" />
+            <label for="size-3">2,500 to 4,000</label>
+            <input type="radio" id="size-4" name="size" value="4,000+ sq ft" data-label="Home size" />
+            <label for="size-4">4,000+</label>
+            <input type="radio" id="size-5" name="size" value="Not sure" data-label="Home size" />
+            <label for="size-5">Not sure</label>
+          </div>
+
+          <p class="opt-q">Is anyone living in the home?</p>
+          <div class="opt-row" role="group" aria-label="Occupancy">
+            <input type="radio" id="occ-1" name="occupancy" value="Vacant" data-label="Occupancy" />
+            <label for="occ-1">Vacant</label>
+            <input type="radio" id="occ-2" name="occupancy" value="Occupied" data-label="Occupancy" />
+            <label for="occ-2">Occupied</label>
+            <input type="radio" id="occ-3" name="occupancy" value="Vacant and staged" data-label="Occupancy" />
+            <label for="occ-3">Vacant and staged</label>
+            <input type="radio" id="occ-4" name="occupancy" value="Not sure" data-label="Occupancy" />
+            <label for="occ-4">Not sure</label>
+          </div>
+
+          <p class="opt-q">How will I get inside?</p>
+          <div class="opt-row" role="group" aria-label="Access">
+            <input type="radio" id="acc-1" name="access" value="Agent will meet me there" data-label="Access" />
+            <label for="acc-1">I will meet you there</label>
+            <input type="radio" id="acc-2" name="access" value="Lockbox" data-label="Access" />
+            <label for="acc-2">Lockbox</label>
+            <input type="radio" id="acc-3" name="access" value="Door code" data-label="Access" />
+            <label for="acc-3">Door code</label>
+            <input type="radio" id="acc-4" name="access" value="Someone will be home" data-label="Access" />
+            <label for="acc-4">Someone will be home</label>
+            <input type="radio" id="acc-5" name="access" value="Other" data-label="Access" />
+            <label for="acc-5">Other</label>
+          </div>
+          <div class="field" id="access-notes-field" hidden>
+            <label for="accessnotes">Where is it, and anything I should know?</label>
+            <input id="accessnotes" name="accessnotes" data-label="Access notes" type="text"
+                   placeholder="Lockbox on the side entrance, park in the driveway" />
+            <p class="form-help">Do not put the code here. I text you for it the morning of the shoot so it is never sitting in an inbox.</p>
+          </div>
+
+          <h2 class="book-q">Pick a day</h2>
+          <div class="day-grid" id="day-options"></div>
+
+          <div id="time-block" hidden>
+            <h2 class="book-q">Pick a time</h2>
+            <div class="time-grid" id="time-options"></div>
+            <p class="form-help">About an hour on site for Essentials, an hour and a half with video. I confirm the exact time by email the same day.</p>
+          </div>
+        </div>
+
+        <!-- ============ STEP 3 ============ -->
+        <div class="book-step" data-step="3" hidden>
+          <h2 class="book-q">Almost done</h2>
+          <div class="row2">
+            <div class="field">
+              <label for="name">Your name <span class="req">*</span></label>
+              <input id="name" name="name" type="text" autocomplete="name" placeholder="Jane Smith" />
+            </div>
+            <div class="field">
+              <label for="brokerage">Brokerage or team</label>
+              <input id="brokerage" name="brokerage" type="text" autocomplete="organization" placeholder="Max Broock Realtors" />
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="email">Email <span class="req">*</span></label>
+              <input id="email" name="email" type="email" autocomplete="email" inputmode="email" placeholder="jane@brokerage.com" />
+              <p class="form-help">Confirmation and the gallery link go here.</p>
+            </div>
+            <div class="field">
+              <label for="phone">Mobile <span class="req">*</span></label>
+              <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(313) 555 1234" />
+              <p class="form-help">I text on the way and if anything changes.</p>
+            </div>
+          </div>
+          <div class="field">
+            <label for="message">Anything I should know?</label>
+            <textarea id="message" name="message" rows="3"
+                      placeholder="Rooms to focus on, seller requests, parking, pets, anything else that helps on the day."></textarea>
+            <p class="form-help">Optional. Skip it and we are fine.</p>
+          </div>
+
+          <div class="book-summary" id="book-summary"></div>
+
+          <p class="form-note">Paying takes you to Stripe. Your card details never touch this site. If the gallery is not what you wanted, you do not pay: the money goes back on the same card and I send you $20 on top.</p>
+        </div>
+
+        <!-- ============ STICKY BAR ============ -->
+        <div class="book-bar">
+          <div class="book-bar-text">
+            <span class="book-bar-line">Pick a package to start</span>
+            <span class="book-bar-price"></span>
+          </div>
+          <div class="book-bar-actions">
+            <button type="button" class="btn btn-ghost" data-back="1" data-bar-step="2" hidden>Back</button>
+            <button type="button" class="btn" data-next="3" data-bar-step="2" hidden>Continue</button>
+            <button type="button" class="btn btn-ghost" data-back="2" data-bar-step="3" hidden>Back</button>
+            <button type="submit" class="btn btn-lg" data-bar-step="3" hidden>Book my shoot</button>
+          </div>
+          <p class="form-status" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+
+    </div>
+  </section>
+
+  <section class="section section-soft">
+    <div class="container narrow">
+      <div class="sec-head center">
+        <p class="eyebrow">After you pay</p>
+        <h2>What happens next</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="n">1</div>
+          <h3>Receipt, then confirmation</h3>
+          <p>Stripe emails the receipt straight away. I confirm your time the same day.</p>
+        </div>
+        <div class="step">
+          <div class="n">2</div>
+          <h3>I text before I come</h3>
+          <p>The day before and again on the way. That is when I ask for the code.</p>
+        </div>
+        <div class="step">
+          <div class="n">3</div>
+          <h3>I shoot and edit</h3>
+          <p>About an hour on site. Editing that night, not next week.</p>
+        </div>
+        <div class="step">
+          <div class="n">4</div>
+          <h3>Gallery in your inbox</h3>
+          <p>About 24 hours later. Not happy and you do not pay, plus $20.</p>
+        </div>
+      </div>
+      <p class="pkg-note">Want to talk it through first? <a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">Grab a free 10 minute call</a> or <a href="contact.html">send a message</a>.</p>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/site.js"></script>
+  <script src="js/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="js/contact-form.js"></script>
+  <script src="js/booking.js"></script>
+</body>
+</html>

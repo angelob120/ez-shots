@@ -1,7 +1,9 @@
 # CLAUDE.md - EZ Shots
 
 ## What this is
-EZ Shots is a static marketing and portfolio website for a real estate photography business serving realtors in Metro Detroit (photo, video, and licensed FAA Part 107 drone work). It is plain HTML, CSS, and vanilla JavaScript with no build step and no framework. Shared announcement bar, nav and footer are injected by `js/site.js`; portfolio and gallery content lives as data in `js/projects.js` and is rendered by `js/render.js`. It is served as static files by the `serve` package (`npm start`) and deploys on Railway. The lead contact form emails submissions to the owner through EmailJS (client side, no backend).
+EZ Shots is a marketing, portfolio and booking website for a real estate photography business serving realtors in Metro Detroit (photo, video, and licensed FAA Part 107 drone work). The pages are plain HTML, CSS, and vanilla JavaScript with no build step and no framework. Shared announcement bar, nav and footer are injected by `js/site.js`; portfolio and gallery content lives as data in `js/projects.js` and is rendered by `js/render.js`. Lead forms email submissions to the owner through EmailJS (client side).
+
+Since 2026-09-11 there is also a small server, `server.js`, Node built ins only, and it is what `npm start` runs. It exists for the two things a static file cannot do: hold the live prices so the owner can change them on the site, and hold the Stripe secret key so the browser never decides what a shoot costs. Everything else is still static files served by the same rules `serve.json` used. `npm run start:static` still runs the old `serve` setup if the server is ever in the way.
 
 ## The offer the site sells
 Everything on the site points at one offer. Do not water it down or contradict it in copy:
@@ -16,18 +18,45 @@ The full wording lives on `guarantee.html` and is restated formally on `refund.h
 ## Absolute rule: no dashes
 Never write an em-dash or an en-dash anywhere: not in code, comments, docs, commit messages, or replies to the owner. Use a plain hyphen `-` or split the sentence in two. Check every file you touch before you finish. (Older untouched pages may still contain them; clean them only when you edit that file.)
 
+## The booking flow, and where prices live
+- `book.html` is the booking flow: package, then property and time, then contact
+  and pay. Three screens, one `<form class="lead-form booking">`, so it reaches
+  the inbox through `js/contact-form.js` like every other form. `js/booking.js`
+  does only the parts that handler cannot.
+- **Prices, packages, checkout links and availability live in `config.json`**, not
+  in code. `admin.html` edits it, the server writes it to `DATA_DIR`, and
+  `js/config.js` is what every page reads it through. Do not hardcode a price into
+  the booking flow again.
+- **Prose prices on the other pages are still hardcoded.** `$150`, `$250`, `$75`
+  and `$125` appear in sentences across `index.html`, `packages.html`,
+  `services.html`, `faq.html`, `guarantee.html`, `contact.html`, `about.html` and
+  `intake.html`. Changing a price in admin does NOT change those. Until they are
+  bound to the config, a price change is an admin edit plus a copy pass.
+- **A slot is not held.** There is no bookings table, so two agents can pick the
+  same time. The copy says the exact time is confirmed by email for that reason.
+  Do not write copy that claims the calendar is locked. See
+  `docs/booking-roadmap.md`.
+- **The server is what decides the price.** `/api/checkout` reads the package
+  price out of its own config. Never let the browser send an amount.
+- Env vars the server reads: `ADMIN_PASSWORD` (admin is off without it, and there
+  is no default), `DATA_DIR` (must be a Railway volume or every saved price
+  resets on deploy), `STRIPE_SECRET_KEY`, `ADMIN_SECRET`, `SITE_URL`.
+
 ## Rules that will bite you
 - The git remote is named `ez-shots`, not `origin`. Pushes go to `git push ez-shots <branch>`. The GitHub repo is https://github.com/angelob120/ez-shots.git.
 - There are two lead forms, one in the `#contact` section of `index.html` and one on `contact.html`. Both share `js/contact-form.js` via the `form.lead-form` class. Change form behaviour in the JS once, not per page. If you add a third form, give it class `lead-form` and it wires itself up.
 - `form.name` in JavaScript returns the form's name attribute, not the input named "name". The handler reads fields with `form.elements.namedItem(...)` for this reason. Do not switch to `form.name.value`.
 - EmailJS keys are publishable client-side keys and live in the `CONFIG` object at the top of `js/contact-form.js`, not in env files (this is a static site with no build step). The `PUBLIC_KEY` is a placeholder until the owner pastes the real one.
-- Nav links are hardcoded in `js/site.js`. Adding a page means adding it to the `links` array there (or the footer block below it), not just creating the file. Nav is Services, Portfolio, Pricing (`packages.html`), Guarantee, About, Contact. Gallery, FAQ and Areas live in the footer only.
-- `serve.json` is load bearing. Without `cleanUrls: false`, `serve` 301s `/project.html?id=x` to `/project` and drops the query string, which breaks every portfolio detail page in production. The rewrites in that file also serve `/index.html` at `/` and let `/services` resolve to `/services.html`. Do not delete it.
+- Nav links are hardcoded in `js/site.js`. Adding a page means adding it to the `links` array there (or the footer block below it), not just creating the file. Nav is Services, Portfolio, Pricing (`packages.html`), Guarantee, About, Contact. Gallery, FAQ and Areas live in the footer only. `book.html` is deliberately not a nav row: it is the header CTA button, so booking never reads as a menu item.
+- `serve.json` is no longer what runs in production, `server.js` is, but the rules
+  in it are still load bearing because `server.js` reimplements them and
+  `npm run start:static` still uses the file. The rules and why:  Without `cleanUrls: false`, `serve` 301s `/project.html?id=x` to `/project` and drops the query string, which breaks every portfolio detail page in production. The rewrites in that file also serve `/index.html` at `/` and let `/services` resolve to `/services.html`. Do not delete it.
 - `Dockerfile` is load bearing. Railway builds with Docker because of it. Without it Railway
   falls back to Railpack, which mounts every Railway service variable into the build as a
   BuildKit secret, and on 2026-09-01 a variable named `EMAILJS.PUBLIC_KEY` (a dot is illegal
-  in an env var name) took every deploy down with `secret EMAILJS not found`. The site needs
-  no Railway variables at all, Railway supplies `PORT` itself.
+  in an env var name) took every deploy down with `secret EMAILJS not found`. Railway
+  supplies `PORT` itself. The variables the site now DOES want are listed under "The
+  booking flow" above, and all of them are ordinary names with no dot in them.
 - Theme (light/dark) is set inline in each page's `<head>` before render to avoid a flash, and toggled in `js/site.js`. Keep both in sync if you touch theming.
 - Portfolio content is data in `js/projects.js`. Edit content there, not in the HTML.
   The standalone gallery was removed on 2026-09-01; `p.gallery` on a project is the

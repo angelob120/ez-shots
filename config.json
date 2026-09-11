@@ -1,0 +1,57 @@
+{
+  "_comment": "EZ Shots live config: packages, prices, checkout links, availability. This file in the repo is the DEFAULT. On a deploy with the server running, admin.html writes a copy into DATA_DIR and that copy wins from then on. Edit this file only to change what a fresh install starts with.",
+  "packages": [
+    {
+      "id": "essentials",
+      "name": "Listing Essentials",
+      "blurb": "Photos and drone aerials for the everyday listing.",
+      "price": 150,
+      "firstPrice": 75,
+      "active": true,
+      "badge": "",
+      "bullets": [
+        "25 to 30 finished photos",
+        "Every room, plus exterior from all sides",
+        "5 to 8 drone aerials included",
+        "MLS sized plus full resolution files",
+        "Any size home, one flat rate"
+      ],
+      "checkoutFull": "https://buy.stripe.com/4gM5kEaUIb3B4zV9BvaVa0n",
+      "checkoutFirst": "https://buy.stripe.com/9B69AU1k83B92rNaFzaVa0q"
+    },
+    {
+      "id": "pro",
+      "name": "Listing Pro",
+      "blurb": "Everything above plus the video that sells it.",
+      "price": 250,
+      "firstPrice": 125,
+      "active": true,
+      "badge": "Most booked",
+      "bullets": [
+        "35 to 45 finished photos",
+        "8 to 12 drone aerials included",
+        "One minute listing video, edited and scored",
+        "Vertical cut for Reels, Shorts and TikTok",
+        "MLS sized plus full resolution files"
+      ],
+      "checkoutFull": "https://buy.stripe.com/3cI8wQ6Es5JhaYj00VaVa0o",
+      "checkoutFirst": "https://buy.stripe.com/3cI6oIfaY7Rpd6r293aVa0p"
+    }
+  ],
+  "availability": {
+    "week": {
+      "0": [],
+      "1": ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM"],
+      "2": ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM"],
+      "3": ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM"],
+      "4": ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM"],
+      "5": ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM"],
+      "6": ["9:00 AM", "11:00 AM", "1:00 PM"]
+    },
+    "blocked": {},
+    "overrides": {},
+    "minNoticeHours": 24,
+    "maxAdvanceDays": 45,
+    "daysShown": 10
+  }
+}

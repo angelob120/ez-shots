@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>You are booked | EZ Shots</title>
+  <meta name="robots" content="noindex, follow" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="booked">
+  <div id="site-header"></div>
+
+  <section class="section" id="main">
+    <div class="container narrow">
+      <div class="booked-card">
+        <div class="booked-check" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+        <h1>You are booked.</h1>
+        <div class="book-summary" id="booked-summary" hidden></div>
+        <p class="lead">Stripe has emailed your receipt. I confirm the exact shoot time by email the same day, and I text you the day before and again when I am on the way.</p>
+        <div class="btn-row center">
+          <a href="intake.html" class="btn">Tell me about the property</a>
+          <a href="index.html" class="btn btn-ghost">Back to the site</a>
+        </div>
+        <p class="form-note" style="margin-top:22px">Two minutes on the property details form saves a phone call and gets the gallery back faster. Anything to change? Email <a href="mailto:bigmoneygelo2@gmail.com" style="color:var(--accent);font-weight:700">bigmoneygelo2@gmail.com</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-soft">
+    <div class="container narrow">
+      <div class="sec-head center">
+        <p class="eyebrow">The promise, again</p>
+        <h2>If the gallery is not what you wanted</h2>
+      </div>
+      <p class="lead center">You do not pay. The money goes back on the same card and I send you $20 on top. Every gallery, this one and every one after, with no deadline on asking. <a href="guarantee.html" style="color:var(--accent);font-weight:700">How it works</a>.</p>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/site.js"></script>
+  <script src="js/booked.js"></script>
+</body>
+</html>

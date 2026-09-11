@@ -40,6 +40,17 @@ offer the whole site is built around:
 - Half done: needs the real EmailJS Public Key pasted and the template confirmed and saved
   in the dashboard. See PROJECT-STATE.md "Blocked on a human".
 
+## Booking flow (2026-09-11)
+- Done: `book.html`, three screens, package then property and time then contact and
+  pay, driven by `js/booking.js`. `booked.html` is the confirmation.
+- Done: `admin.html` plus `server.js`, so prices, checkout links and availability
+  are edited on the site and stored in `config.json` / `DATA_DIR`.
+- Done: server side Stripe Checkout Sessions when `STRIPE_SECRET_KEY` is set,
+  payment links as the fallback.
+- Left: a bookings table, and with it slot locking, the Stripe webhook, the admin
+  dashboard past settings, Google Calendar and Sheets, referrals, the editor
+  portal. See `docs/booking-roadmap.md`.
+
 ## Commerce and booking
 - Done: TidyCal link https://tidycal.com/angelo3/quick-10-minute-chat on every package and
   in the footer.
@@ -57,5 +68,5 @@ offer the whole site is built around:
   config `serve` 301s `/project.html?id=x` to `/project` and drops the query string, which
   broke every portfolio detail page in production.
 - Left: connect the GitHub repo to Railway and add a public domain.
-- Note: `CLAUDE.md`, `PROJECT-STATE.md` and `docs/` are served publicly as static files.
-  Move them out of the deploy root if that matters.
+- Fixed 2026-09-11: `CLAUDE.md`, `PROJECT-STATE.md`, `docs/`, `scripts/` and the
+  package files used to be served publicly. `server.js` returns 404 for all of them.

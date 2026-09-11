@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings | EZ Shots</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="admin">
+  <div id="site-header"></div>
+
+  <section class="page-head" id="main">
+    <div class="container">
+      <p class="eyebrow">Owner only</p>
+      <h1>Prices and availability</h1>
+      <p class="lead">What you change here is what the booking page charges. Nothing needs a deploy.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container form-narrow">
+
+      <!-- Shown while we ask the server who you are. -->
+      <div id="admin-boot"><p class="form-help">Checking...</p></div>
+
+      <!-- No server, or admin switched off. -->
+      <div id="admin-off" hidden>
+        <div class="form-block">
+          <p class="form-legend"><b>Admin is not switched on</b><span>Nothing here can save yet.</span></p>
+          <p>This page needs the EZ Shots server running with an <code>ADMIN_PASSWORD</code> set. On Railway that is Variables, add <code>ADMIN_PASSWORD</code>, then redeploy. Add a volume mounted at <code>/data</code> and set <code>DATA_DIR</code> to <code>/data</code> in the same place, or every price you set here goes back to the shipped default on the next deploy.</p>
+          <p class="form-note">Until then the site runs on <code>config.json</code> in the repo, which is a code edit and a deploy.</p>
+        </div>
+      </div>
+
+      <!-- Login. -->
+      <div id="admin-login" hidden>
+        <form class="admin-form" id="login-form">
+          <div class="form-block">
+            <p class="form-legend"><b>Sign in</b><span>One password, yours, from the Railway variables.</span></p>
+            <div class="field">
+              <label for="admin-password">Password</label>
+              <input id="admin-password" type="password" autocomplete="current-password" />
+            </div>
+            <div class="form-submit">
+              <button type="submit" class="btn">Sign in</button>
+              <p class="form-status" id="login-status" role="status" aria-live="polite"></p>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- The real thing. -->
+      <div id="admin-panel" hidden>
+        <div class="admin-bar">
+          <span id="admin-mode" class="admin-pill"></span>
+          <button type="button" class="btn btn-ghost" id="logout-btn">Sign out</button>
+        </div>
+
+        <div class="form-block">
+          <p class="form-legend"><b>Packages</b><span>The price on the left is what a returning client pays. The first shoot price is what the button says by default.</span></p>
+          <div id="pkg-editor"></div>
+          <button type="button" class="btn btn-ghost" id="add-package">Add a package</button>
+        </div>
+
+        <div class="form-block">
+          <p class="form-legend"><b>Bookable days</b><span>Times you are willing to start a shoot, per weekday. Leave a day empty to close it.</span></p>
+          <div id="week-editor"></div>
+          <div class="row3">
+            <div class="field">
+              <label for="minNotice">Minimum notice, hours</label>
+              <input id="minNotice" type="number" min="0" max="720" />
+              <p class="form-help">Nothing inside this window can be booked.</p>
+            </div>
+            <div class="field">
+              <label for="maxAdvance">Book how far ahead, days</label>
+              <input id="maxAdvance" type="number" min="1" max="365" />
+            </div>
+            <div class="field">
+              <label for="daysShown">Days offered at once</label>
+              <input id="daysShown" type="number" min="1" max="60" />
+              <p class="form-help">How many open days the picker shows.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-block">
+          <p class="form-legend"><b>Days off</b><span>Nobody can book these. The reason is for you, a client only ever sees that the day is not offered.</span></p>
+          <div id="blocked-editor"></div>
+          <div class="admin-add">
+            <input type="date" id="block-date" aria-label="Date to block" />
+            <input type="text" id="block-reason" placeholder="Reason, private" aria-label="Reason" />
+            <button type="button" class="btn btn-ghost" id="add-block">Block this date</button>
+          </div>
+        </div>
+
+        <div class="form-block">
+          <p class="form-legend"><b>One off days</b><span>A different time list for one date. Opens a closed Saturday, or shortens a busy Tuesday.</span></p>
+          <div id="override-editor"></div>
+          <div class="admin-add">
+            <input type="date" id="ov-date" aria-label="Date to change" />
+            <input type="text" id="ov-times" placeholder="9:00 AM, 11:00 AM" aria-label="Times for that date" />
+            <button type="button" class="btn btn-ghost" id="add-override">Set this date</button>
+          </div>
+        </div>
+
+        <div class="admin-save">
+          <button type="button" class="btn btn-lg" id="save-btn">Save changes</button>
+          <p class="form-status" id="save-status" role="status" aria-live="polite"></p>
+          <p class="form-note">Saved changes are live on <a href="book.html">the booking page</a> straight away. Bookings already taken are unaffected, they were charged at the price that was live then.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/site.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
