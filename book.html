@@ -31,6 +31,16 @@
   <section class="section book-section">
     <div class="container">
 
+      <!-- The packages are rendered from the live config, so with scripting off
+           this page has nothing on it. Say so, and give them the two routes that
+           still work rather than a blank panel. -->
+      <noscript>
+        <div class="form-block">
+          <p class="form-legend"><b>This page needs JavaScript</b><span>The booking form cannot load without it.</span></p>
+          <p>You can still see the packages and prices on the <a href="packages.html">pricing page</a>, send me the property on the <a href="contact.html">contact page</a>, or grab a <a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">free 10 minute call</a> and I will book it in for you.</p>
+        </div>
+      </noscript>
+
       <form class="lead-form booking" novalidate
             data-required="name,email,phone,address,date,time"
             data-subject="New booking"
@@ -51,9 +61,9 @@
         <div class="book-step" data-step="1">
           <p class="opt-q">Is this your first shoot with EZ Shots?</p>
           <div class="opt-row" role="group" aria-label="First shoot with EZ Shots">
-            <input type="radio" id="first-yes" name="firstshoot" value="First shoot, half price" data-label="First shoot" checked />
+            <input type="radio" id="first-yes" name="firstshoot" data-first="yes" value="Yes, half price applied" data-label="First time booking" checked />
             <label for="first-yes">First time, 50% off</label>
-            <input type="radio" id="first-no" name="firstshoot" value="Booked before, full price" data-label="First shoot" />
+            <input type="radio" id="first-no" name="firstshoot" data-first="no" value="No, full price" data-label="First time booking" />
             <label for="first-no">I have booked before</label>
           </div>
 

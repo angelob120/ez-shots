@@ -4,12 +4,22 @@
 This file is the memory between sessions. Read it at the start of every session along with `CLAUDE.md`. At the end of every session, append a new dated entry to the top of the Work Log describing what changed and anything the next session would otherwise have to rediscover. "Blocked on a human" lists things only the owner can do (accounts, keys, DNS, deploy clicks). Detailed per-area status lives in `docs/site.md`.
 
 ## Blocked on a human
-- **Set three Railway variables, or admin and the booking flow run half blind.**
-  `ADMIN_PASSWORD` (any password you pick, admin.html is dead without it and there
-  is deliberately no default), then a Railway **volume mounted at `/data`** with
-  `DATA_DIR=/data`. Without the volume every price you set in admin goes back to
-  the shipped default on the next deploy, silently, because the container
-  filesystem resets. Optional third: `STRIPE_SECRET_KEY`.
+- **Add the Railway volume, mounted at `/data`.** This is the ONLY thing standing
+  between the admin page and working properly. `ADMIN_PASSWORD`, `DATA_DIR=/data`
+  and `SITE_URL` were all set on production on 2026-09-11 and admin is live and
+  tested at https://ezshots.org/admin. But with no volume, `/data` is the
+  container filesystem, so every price set in admin reverts to `config.json` on
+  the next deploy, silently. In the Railway dashboard: the ez-shots service,
+  Settings, Volumes, Add Volume, mount path `/data`. Three clicks. Claude tried
+  to create it through the Railway MCP on 2026-09-11 and the action was blocked
+  by a permission classifier, so it has to be done by hand.
+- **The admin password is `123`.** The owner chose it on 2026-09-11 after being
+  told it is guessable by hand in under an hour and that the page controls what
+  customers get charged. It stands until he says otherwise. If he ever asks to
+  harden it, change `ADMIN_PASSWORD` in Railway and nothing else needs touching.
+- **Optional: `STRIPE_SECRET_KEY`.** Not set yet. The moment it is, checkout
+  becomes a server created Session at the server's price and the payment links
+  become the outage fallback.
 - **The Stripe API key you mentioned on 2026-09-11.** Paste the secret key into
   Railway as `STRIPE_SECRET_KEY` and nothing else needs doing: the server starts
   creating Checkout Sessions itself, with the price read from its own config, and
@@ -114,6 +124,56 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-09-11 (last) - Audit pass, and the booking flow is live on ezshots.org
+
+Went back over everything that had been built but not actually exercised.
+
+**The one path never tested was the one that matters: what a booking sends.**
+Stubbed the EmailJS send and ran a real booking through. The body arrives as a
+readable block, in form order, with the package, the price charged, the date and
+time, the address, the size, occupancy, access, access notes and brokerage, then
+the client's own notes under a "Notes:" heading, with the subject reading
+`New booking - 18 Kenwood Ct, Royal Oak, MI 48067`. One clumsy line was fixed:
+the first shoot answer read `First shoot: First shoot, half price`. It now reads
+`First time booking: Yes, half price applied`, and `js/booking.js` reads a
+`data-first` flag rather than pattern matching the value text, so that wording
+can change again without silently flipping the price the page charges.
+
+**Every validation path was walked**, in order, with nothing filled in: address,
+then size, then occupancy, then access, then day, then time, then name, email and
+mobile, then a bad email address. All nine give a plain English sentence.
+
+**The Stripe handoff was proved end to end**, redirect included: the button
+changes to "Opening checkout...", the status line shows, and the browser lands on
+the next page. The real link it would have used was the correct Essentials first
+shoot link.
+
+**Three server fixes.** HEAD requests were sending a body. The login attempt map
+grew one entry per address forever, a slow leak on a process meant to run for
+months, and now prunes itself past 500. And `/api/checkout` now carries a comment
+saying plainly what it does and does not decide: the AMOUNT is the server's, read
+from its own config, but WHICH of the two prices applies is a radio button the
+browser sends, because nothing can check "have you booked before" without a
+customers table. That is equally true of the two public payment links already on
+the pricing page, so it is not a new hole, but the earlier note claiming the
+server decides the price was too strong and has been corrected in `CLAUDE.md`.
+
+**`book.html` had nothing on it with scripting off**, since the packages render
+from config. It now carries a `<noscript>` pointing at the pricing page, the
+contact page and the call link.
+
+**Light mode was checked for the first time** on `book.html`, `booked.html` and
+`admin.html`, at 375px. All three read correctly: the struck through full price,
+the selected day and time, the greyed "Closed" placeholder on Sunday, the sticky
+bars.
+
+**Production.** `ADMIN_PASSWORD`, `DATA_DIR=/data` and `SITE_URL` were set on the
+Railway production environment and the service redeployed. Confirmed live against
+https://ezshots.org: `/book` serves, `/api/config` returns the packages,
+`/api/admin/session` reports admin enabled, the password works and a wrong one is
+refused, and an authenticated read and write of the config both return 200. The
+volume is the one thing still missing, see "Blocked on a human".
 
 ### 2026-09-11 (later) - Every price in the copy now comes from the config
 

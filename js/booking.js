@@ -322,7 +322,10 @@
   // ------------------------------------------------------------------
   all('input[name="firstshoot"]', form).forEach(function (r) {
     r.addEventListener("change", function () {
-      state.first = /^first/i.test(r.value);
+      // Read the flag, not the wording. The value is copy that ends up in the
+      // email and it should be free to change without silently flipping the
+      // price this page charges.
+      state.first = r.getAttribute("data-first") === "yes";
       var keep = state.pkg && state.pkg.id;
       paintPackages();
       if (keep) pickPackage(keep, true);

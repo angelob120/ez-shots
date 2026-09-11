@@ -150,6 +150,14 @@ const attempts = new Map();
 
 function rateLimited(ip) {
   const now = Date.now();
+  // One entry per address, never cleaned, is a slow memory leak on a process
+  // that is meant to run for months. Nothing here needs to remember a quiet
+  // address from an hour ago.
+  if (attempts.size > 500) {
+    for (const [k, v] of attempts) {
+      if ((v.until || 0) < now && now - (v.at || 0) > 15 * 60 * 1000) attempts.delete(k);
+    }
+  }
   const rec = attempts.get(ip) || { n: 0, until: 0 };
   if (rec.until > now) return true;
   if (now - (rec.at || 0) > 15 * 60 * 1000) rec.n = 0;
@@ -279,6 +287,7 @@ async function serveStatic(req, res, pathname) {
     "cache-control": cacheHeader,
     etag
   });
+  if (req.method === "HEAD") return res.end();
   fs.createReadStream(file).pipe(res);
 }
 
@@ -372,6 +381,13 @@ async function api(req, res, pathname) {
     const pkg = cfg.packages.find(p => p.id === b.packageId && p.active !== false);
     if (!pkg) return json(res, 400, { error: "Unknown package." });
 
+    // The AMOUNT is the server's decision: it comes out of the config here and
+    // the browser never sends a number. WHICH of the two prices applies is not,
+    // because "has this person booked before" cannot be answered without a
+    // customers table. So a returning agent who wants to pay half can get half
+    // by asking for it. That is exactly as true of the two public payment links
+    // on the pricing page today, so it is not a new hole, but it is the reason
+    // the bookings and customers tables are phase one in the roadmap.
     const first = b.firstShoot !== false;
     const amount = first ? pkg.firstPrice : pkg.price;
     const link = first ? pkg.checkoutFirst : pkg.checkoutFull;

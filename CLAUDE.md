@@ -40,8 +40,14 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   same time. The copy says the exact time is confirmed by email for that reason.
   Do not write copy that claims the calendar is locked. See
   `docs/booking-roadmap.md`.
-- **The server is what decides the price.** `/api/checkout` reads the package
-  price out of its own config. Never let the browser send an amount.
+- **The server decides the amount, not which of the two prices applies.**
+  `/api/checkout` reads the package price out of its own config and the browser
+  never sends a number. But "is this your first shoot" is a radio button, and
+  without a customers table nothing can check it, so a returning agent who asks
+  for half price gets it. That is equally true of the two public payment links
+  on the pricing page, so it is not a regression, and it is the reason the
+  bookings and customers tables are phase one in `docs/booking-roadmap.md`. Do
+  not describe the discount as verified anywhere in the copy.
 - **Static files are served `no-cache`.** HTML, CSS, JS, JSON and SVG revalidate
   on every request and the ETag turns that into a 304. There is no build step and
   no hash in the filenames, so `js/booking.js` keeps its URL forever: with a long
