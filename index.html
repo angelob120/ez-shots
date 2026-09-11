@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EZ Shots | Real Estate Photography in Metro Detroit</title>
-  <meta name="description" content="MLS ready real estate photography, drone aerials and 1 minute listing video for Metro Detroit realtors. Packages from $150. First shoot 50% off, and if you are not happy you do not pay and you get $20 cash." />
+  <meta name="description" data-price="MLS ready real estate photography, drone aerials and 1 minute listing video for Metro Detroit realtors. Packages from {essentials}. First shoot 50% off, and if you are not happy you do not pay and you get $20 cash." content="MLS ready real estate photography, drone aerials and 1 minute listing video for Metro Detroit realtors. Packages from $150. First shoot 50% off, and if you are not happy you do not pay and you get $20 cash." />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/styles.css" />
   <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
@@ -18,13 +18,13 @@
       <div class="hero-inner">
         <span class="hero-badge"><span class="pulse"></span> New client offer: first shoot 50% off</span>
         <h1>Listings that look worth <em>every dollar</em> of the asking price.</h1>
-        <p class="hero-sub">Photos, drone aerials and listing video for Metro Detroit realtors. Shot today, in your inbox tomorrow morning, from $150 with aerials already included. Your first shoot is half price.</p>
+        <p class="hero-sub">Photos, drone aerials and listing video for Metro Detroit realtors. Shot today, in your inbox tomorrow morning, from <span data-price="{essentials}">$150</span> with aerials already included. Your first shoot is half price.</p>
         <div class="btn-row">
-          <a href="packages.html" class="btn btn-lg">Book your first shoot, $75</a>
+          <a href="book.html" class="btn btn-lg" data-price="Book your first shoot, {essentials.first}">Book your first shoot, $75</a>
           <a href="portfolio.html" class="btn btn-lg btn-outline-white">View recent shoots</a>
         </div>
         <div class="hero-trust">
-          <div><b>$150</b><span>Photo and drone package</span></div>
+          <div><b data-price="{essentials}">$150</b><span>Photo and drone package</span></div>
           <div><b>~24 hrs</b><span>Average delivery time</span></div>
           <div><b>$0 + $20</b><span>If you are not happy</span></div>
           <div><b>Part 107</b><span>FAA licensed drone pilot</span></div>
@@ -109,8 +109,8 @@
         <div class="pkg">
           <h3>Listing Essentials</h3>
           <p class="desc">Photos and aerials for the everyday listing.</p>
-          <div class="price">$150<span> / shoot</span></div>
-          <span class="first-price">First shoot: $75</span>
+          <div class="price"><span data-price="{essentials}">$150</span><span> / shoot</span></div>
+          <span class="first-price" data-price="First shoot: {essentials.first}">First shoot: $75</span>
           <ul>
             <li>25 to 30 finished photos</li>
             <li>Full interior and exterior</li>
@@ -119,9 +119,9 @@
             <li>Next day delivery on average</li>
           </ul>
           <div class="pkg-cta">
-            <a href="book.html?package=essentials" class="btn">Book your first shoot, $75</a>
+            <a href="book.html?package=essentials" class="btn" data-price="Book your first shoot, {essentials.first}">Book your first shoot, $75</a>
             <div class="pkg-options">
-              <a href="book.html?package=essentials" class="btn btn-ghost">Booked before? Pay $150</a>
+              <a href="book.html?package=essentials" class="btn btn-ghost" data-price="Booked before? Pay {essentials}">Booked before? Pay $150</a>
               <a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener" class="btn btn-ghost">Book a 10 minute call</a>
             </div>
           </div>
@@ -130,8 +130,8 @@
           <div class="badge">MOST BOOKED</div>
           <h3>Listing Pro</h3>
           <p class="desc">Everything above plus the video that sells it.</p>
-          <div class="price">$250<span> / shoot</span></div>
-          <span class="first-price">First shoot: $125</span>
+          <div class="price"><span data-price="{pro}">$250</span><span> / shoot</span></div>
+          <span class="first-price" data-price="First shoot: {pro.first}">First shoot: $125</span>
           <ul>
             <li>35 to 45 finished photos</li>
             <li>Full interior and exterior</li>
@@ -141,9 +141,9 @@
             <li>Next day delivery on average</li>
           </ul>
           <div class="pkg-cta">
-            <a href="book.html?package=pro" class="btn">Book your first shoot, $125</a>
+            <a href="book.html?package=pro" class="btn" data-price="Book your first shoot, {pro.first}">Book your first shoot, $125</a>
             <div class="pkg-options">
-              <a href="book.html?package=pro" class="btn btn-ghost">Booked before? Pay $250</a>
+              <a href="book.html?package=pro" class="btn btn-ghost" data-price="Booked before? Pay {pro}">Booked before? Pay $250</a>
               <a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener" class="btn btn-ghost">Book a 10 minute call</a>
             </div>
           </div>
@@ -164,7 +164,7 @@
           <a href="guarantee.html" class="btn btn-white">Read the full guarantee</a>
         </div>
         <ul>
-          <li><span class="k">50%</span> off your first shoot, so trying me costs $75</li>
+          <li><span class="k">50%</span> off your first shoot, so trying me costs <span data-price="{essentials.first}">$75</span></li>
           <li><span class="k">$0</span> to pay for any gallery you are not happy with</li>
           <li><span class="k">$20</span> cash on top, for the morning it cost you</li>
           <li><span class="k">72 hrs</span> hard delivery deadline, or the shoot is free</li>
@@ -258,7 +258,7 @@
         </div>
         <div class="vcard">
           <div class="ico">💵</div>
-          <h3>The first one is $75</h3>
+          <h3 data-price="The first one is {essentials.first}">The first one is $75</h3>
           <p>Half price, so testing me on a real listing costs less than a night out. If it works you have a photographer who answers the phone. If it does not, you have lost nothing.</p>
         </div>
         <div class="vcard">
@@ -307,7 +307,7 @@
         </details>
         <details>
           <summary>What is the 50% off first shoot?</summary>
-          <div class="answer"><p>Any realtor who has not worked with EZ Shots before pays half price on their first booking. Listing Essentials becomes $75 and Listing Pro becomes $125. One per agent, and it applies to whichever package you pick.</p></div>
+          <div class="answer"><p>Any realtor who has not worked with EZ Shots before pays half price on their first booking. Listing Essentials becomes <span data-price="{essentials.first}">$75</span> and Listing Pro becomes <span data-price="{pro.first}">$125</span>. One per agent, and it applies to whichever package you pick.</p></div>
         </details>
         <details>
           <summary>What happens if I am not happy with the photos?</summary>
@@ -335,7 +335,7 @@
   <!-- CTA band -->
   <section class="cta-band">
     <div class="container">
-      <h2>Your first shoot is $75.</h2>
+      <h2 data-price="Your first shoot is {essentials.first}.">Your first shoot is $75.</h2>
       <p>Half price to start, nothing to pay if you do not love it, $20 in your pocket either way, and photos back by tomorrow morning. There is not much left to think about.</p>
       <div class="btn-row center">
         <a href="packages.html" class="btn btn-lg btn-white">Book a shoot</a>
@@ -394,8 +394,8 @@
         <div class="field">
           <label for="package">Package</label>
           <select id="package" name="package">
-            <option>Listing Essentials, $150</option>
-            <option selected>Listing Pro, $250</option>
+            <option data-price="Listing Essentials, {essentials}">Listing Essentials, $150</option>
+            <option selected data-price="Listing Pro, {pro}">Listing Pro, $250</option>
             <option>First shoot, 50% off</option>
             <option>Not sure yet</option>
           </select>
@@ -414,6 +414,8 @@
   <div id="site-footer"></div>
   <script src="js/projects.js"></script>
   <script src="js/site.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/prices.js"></script>
   <script src="js/render.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script src="js/contact-form.js"></script>

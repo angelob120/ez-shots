@@ -18,6 +18,25 @@
   var cfg = null;
 
   function el(id) { return document.getElementById(id); }
+
+  // Unsaved changes are the one way this page can lose work, so they are said
+  // out loud on the bar and guarded on the way out of the tab. The Save button
+  // stays disabled while there is nothing to save, which also means a double
+  // tap cannot fire two writes.
+  var isDirty = false;
+  function dirty(flag) {
+    isDirty = !!flag;
+    var bar = document.querySelector(".admin-savebar");
+    var btn = el("save-btn");
+    if (bar) bar.classList.toggle("dirty", isDirty);
+    if (el("save-state")) el("save-state").textContent = isDirty ? "Unsaved changes" : "Everything saved";
+    if (btn) btn.disabled = !isDirty;
+  }
+  window.addEventListener("beforeunload", function (e) {
+    if (!isDirty) return;
+    e.preventDefault();
+    e.returnValue = "";
+  });
   function show(node) {
     [boot, off, login, panel].forEach(function (n) { n.hidden = n !== node; });
   }
@@ -71,12 +90,13 @@
         '<p class="form-help admin-stripe-note"></p>';
 
       card.querySelectorAll("[data-f]").forEach(function (input) {
-        input.addEventListener("input", function () { readPackage(card, p); });
-        input.addEventListener("change", function () { readPackage(card, p); });
+        input.addEventListener("input", function () { readPackage(card, p); dirty(true); });
+        input.addEventListener("change", function () { readPackage(card, p); dirty(true); });
       });
       card.querySelector("[data-remove]").addEventListener("click", function () {
         if (cfg.packages.length < 2) return alert("Keep at least one package.");
         cfg.packages.splice(i, 1);
+        dirty(true);
         paintPackages();
       });
       wrap.appendChild(card);
@@ -92,15 +112,18 @@
       else if (f === "price" || f === "firstPrice") p[f] = input.value === "" ? "" : Number(input.value);
       else p[f] = input.value;
     });
-    if (!p.id) p.id = slug(p.name);
+    if (!p.id) p.id = slug(p.name, p);
     card.querySelector(".admin-card-head b").textContent = p.name || "Untitled package";
   }
 
-  function slug(name) {
+  // The id is what ?package=pro in a link matches on, so it is set once when a
+  // package is created and never again. Renaming "Listing Pro" must not break
+  // every link that already points at it.
+  function slug(name, mine) {
     var base = String(name || "package").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "package";
-    var taken = cfg.packages.map(function (p) { return p.id; });
+    var taken = cfg.packages.filter(function (p) { return p !== mine; }).map(function (p) { return p.id; });
     var id = base, n = 2;
-    while (taken.filter(function (x) { return x === id; }).length > 1) id = base + "-" + n++;
+    while (taken.indexOf(id) !== -1) id = base + "-" + n++;
     return id;
   }
 
@@ -133,6 +156,7 @@
         var input = row.querySelector("input");
         input.addEventListener("input", function () {
           cfg.availability.week[String(d)] = parseTimes(input.value);
+          dirty(true);
         });
         row.classList.toggle("off", !times);
         wrap.appendChild(row);
@@ -157,7 +181,7 @@
       x.type = "button";
       x.className = "admin-x";
       x.textContent = "Remove";
-      x.addEventListener("click", function () { delete cfg.availability.blocked[k]; paintDates(); });
+      x.addEventListener("click", function () { delete cfg.availability.blocked[k]; dirty(true); paintDates(); });
       row.appendChild(x);
       b.appendChild(row);
     });
@@ -174,7 +198,7 @@
       x.type = "button";
       x.className = "admin-x";
       x.textContent = "Remove";
-      x.addEventListener("click", function () { delete cfg.availability.overrides[k]; paintDates(); });
+      x.addEventListener("click", function () { delete cfg.availability.overrides[k]; dirty(true); paintDates(); });
       row.appendChild(x);
       o.appendChild(row);
     });
@@ -204,6 +228,7 @@
       cfg.availability.blocked = cfg.availability.blocked || {};
       cfg.availability.overrides = cfg.availability.overrides || {};
       paintAll();
+      dirty(false);
       show(panel);
     });
   }
@@ -217,7 +242,8 @@
     api("/api/admin/config", { method: "PUT", body: JSON.stringify(cfg) }).then(function (d) {
       cfg = d.config;
       paintAll();
-      status(s, "success", "Saved. The booking page is using these now.");
+      dirty(false);
+      status(s, "success", "Saved. Every page on the site is using these now.");
     }).catch(function (e) {
       status(s, "error", e.message);
     });
@@ -241,13 +267,18 @@
   });
 
   el("save-btn").addEventListener("click", save);
+  ["minNotice", "maxAdvance", "daysShown"].forEach(function (id) {
+    el(id).addEventListener("input", function () { dirty(true); });
+  });
 
   el("add-package").addEventListener("click", function () {
-    cfg.packages.push({
+    var p = {
       id: "", name: "New package", blurb: "", price: 0, firstPrice: 0,
       active: false, badge: "", bullets: [], checkoutFull: "", checkoutFirst: ""
-    });
-    cfg.packages[cfg.packages.length - 1].id = slug("new package");
+    };
+    cfg.packages.push(p);
+    p.id = slug("new package", p);
+    dirty(true);
     paintPackages();
   });
 
@@ -257,6 +288,7 @@
     cfg.availability.blocked[d] = el("block-reason").value.trim() || "Not available";
     el("block-date").value = "";
     el("block-reason").value = "";
+    dirty(true);
     paintDates();
   });
 
@@ -266,6 +298,7 @@
     cfg.availability.overrides[d] = parseTimes(el("ov-times").value);
     el("ov-date").value = "";
     el("ov-times").value = "";
+    dirty(true);
     paintDates();
   });
 

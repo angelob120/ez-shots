@@ -82,7 +82,7 @@
           <li><b>Licensed music,</b> cut to the edit, so nothing gets muted or claimed on social.</li>
           <li><b>Two versions.</b> A horizontal cut for the MLS and your site, a vertical cut sized for Reels, Shorts and TikTok.</li>
         </ul>
-        <a href="packages.html" class="btn">Listing Pro is $250</a>
+        <a href="book.html?package=pro" class="btn" data-price="Listing Pro is {pro}">Listing Pro is $250</a>
       </div>
     </div>
   </section>
@@ -155,7 +155,7 @@
   <section class="cta-band">
     <div class="container">
       <h2>Book the first one for half price.</h2>
-      <p>$75 for photos and aerials, $125 with the video. Either way, you do not pay for a gallery you are not happy with.</p>
+      <p><span data-price="{essentials.first}">$75</span> for photos and aerials, <span data-price="{pro.first}">$125</span> with the video. Either way, you do not pay for a gallery you are not happy with.</p>
       <div class="btn-row center">
         <a href="packages.html" class="btn btn-lg btn-white">See pricing</a>
         <a href="contact.html" class="btn btn-lg btn-outline-white">Send the address</a>
@@ -165,5 +165,7 @@
 
   <div id="site-footer"></div>
   <script src="js/site.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/prices.js"></script>
 </body>
 </html>

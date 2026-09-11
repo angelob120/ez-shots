@@ -27,17 +27,27 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   in code. `admin.html` edits it, the server writes it to `DATA_DIR`, and
   `js/config.js` is what every page reads it through. Do not hardcode a price into
   the booking flow again.
-- **Prose prices on the other pages are still hardcoded.** `$150`, `$250`, `$75`
-  and `$125` appear in sentences across `index.html`, `packages.html`,
-  `services.html`, `faq.html`, `guarantee.html`, `contact.html`, `about.html` and
-  `intake.html`. Changing a price in admin does NOT change those. Until they are
-  bound to the config, a price change is an admin edit plus a copy pass.
+- **Prose prices are bound to the config, one element at a time.** `js/prices.js`
+  fills `data-price="{essentials.first}"` style templates on 45 elements across
+  nine pages, including the meta descriptions and the package `<option>` rows.
+  Add a new price to the copy and it needs a `data-price` or it will go stale.
+  **Do not "simplify" this into a find and replace for `$150`.** `services.html`
+  says "Plus $75" for the twilight and rush add ons and `faq.html` says other
+  photographers charge "$100 to $175". Those numbers must not move when a package
+  price moves, which is the whole reason the binding is explicit. The number
+  typed in the HTML stays as the fallback for when the config cannot be reached.
 - **A slot is not held.** There is no bookings table, so two agents can pick the
   same time. The copy says the exact time is confirmed by email for that reason.
   Do not write copy that claims the calendar is locked. See
   `docs/booking-roadmap.md`.
 - **The server is what decides the price.** `/api/checkout` reads the package
   price out of its own config. Never let the browser send an amount.
+- **Static files are served `no-cache`.** HTML, CSS, JS, JSON and SVG revalidate
+  on every request and the ETag turns that into a 304. There is no build step and
+  no hash in the filenames, so `js/booking.js` keeps its URL forever: with a long
+  max-age a deploy reaches a returning visitor whenever their browser feels like
+  it. This was a real bug on 2026-09-11, a week old `admin.js` ran against a new
+  `admin.html`. Images and fonts keep the long cache, a new photo is a new name.
 - Env vars the server reads: `ADMIN_PASSWORD` (admin is off without it, and there
   is no default), `DATA_DIR` (must be a Railway volume or every saved price
   resets on deploy), `STRIPE_SECRET_KEY`, `ADMIN_SECRET`, `SITE_URL`.

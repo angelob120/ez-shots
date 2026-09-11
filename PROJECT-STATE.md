@@ -15,11 +15,14 @@ This file is the memory between sessions. Read it at the start of every session 
   creating Checkout Sessions itself, with the price read from its own config, and
   the payment links drop back to being the fallback for a Stripe outage. Use the
   live key, not the test one, and never put it in a file in this repo.
-- **Prose prices on the marketing pages are still hardcoded.** Changing a price in
-  admin changes the booking page and the checkout, and does NOT change the
-  sentences on `index.html`, `packages.html`, `services.html`, `faq.html`,
-  `guarantee.html`, `contact.html`, `about.html` or `intake.html`. Until those are
-  bound to the config, a price change is two jobs. Worth fixing next.
+- **Add on prices are still copy, not config.** The twilight and rush add ons on
+  `services.html` say "Plus $75" and that number is typed into the page. They are
+  not packages, they are not bookable, and nothing charges them automatically, so
+  they were left alone on purpose. If they ever become real line items they want
+  to be packages in the config like everything else.
+- **The $20 in the guarantee is copy too.** It appears 13 times on
+  `guarantee.html` alone. Changing it is a wording decision across several pages,
+  not a number to flip in admin, so it was not bound.
 - **The Stripe checkout is branded "Design Byte Agency".** Confirmed on 2026-09-01 by
   opening both payment links. A realtor clicks Buy on ezshots and lands on a card form
   for a company they have never heard of. That reads as a phishing page, and it is the
@@ -111,6 +114,60 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-09-11 (later) - Every price in the copy now comes from the config
+
+The prices in the marketing copy were the one thing left lying about: change a
+price in admin and the booking page moved while the sentence on the home page
+still said $150. All 45 of them across nine pages are now bound to the live
+config through `js/prices.js`, including the two meta descriptions and the
+package `<option>` rows in the contact and intake forms.
+
+**The binding is explicit, one element at a time, and that is not an accident.**
+A find and replace for "$150" would have been ten minutes of work and a bug
+waiting to happen: `services.html` says **"Plus $75"** for the twilight and rush
+add ons, and `services.html` and `faq.html` both say other photographers charge
+**"$100 to $175"**. Those are different numbers that happen to look the same, and
+a blind replace would have silently rewritten them the first time a package price
+changed. So a price that should move carries
+`data-price="{essentials.first}"` and anything unmarked is left alone. The number
+typed into the HTML is the fallback if the config cannot be reached, which is
+also what a plain static deploy with no server falls back to.
+
+**A real bug the testing turned up: static files were cached for a week.** The
+server was sending `max-age=604800` on everything that was not HTML or JSON, so
+a browser kept running a week old `js/admin.js` against a freshly deployed
+`admin.html`. That is exactly how a price fix outlives the deploy that made it.
+HTML, CSS, JS, JSON and SVG are now `no-cache` and the ETag makes the
+revalidation a 304. Images and fonts keep the long cache, since a new photo gets
+a new filename.
+
+**Two smaller things.** Adding two packages in a row in admin used to give both
+the id `new-package`, and the server rejected the save with an error that read
+like the owner's fault. Fixed by excluding the package being named from its own
+uniqueness check. And the admin Save button is now a sticky bar that says
+"Unsaved changes" while there are any, stays disabled when there are none, and
+guards a tab close, because Save used to be four blocks of fields below whatever
+you had just typed.
+
+The hero CTA on the home page and the "Listing Pro is $250" button on
+`services.html` were still pointing at the pricing page. Both now go to the
+booking flow, so every primary button on the site ends in the same place.
+
+Verified: prices were set to $199 / $99 and $349 / $174 through the admin page,
+and every page was then loaded in a browser and read back. No page showed a stale
+$150, $250, $75 or $125 anywhere, the meta description on `packages.html`
+rewrote itself, and the package dropdowns on the contact and intake forms read
+"Listing Essentials, $199". At the same time `services.html` still said "Plus
+$75" twice, `faq.html` and `services.html` still said "$100 to $175", and
+`about.html` still said "$400", which is the whole point. Prices were then set
+back and every page re-checked. The no server path was tested by running
+`npm run start:static` on another port: `/api/config` 404s, the pages fall back
+to `/config.json` and render correctly. Deleting the Pro package entirely was
+tested too: no `{pro}` token leaks onto any page, the copy keeps the number it
+was shipped with, and the booking page offers one card. The full booking flow
+was run again end to end at 375px and produced the right button, the right
+Stripe link and the right summary. `npm test` passes. No em or en dashes.
 
 ### 2026-09-11 - Booking flow, a server, and prices the owner can change on the site
 

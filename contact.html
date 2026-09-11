@@ -22,7 +22,7 @@
 
   <div class="offer-strip">
     <div class="container">
-      <div class="offer-item"><span class="ico">🎁</span> First shoot 50% off: <b>$75</b> or <b>$125</b></div>
+      <div class="offer-item"><span class="ico">🎁</span> First shoot 50% off: <b data-price="{essentials.first}">$75</b> or <b data-price="{pro.first}">$125</b></div>
       <div class="offer-item"><span class="ico">🛡️</span> Not happy? <b>You do not pay, plus $20</b></div>
       <div class="offer-item"><span class="ico">⏱️</span> Gallery back in about <b>24 hours</b></div>
     </div>
@@ -85,8 +85,8 @@
         <div class="field">
           <label for="package">Package</label>
           <select id="package" name="package">
-            <option>Listing Essentials, $150</option>
-            <option selected>Listing Pro, $250</option>
+            <option data-price="Listing Essentials, {essentials}">Listing Essentials, $150</option>
+            <option selected data-price="Listing Pro, {pro}">Listing Pro, $250</option>
             <option>First shoot, 50% off</option>
             <option>Commercial or vacant land</option>
             <option>Not sure yet</option>
@@ -133,6 +133,8 @@
 
   <div id="site-footer"></div>
   <script src="js/site.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/prices.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script src="js/contact-form.js"></script>
 </body>

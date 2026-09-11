@@ -31,7 +31,7 @@
           <div class="seal">🎁</div>
           <span class="stamp">Promise one</span>
           <h3>Your first shoot is 50% off</h3>
-          <p>Any realtor who has not worked with EZ Shots before pays half price on their first booking. Listing Essentials drops to $75, Listing Pro drops to $125. One per agent, no code required, no minimum commitment after it.</p>
+          <p>Any realtor who has not worked with EZ Shots before pays half price on their first booking. Listing Essentials drops to <span data-price="{essentials.first}">$75</span>, Listing Pro drops to <span data-price="{pro.first}">$125</span>. One per agent, no code required, no minimum commitment after it.</p>
         </div>
         <div class="g-card">
           <div class="seal">🛡️</div>
@@ -114,7 +114,7 @@
   <section class="cta-band">
     <div class="container">
       <h2>Nothing to lose on the first one.</h2>
-      <p>$75 for photos and aerials. If they miss, you pay nothing and you keep $20. Book the shoot and see.</p>
+      <p><span data-price="{essentials.first}">$75</span> for photos and aerials. If they miss, you pay nothing and you keep $20. Book the shoot and see.</p>
       <div class="btn-row center">
         <a href="contact.html" class="btn btn-lg btn-white">Book your first shoot</a>
         <a href="portfolio.html" class="btn btn-lg btn-outline-white">See the work first</a>
@@ -124,5 +124,7 @@
 
   <div id="site-footer"></div>
   <script src="js/site.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/prices.js"></script>
 </body>
 </html>

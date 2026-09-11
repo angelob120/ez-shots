@@ -261,11 +261,15 @@ async function serveStatic(req, res, pathname) {
   }
 
   const ext = path.extname(file).toLowerCase();
-  // HTML and config revalidate every time: a price change has to be visible on
-  // the next reload, not a week later. Images and CSS are fine cached.
-  const cacheHeader = ext === ".html" || ext === ".json"
-    ? "no-cache"
-    : "public, max-age=604800";
+  // Everything the site is built from revalidates on every request, and the
+  // ETag below makes that a 304 rather than a download. This has to be
+  // no-cache: there is no build step and no hash in the filenames, so
+  // js/booking.js keeps the same URL forever. With a long max-age a deploy
+  // would reach a returning visitor whenever their browser felt like it, which
+  // is how a stale price list outlives the deploy that fixed it.
+  // Images and fonts do not have that problem, a new photo is a new filename.
+  const CODE = [".html", ".json", ".js", ".css", ".svg", ".xml", ".txt"];
+  const cacheHeader = CODE.indexOf(ext) !== -1 ? "no-cache" : "public, max-age=604800";
   const etag = '"' + stat.size + "-" + Number(stat.mtimeMs).toString(36) + '"';
   if (req.headers["if-none-match"] === etag) { res.writeHead(304, { etag }); return res.end(); }
 

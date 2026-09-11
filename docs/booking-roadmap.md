@@ -18,6 +18,10 @@ This file tracks it against reality so no session has to re-derive the gap.
   than trusting the query string.
 - Availability rules in the order the plan sets out: blocked date, date override,
   weekday default, minimum notice, maximum advance, days offered.
+- `js/prices.js` binds every price in the marketing copy to the same config, 45
+  elements across nine pages, meta descriptions included. Marked one at a time on
+  purpose: "Plus $75" for the twilight add on and "$100 to $175" for what other
+  photographers charge must not move when a package price moves.
 
 ## Not built, in the order it is worth building
 
@@ -66,3 +70,7 @@ real shoots have been run through the manual version of the same workflow.
   access notes field says the code gets texted the morning of the shoot. That is
   deliberate, see `CLAUDE.md`.
 - **No customer accounts.** The plan says so and nothing here needs one.
+- **No find and replace for prices in copy.** See above. It looks simpler and it
+  silently rewrites the add on and competitor numbers.
+- **Static files are `no-cache`.** No build step means no hashed filenames, so a
+  long max-age lets a stale script outlive the deploy that fixed it.

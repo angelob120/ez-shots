@@ -47,6 +47,9 @@ offer the whole site is built around:
   are edited on the site and stored in `config.json` / `DATA_DIR`.
 - Done: server side Stripe Checkout Sessions when `STRIPE_SECRET_KEY` is set,
   payment links as the fallback.
+- Done: every price in the marketing copy bound to the config through
+  `js/prices.js`, so one change in admin moves the whole site. Add on prices and
+  competitor comparisons are deliberately not bound.
 - Left: a bookings table, and with it slot locking, the Stripe webhook, the admin
   dashboard past settings, Google Calendar and Sheets, referrals, the editor
   portal. See `docs/booking-roadmap.md`.

@@ -849,3 +849,21 @@ form.booking { background: none; border: none; box-shadow: none; padding: 0; gap
   .booked-card { padding: 36px 22px; }
   .booked-card h1 { font-size: 30px; }
 }
+
+/* The save bar follows you down the settings page. Reaching for Save should
+   never mean scrolling past four blocks of fields to find it. */
+.admin-savebar {
+  position: sticky; bottom: 0; z-index: 40; margin-top: 26px;
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px;
+  background: var(--header-bg); backdrop-filter: saturate(180%) blur(12px);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 16px; box-shadow: var(--shadow-md);
+}
+.admin-savebar-state { font-size: 13.5px; font-weight: 700; color: var(--muted); }
+.admin-savebar.dirty .admin-savebar-state { color: var(--accent); }
+.admin-savebar .form-status { grid-column: 1 / -1; }
+.admin-savebar .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+@media (max-width: 720px) {
+  .admin-savebar { padding: 12px 14px; }
+  .admin-savebar .btn-lg { padding: 14px 22px; font-size: 15.5px; }
+}

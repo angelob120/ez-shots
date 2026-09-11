@@ -106,10 +106,13 @@
           </div>
         </div>
 
-        <div class="admin-save">
-          <button type="button" class="btn btn-lg" id="save-btn">Save changes</button>
+        <p class="form-note">Saved changes are live on <a href="book.html">the booking page</a> and in the copy on every other page straight away. Bookings already taken are unaffected, they were charged at the price that was live then.</p>
+
+        <!-- Sticky, so Save is never a scroll away from whatever you just typed. -->
+        <div class="admin-savebar">
+          <span class="admin-savebar-state" id="save-state">Everything saved</span>
+          <button type="button" class="btn btn-lg" id="save-btn" disabled>Save changes</button>
           <p class="form-status" id="save-status" role="status" aria-live="polite"></p>
-          <p class="form-note">Saved changes are live on <a href="book.html">the booking page</a> straight away. Bookings already taken are unaffected, they were charged at the price that was live then.</p>
         </div>
       </div>
 
