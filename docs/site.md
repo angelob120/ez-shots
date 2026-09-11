@@ -29,9 +29,11 @@ offer the whole site is built around:
   no-flash inline set in each `<head>` and a toggle in the header.
 - Done: portfolio and gallery data in `js/projects.js`, rendered by `js/render.js`. Eight
   shoots with size, package, photo count and turnaround per shoot.
-- Left: real photos and real client names. Everything else is written copy that can ship.
-  Placeholders still in the site: Unsplash stock images, the phone number (248) 555-0139,
-  and three testimonials attributed to "Realtor name / Brokerage, city".
+- Left: real photos. Everything else is written copy that can ship. The fake phone
+  number and the three invented testimonials were removed on 2026-09-01 and must
+  not come back without real ones behind them. `gallery.html` was removed the same
+  day. Still placeholder: Unsplash stock for the hero, the portrait and the section
+  images.
 
 ## Contact / lead capture
 - Done: EmailJS on both forms (index `#contact` and `contact.html`), shared through
@@ -43,16 +45,25 @@ offer the whole site is built around:
 ## Booking flow (2026-09-11)
 - Done: `book.html`, three screens, package then property and time then contact and
   pay, driven by `js/booking.js`. `booked.html` is the confirmation.
-- Done: `admin.html` plus `server.js`, so prices, checkout links and availability
-  are edited on the site and stored in `config.json` / `DATA_DIR`.
+- Done: `admin.html` plus `server.js`, so prices, checkout links and the schedule
+  are edited on the site. They are stored in a Railway Postgres (`server/db.js`);
+  `config.json` in the repo is only the seed a fresh install starts from.
+- Done: the calendar is worked out on the server, `GET /api/availability`, four
+  weeks out, 8 AM to 8 PM every two hours, Sunday closed by default. The browser
+  paints what it is given and never computes a rule.
+- Done: a bookings table and a real hold. `POST /api/book` takes the slot behind a
+  Postgres advisory lock, a partial unique index makes a double booking
+  impossible, and `POST /api/stripe/webhook` confirms it when Stripe says paid.
+- Done: `admin-bookings.html` for the owner's day and `manage.html` for the
+  customer's own booking by token link.
 - Done: server side Stripe Checkout Sessions when `STRIPE_SECRET_KEY` is set,
   payment links as the fallback.
 - Done: every price in the marketing copy bound to the config through
   `js/prices.js`, so one change in admin moves the whole site. Add on prices and
   competitor comparisons are deliberately not bound.
-- Left: a bookings table, and with it slot locking, the Stripe webhook, the admin
-  dashboard past settings, Google Calendar and Sheets, referrals, the editor
-  portal. See `docs/booking-roadmap.md`.
+- Left: half price checked against past bookings, Google Calendar and Sheets,
+  reminders, referrals, customers and lifetime revenue, the editor portal. See
+  `docs/booking-roadmap.md`.
 
 ## Commerce and booking
 - Done: TidyCal link https://tidycal.com/angelo3/quick-10-minute-chat on every package and
@@ -66,10 +77,15 @@ offer the whole site is built around:
   invoice until there is one.
 
 ## Deploy
-- Done: `package.json` serves static files with `serve` on Railway's `$PORT` (`npm start`).
+- Done: `npm start` runs `server.js` on Railway's `$PORT`, with the `Dockerfile`
+  forcing a Docker build. `npm run start:static` still runs the old `serve` setup
+  if the server is ever in the way, with online booking off.
+- Done: a Railway Postgres with its own volume holds the config and the bookings.
+  `DATABASE_URL` and `TZ` are set on production.
 - Done: `serve.json` sets `cleanUrls: false` plus rewrites. This matters: with the default
   config `serve` 301s `/project.html?id=x` to `/project` and drops the query string, which
   broke every portfolio detail page in production.
-- Left: connect the GitHub repo to Railway and add a public domain.
+- Done: the GitHub repo is connected to Railway and the site is live at
+  https://ezshots.org.
 - Fixed 2026-09-11: `CLAUDE.md`, `PROJECT-STATE.md`, `docs/`, `scripts/` and the
   package files used to be served publicly. `server.js` returns 404 for all of them.

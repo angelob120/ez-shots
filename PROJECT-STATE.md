@@ -4,27 +4,33 @@
 This file is the memory between sessions. Read it at the start of every session along with `CLAUDE.md`. At the end of every session, append a new dated entry to the top of the Work Log describing what changed and anything the next session would otherwise have to rediscover. "Blocked on a human" lists things only the owner can do (accounts, keys, DNS, deploy clicks). Detailed per-area status lives in `docs/site.md`.
 
 ## Blocked on a human
-- **Add the Railway volume, mounted at `/data`.** This is the ONLY thing standing
-  between the admin page and working properly. `ADMIN_PASSWORD`, `DATA_DIR=/data`
-  and `SITE_URL` were all set on production on 2026-09-11 and admin is live and
-  tested at https://ezshots.org/admin. But with no volume, `/data` is the
-  container filesystem, so every price set in admin reverts to `config.json` on
-  the next deploy, silently. In the Railway dashboard: the ez-shots service,
-  Settings, Volumes, Add Volume, mount path `/data`. Three clicks. Claude tried
-  to create it through the Railway MCP on 2026-09-11 and the action was blocked
-  by a permission classifier, so it has to be done by hand.
+- **Delete the `EMAILJS.PUBLIC_KEY` variable on the ez-shots Railway service.**
+  It is still there. A dot is illegal in an env var name, and on 2026-09-01 that
+  one variable took every deploy down, because Railpack mounts every service
+  variable into the build as a BuildKit secret. The `Dockerfile` is what keeps it
+  harmless today: delete the `Dockerfile` and the site stops building again, for
+  a reason nobody would guess. Nothing reads the variable, the EmailJS key is a
+  publishable one and lives in `js/contact-form.js`. Railway service, Variables,
+  delete the row. `PUBLIC_KEY`, `TEMPLATE_ID` and `SITE_NAME` are the same kind
+  of leftover and can go with it.
 - **The admin password is `123`.** The owner chose it on 2026-09-11 after being
   told it is guessable by hand in under an hour and that the page controls what
   customers get charged. It stands until he says otherwise. If he ever asks to
   harden it, change `ADMIN_PASSWORD` in Railway and nothing else needs touching.
-- **Optional: `STRIPE_SECRET_KEY`.** Not set yet. The moment it is, checkout
-  becomes a server created Session at the server's price and the payment links
-  become the outage fallback.
-- **The Stripe API key you mentioned on 2026-09-11.** Paste the secret key into
-  Railway as `STRIPE_SECRET_KEY` and nothing else needs doing: the server starts
-  creating Checkout Sessions itself, with the price read from its own config, and
-  the payment links drop back to being the fallback for a Stripe outage. Use the
-  live key, not the test one, and never put it in a file in this repo.
+- **Paste `STRIPE_SECRET_KEY` into Railway.** Still not set, and it is now the
+  biggest remaining gap, because the hold the server takes is worth much more
+  with it. With the key, `/api/book` creates a Checkout Session at the price the
+  server read from its own config, and the slot is held 32 minutes while the
+  agent pays. Without it the booking falls back to a public payment link and the
+  hold has to run 24 hours, because nothing tells the site the payment happened.
+  Use the live key, not the test one, and never put it in a file in this repo.
+- **Then add `STRIPE_WEBHOOK_SECRET`.** In Stripe, Developers, Webhooks, add an
+  endpoint at `https://ezshots.org/api/stripe/webhook` for
+  `checkout.session.completed`, and paste its signing secret into Railway. That
+  is what turns a held slot into a confirmed booking without anyone watching. The
+  success page confirms it too, so a customer who pays and does come back is not
+  lost without the webhook; one who closes the tab at the card form is the case
+  it covers.
 - **Add on prices are still copy, not config.** The twilight and rush add ons on
   `services.html` say "Plus $75" and that number is typed into the page. They are
   not packages, they are not bookable, and nothing charges them automatically, so
@@ -124,6 +130,88 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-09-11 (latest) - Postgres, a slot that is actually held, and four weeks of calendar
+
+The booking flow shipped earlier in the day could take a booking but could not
+keep one. Two agents could pick the same 1:00 PM, the availability was worked
+out in the browser, and the prices the owner set in admin were about to be wiped
+by the next deploy because the `/data` volume nobody had added was really the
+container filesystem. All three had the same fix.
+
+**A Railway Postgres, and it replaced the volume rather than waiting for it.**
+`server/db.js` is the whole database layer, one dependency (`pg`). The config
+and the bookings both live there now. `DATA_DIR` still works with no database,
+so `npm run start:static` and a laptop with no Postgres are unaffected, but
+production reads `DATABASE_URL` and the volume item is off the blocked list: the
+Postgres service has its own volume and nobody has to remember to attach one.
+Schema lives in `server/migrations`, applied on boot in name order and recorded
+in `schema_migrations`. `001_settings_and_bookings.sql` is the only one so far.
+Never edit an applied migration, add `002`.
+
+**The slot is held.** `POST /api/book` runs in a transaction behind a Postgres
+advisory lock on that one slot, so the second request for the same time waits
+for the first and then finds it gone. Under that, a partial unique index on
+`(date, time) WHERE status = 'confirmed'` means two confirmed bookings can never
+share a slot even if every line of the code above it is wrong. A hold lasts 32
+minutes with Stripe Checkout and 24 hours with a payment link (nothing tells the
+site a link was paid, so it gets the longer rope), and becomes a confirmed
+booking when Stripe says paid or when the owner marks it paid in admin. The copy
+on `book.html` now says the time is held, and locked in on payment. It used to
+say the exact time would be confirmed by email, which was the honest thing to
+say when nothing held anything.
+
+**The calendar moved to the server, and that was the point.** `GET
+/api/availability` is now the only thing that says what can be booked, and
+`server/availability.js` applies the rules in the plan's order: blocked date,
+one off list, weekday default, slots already held or confirmed, minimum notice,
+maximum advance, daily cap, then look busy. The browser cannot run rule four, it
+does not know what is booked, so `book.html` paints what it is given and nothing
+else. `TZ` defaults to `America/Detroit` in `server.js` and the `Dockerfile`, so
+a plain local `Date` is Detroit time on a Railway box that thinks it is in UTC.
+
+**Four weeks, 8 AM to 8 PM, which is what was asked for.** `maxAdvanceDays` is
+28 and the hours are 8:00 AM to 8:00 PM every two hours, seven start times a
+day, Monday to Saturday. Sunday is closed and the owner can open it in admin
+without touching code. Verified against production: `/api/availability` returns
+`today 2026-09-11`, `to 2026-10-09`, no Sunday, and the day lists run 8:00 AM to
+8:00 PM.
+
+**Look busy.** `availability.lookBusy` is a percentage that hides a share of each
+day's genuinely open times. Always the same ones for a given day, never a day's
+last remaining time, and it comes back off as real bookings fill the day. It is
+cosmetic: `canBook()` skips it, so a slot hidden by look busy is still bookable
+by anyone holding a direct link, and a hold is never refused because of it.
+
+**The Stripe webhook.** `POST /api/stripe/webhook` verifies the signature and
+confirms the booking on `checkout.session.completed`. The success page confirms
+it too, from `/api/session`, so a customer who pays and comes back is not lost
+without the webhook; the one who closes the tab at the card form is the case the
+webhook covers. `STRIPE_WEBHOOK_SECRET` is not set yet, see "Blocked on a human".
+
+**Two more pages.** `admin-bookings.html` is the owner's day: today, needs
+attention, upcoming, mark paid, cancel, private note. `manage.html` is the
+customer's own view of one booking, reached by a 32 hex character token in a
+link, no account and no password, and deliberately small: see it, add it to a
+calendar, cancel it. Moving a booking is an email, because a move is a new slot
+and the owner should watch it happen. Both admin pages boot through
+`js/admin-core.js`; a third would boot the same way.
+
+**One crash worth remembering.** The first cut called the migrations on boot and
+awaited them, so a deploy that started before Postgres was reachable took the
+whole site down, brochure pages included, for a database the brochure does not
+need. The connection now retries in the background and the static site serves
+throughout.
+
+**Verified.** `npm test` is 15 availability checks plus the form checks, and it
+pins the rules that matter: seven start times ending at 8:00 PM, a window of
+four weeks, the 24 hour notice, a closed weekday, a one off list overriding it,
+five bookings closing a day, and look busy never taking a day's last slot. The
+whole flow was then walked in the browser: a held slot, the email stub, the
+redirect, the back button finding the hold still there, and the "just booked"
+path scrolling to the time picker rather than the top of the page. Production is
+live at https://ezshots.org with `DATABASE_URL` and `TZ` set.
+
 
 ### 2026-09-11 (last) - Audit pass, and the booking flow is live on ezshots.org
 
