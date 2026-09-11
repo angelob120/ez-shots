@@ -4,6 +4,25 @@
 This file is the memory between sessions. Read it at the start of every session along with `CLAUDE.md`. At the end of every session, append a new dated entry to the top of the Work Log describing what changed and anything the next session would otherwise have to rediscover. "Blocked on a human" lists things only the owner can do (accounts, keys, DNS, deploy clicks). Detailed per-area status lives in `docs/site.md`.
 
 ## Blocked on a human
+
+### Do these before automated outreach turns on
+`docs/plan.md` puts 300 messages a day, 1,500 a week, into this funnel. Three items below
+stop being ordinary bugs at that volume and become the whole funnel. In priority order:
+
+1. **`ezshots.org` has to resolve to this site.** The outreach message in the plan tells an
+   interested agent to go to ezshots.org. No domain is connected to Railway yet and the
+   name appears nowhere in the repo. Every "send ezshots.org" reply is wasted until it
+   does. Once it is live, canonical and Open Graph tags can be added, there are none today.
+2. **The Stripe checkout still says Design Byte Agency**, selling "Photography Pictures NO
+   VIDEO". An agent who came from a cold message and has never heard of either name reads
+   that as a phishing page. Details below.
+3. **The EmailJS Template ID is still unconfirmed.** A wrong id loses the lead silently and
+   EmailJS still reports success. At a handful of leads a week that is a bug. At 1,500
+   messages a week it is the funnel. Details below.
+
+Also pending, not blocking: **two Stripe links at $200 and $300** for the plan's post proof
+pricing. Until they exist, no page may quote those numbers.
+
 - **The Stripe checkout is branded "Design Byte Agency".** Confirmed on 2026-09-01 by
   opening both payment links. A realtor clicks Buy on ezshots and lands on a card form
   for a company they have never heard of. That reads as a phishing page, and it is the
@@ -95,6 +114,64 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-09-11 - The September to December plan is now in the repo as `docs/plan.md`
+
+The owner wrote an updated operating plan covering both businesses and called it the
+source of truth through December. It is now `docs/plan.md`, dash free per the house rule,
+with his numbers and decisions preserved as written. `CLAUDE.md` now names it in the
+session protocol so every future session reads it at start, alongside a rule that the
+site's job is to convert agents who reply to automated outreach, and that work this site
+does not need should not be started.
+
+What the plan actually decides, for a session that only has time for the short version:
+
+- **EZ Orders is the long term asset. EZ Shots is a temporary cash engine that ends its
+  aggressive push on 2026-12-31.** After that, repeat agents only, if the jobs are easy and
+  convenient. Do not start site work that assumes photography keeps scaling into 2027.
+- **Acquisition is automated on both sides.** Software sources, filters, queues and sends
+  300 messages a day, 5 days a week. No cold calling, no manual prospecting. The owner
+  only touches people who raised a hand.
+- **Capacity is a faucet, not a goal.** 10 to 15 shoots a week booked means outbound gets
+  turned down. The target is 2 to 3 shoots a day, not the maximum possible.
+- **Current gate is "make EZ Orders work"**, target October, 10 active transacting
+  restaurants. Gate 2 is $3K a month EZ Orders owner cash flow held for two months, and
+  photography revenue explicitly does not count toward it.
+
+Four things about this repo fell out of reconciling the plan against what is actually
+deployed. They are written up in full at the bottom of `docs/plan.md`:
+
+- **The plan's $200 and $300 pricing is not live and must not be shipped early.** It is
+  conditioned on "after initial proof", and every price on this site is bound to a Stripe
+  link that charges that exact amount. Shipping the copy without new links recreates the
+  worst bug this site can have, which is the one already fixed on 2026-09-01. `CLAUDE.md`
+  now carries that as a rule so a future session cannot do it by accident.
+- **The weekly money model assumes that pricing.** A $250 blended average ticket needs
+  $200 and $300 in a rough 50/50 mix. On today's prices the same mix blends to about $200
+  for repeat clients and about $100 for first shoots, so 10 shoots a week is roughly
+  $2,000 gross today, not $2,500, and less while most agents are still on a first shoot.
+  Worth knowing before the model gets used to decide anything.
+- **The outreach message sends agents to ezshots.org and no domain is connected.** That is
+  now the first item under "Blocked on a human", ahead of the Stripe and EmailJS blockers,
+  which are themselves now prerequisites rather than ordinary bugs at 1,500 messages a week.
+- **The message and the site agree on the offer**, which is worth keeping that way. "You do
+  not pay and I will give you $20 for your time" is the same promise as `guarantee.html`
+  and `refund.html`, so a reword touches three places now, not two.
+
+No site copy, markup, styles or scripts were changed, on purpose. Everything the plan
+implies for the pages is either owner blocked or deliberately deferred.
+
+Verified: `npm test` passes, three lead forms still wire up. `git ls-files | xargs grep`
+finds no em dash or en dash in any tracked file outside the stale `ez-shots/` extract,
+which predates the rule and is untouched. Every file referenced above exists.
+
+**Branch note for the next session.** This session ran under a harness that pinned work to
+`claude/ez-orders-shots-plan-ar5plk` and named the remote `origin`, not the `staging`
+branch and `ez-shots` remote in the git flow above. There is no `staging` branch in this
+clone at all. Nothing was merged to `main`. The next session with normal access should
+either merge this branch into `staging` and follow the usual promotion, or confirm with
+the owner which flow he wants now that the harness disagrees with `CLAUDE.md`.
+
 
 ### 2026-09-10 - The guarantee is now "you do not pay, plus $20", and the 48 hour window is gone
 

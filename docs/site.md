@@ -1,6 +1,8 @@
 # docs/site.md - EZ Shots site plan
 
 One plan file is enough for a site this small. Mark items done in place as they land.
+This file covers the site. `docs/plan.md` covers the business the site serves and
+outranks it on anything about pricing, capacity or how leads arrive.
 
 ## Positioning
 Real estate photography for realtors in Metro Detroit (Wayne, Oakland, Macomb). The
@@ -18,6 +20,9 @@ offer the whole site is built around:
   vertical social cut, same delivery.
 - Add ons: twilight +$75, 3,000 to 4,500 sq ft +$50, over 4,500 quoted, rush 12 hour +$75,
   aerial only video +$60, vacant land and commercial quoted.
+- Pending, do not ship yet: `docs/plan.md` sets $200 for photos plus drone and $300 for
+  photos plus drone plus video, after initial proof. Both need a Stripe link that charges
+  the amount before any page can quote it.
 - Photo counts came from 2025 to 2026 industry pricing guides: 15 to 30 finished frames is
   standard under 2,000 sq ft, 30 to 50 above it.
 
@@ -56,6 +61,9 @@ offer the whole site is built around:
 - Done: `serve.json` sets `cleanUrls: false` plus rewrites. This matters: with the default
   config `serve` 301s `/project.html?id=x` to `/project` and drops the query string, which
   broke every portfolio detail page in production.
-- Left: connect the GitHub repo to Railway and add a public domain.
+- Left: connect the GitHub repo to Railway and add a public domain. **The domain is
+  `ezshots.org`**, named in the outreach message in `docs/plan.md`. It has to resolve to
+  this site before automated outreach starts pointing agents at it. There are no
+  canonical or Open Graph URL tags on any page yet; add them once it is live.
 - Note: `CLAUDE.md`, `PROJECT-STATE.md` and `docs/` are served publicly as static files.
   Move them out of the deploy root if that matters.

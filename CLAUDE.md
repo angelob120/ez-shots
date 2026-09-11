@@ -13,6 +13,11 @@ Everything on the site points at one offer. Do not water it down or contradict i
 - Drone aerials are included in both packages, never sold as an add on.
 The full wording lives on `guarantee.html` and is restated formally on `refund.html`. If one changes, change both.
 
+**The prices above are the live ones.** `docs/plan.md` sets a future $200 photos plus
+drone and $300 photos plus drone plus video, explicitly "after initial proof". Do not
+put those numbers on a page until two Stripe links that charge them exist, because every
+price on this site is bound to a link that charges that exact amount.
+
 ## Absolute rule: no dashes
 Never write an em-dash or an en-dash anywhere: not in code, comments, docs, commit messages, or replies to the owner. Use a plain hyphen `-` or split the sentence in two. Check every file you touch before you finish. (Older untouched pages may still contain them; clean them only when you edit that file.)
 
@@ -50,9 +55,14 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
 - **Do not ship invented client names, quotes or phone numbers.** Both were live on
   production and both were removed on 2026-09-01. If there is no real proof yet, say
   so on the page; the honest version converts better than a caught fake.
+- **`docs/plan.md` is the owner's operating plan through December 2026** and it governs
+  what work is worth doing here. EZ Shots is a temporary cash engine that ends its
+  aggressive push on 2026-12-31; EZ Orders is the long term asset. The site's job is to
+  convert agents who reply to automated outreach. Weigh any proposed work against that,
+  and do not start site projects the plan does not need.
 
 ## Session protocol
-1. Start every session by reading `CLAUDE.md` and `PROJECT-STATE.md`.
+1. Start every session by reading `CLAUDE.md`, `PROJECT-STATE.md` and `docs/plan.md`.
 2. Do all work on the `staging` branch. `main` is production.
 3. Finish every session by appending a dated entry to the top of the Work Log in `PROJECT-STATE.md`: what changed, why, anything the next session would otherwise rediscover, and how you verified it.
 4. Run git yourself and promote to production. The owner asked for this on 2026-09-01, it replaces the old "never run git, hand over commands" rule. Commit after every finished and verified change, not batched at the end of the session.
