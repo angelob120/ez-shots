@@ -4,15 +4,30 @@
 This file is the memory between sessions. Read it at the start of every session along with `CLAUDE.md`. At the end of every session, append a new dated entry to the top of the Work Log describing what changed and anything the next session would otherwise have to rediscover. "Blocked on a human" lists things only the owner can do (accounts, keys, DNS, deploy clicks). Detailed per-area status lives in `docs/site.md`.
 
 ## Blocked on a human
-- **Delete the `EMAILJS.PUBLIC_KEY` variable on the ez-shots Railway service.**
-  It is still there. A dot is illegal in an env var name, and on 2026-09-01 that
-  one variable took every deploy down, because Railpack mounts every service
-  variable into the build as a BuildKit secret. The `Dockerfile` is what keeps it
-  harmless today: delete the `Dockerfile` and the site stops building again, for
-  a reason nobody would guess. Nothing reads the variable, the EmailJS key is a
-  publishable one and lives in `js/contact-form.js`. Railway service, Variables,
-  delete the row. `PUBLIC_KEY`, `TEMPLATE_ID` and `SITE_NAME` are the same kind
-  of leftover and can go with it.
+- **The Railway project was deleted on 2026-09-12 and the site now runs from a
+  rebuilt one.** Everything below is what only the owner can finish.
+- **Point `ezshots.org` at the new service.** The root record is still the CNAME
+  to the deleted service, `pq6e6bom.up.railway.app`. At the registrar, change it
+  to `a4clpd3t.up.railway.app`. Until then the domain 404s and only
+  `https://ez-shots-production-e091.up.railway.app` serves the site. The custom
+  domain is already attached on the Railway side and is waiting on the record.
+- **Set `ADMIN_PASSWORD` on the new service.** It is unset, so `/admin` is off
+  and nobody can mark a booking paid by hand. The old value was `123`.
+- **Paste `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` into the new service.**
+  Both were set on the old project and neither survived it. Without the secret
+  key checkout falls back to payment links and the hold runs 24 hours instead of
+  32 minutes. The webhook endpoint has to be recreated in Stripe too, pointing at
+  `https://ezshots.org/api/stripe/webhook` for `checkout.session.completed`.
+- **Ask Railway to restore the deleted project, if the booking rows matter.**
+  Deleting a project takes its Postgres volume with it and Railway's own docs say
+  only an offsite logical dump survives that. There was no dump. Any booking that
+  was actually paid for still exists in Stripe, with `booking_id`, `address`,
+  `shoot_date` and `shoot_time` in the session metadata, so the calendar can be
+  rebuilt from Stripe if a restore is refused.
+- **Rotate the EmailJS private key.** It was shown on screen in a shared
+  screenshot on 2026-09-12. "Refresh Keys" in the EmailJS account rotates the
+  public key with it, and the public key is hardcoded in `js/contact-form.js`,
+  so the file has to be updated in the same pass.
 - **The admin password is `123`.** The owner chose it on 2026-09-11 after being
   told it is guessable by hand in under an hour and that the page controls what
   customers get charged. It stands until he says otherwise. If he ever asks to
@@ -130,6 +145,35 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-09-12 - The Railway project was deleted, and the site was rebuilt onto a new one
+- The owner deleted the `WEBSITE EZ Shots` Railway project by accident. Not just the
+  service: the project, and with it the Postgres and its volume. `ezshots.org` served
+  Railway's "Application not found" 404. The API disagreed with itself for a while -
+  `list-projects` still returned the project while `railway status -p <id>` said
+  "Project is deleted" - so trust the live site and `railway status`, not the listing.
+- Rebuilt as a NEW project, `WEBSITE EZ Shots (rebuild)`, id
+  `e3dff336-d401-4d59-9f3e-6599971041b0`, deliberately leaving the old one alone so a
+  Railway support restore stays possible. Postgres provisioned, service `ez-shots`
+  connected to `angelob120/ez-shots` on `main`, Railway domain
+  `ez-shots-production-e091.up.railway.app` generated, `ezshots.org` attached and
+  waiting on the CNAME.
+- Verified after deploy: `/api/config` serves the seeded packages, `/api/availability`
+  returns four weeks of slots, and `/api/admin/session` reports `bookings: true`, which
+  means the migrations ran against the new database. `stripe`, `webhook` and the admin
+  password are all still false or unset - see "Blocked on a human".
+- Nothing was lost from the code. The working tree was clean and GitHub `main` was
+  already at `30d4c16`, the same commit as local, so the rebuild deployed exactly what
+  was running before.
+- Variables set on the new service: `TZ`, `DATABASE_URL` (a reference to the new
+  Postgres), `SITE_URL`, `SITE_NAME`, and the three publishable EmailJS values, now
+  under honest names - `EMAILJS_SERVICE_ID`, `EMAILJS_PUBLIC_KEY`,
+  `EMAILJS_TEMPLATE_CONTACT`. The old dead `PUBLIC_KEY` / `SERVICE_ID` / `TEMPLATE_ID`
+  leftovers were not recreated, and neither was the illegal `EMAILJS.PUBLIC_KEY` that
+  broke deploys on 2026-09-01. That blocker is now closed by the rebuild.
+- Still not started: the confirmation and notification emails the owner asked for
+  (contact form to the owner, and a post-purchase email to both the owner and the
+  customer). The design work done before the deletion is written up in `docs/emails.md`.
 
 ### 2026-09-11 (latest) - Postgres, a slot that is actually held, and four weeks of calendar
 
