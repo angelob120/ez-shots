@@ -106,10 +106,27 @@ Four variables. Two are set on the Railway service already:
 | `EMAILJS_PRIVATE_KEY` | the account private key | **no, owner only** |
 | `EMAILJS_TEMPLATE_BOOKING` | the new template's id | **no, template not made yet** |
 
-The template to create: To Email `{{to_email}}`, Subject `{{subject}}`, Content
-`{{message}}`, Reply To `{{reply_to}}`. Nothing else. The body must be exactly
-`{{message}}` and nothing around it, because the server sends a finished plain
-text email and anything the template adds shows up inside it.
+The template to create: To Email `{{to_email}}`, Subject `{{subject}}`, Reply To
+`{{reply_to}}`, From Name `EZ Shots`, default From Email. Nothing in Bcc or Cc.
+
+The body is the part with a trap in it. **EmailJS renders template content as
+HTML**, so a bare `{{message}}` arrives as one paragraph with every line break
+gone: the booking details, the prep list and the signature all run together.
+Click Edit Content for raw HTML mode, clear it, and paste exactly this and
+nothing else:
+
+```html
+<pre style="margin:0; white-space:pre-wrap; word-wrap:break-word; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; line-height:1.55; color:#111;">{{message}}</pre>
+```
+
+`white-space:pre-wrap` keeps the newlines and still wraps long lines, so a long
+address does not force sideways scrolling on a phone. The font-family overrides
+the monospace `<pre>` inherits, so it reads as an email and not as code.
+`margin:0` removes the gap `<pre>` adds above itself.
+
+Nothing else belongs in the template: no greeting, no signature, no logo. The
+server sends a finished email and anything the template wraps around it appears
+INSIDE the message, between the booking details and the instructions.
 
 And in EmailJS, Account, Security: turn on API access for non-browser
 applications. Without it every send comes back `403 API calls in strict mode`.
