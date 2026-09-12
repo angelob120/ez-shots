@@ -24,13 +24,6 @@ This file is the memory between sessions. Read it at the start of every session 
   was actually paid for still exists in Stripe, with `booking_id`, `address`,
   `shoot_date` and `shoot_time` in the session metadata, so the calendar can be
   rebuilt from Stripe if a restore is refused.
-- **Turn on EmailJS non-browser API access. This is the one thing stopping the
-  booking emails.** Account, Security, "API access from non-browser
-  environments". Checked on 2026-09-12: a server side send came back `403 API
-  access from non-browser environments is currently disabled`. Until it is on,
-  every paid booking logs `email failed` and neither the owner nor the customer
-  hears anything. Both templates are made and Railway points at the right one.
-  Then sign in and `POST /api/admin/test-email` to prove it.
 - **The booking form still offers "Door code" and a free text access notes box.**
   CLAUDE.md says never collect lockbox or gate codes, and whatever a customer
   types there is now emailed to the owner inboxes. The owner should decide
@@ -157,6 +150,14 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-09-12 (night) - Booking emails proven end to end
+- Owner turned on EmailJS non-browser API access. `POST /api/admin/test-email` then
+  delivered the owner notification to both `angelobrown1000@gmail.com` and
+  `hello@ezorders.shop` in one request, rendered as designed HTML with every row
+  filled and empty ones dropped. The confirmation emails blocker is closed.
+- EmailJS appends "Email sent via EmailJS.com" under each message on the free
+  plan. It is not in the template or the code.
 
 ### 2026-09-12 (evening) - EmailJS templates made, and a full check of the live site
 - Two EmailJS templates now. `template_lybu0cj` (was named Contact Us, rename to EZ
