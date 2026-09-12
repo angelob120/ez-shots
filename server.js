@@ -37,6 +37,11 @@
 //                          success page, which is the same server side read of
 //                          the session, only it depends on the browser coming
 //                          back. Set it and that dependency goes away.
+//   OWNER_EMAIL            where a booking notification goes. Unset means the
+//                          owner gets no email; the customer still gets his.
+//   EMAILJS_*              the confirmation emails. See server/email.js for the
+//                          full list and for why they are sent from here and
+//                          not from the browser like the contact form is.
 //   SITE_URL               optional, the public origin used to build Stripe's
 //                          return URLs. Worked out from the request when unset.
 //   TZ                     the business timezone. Defaulted below to Detroit so
@@ -56,6 +61,7 @@ const crypto = require("node:crypto");
 const avail = require("./server/availability");
 const stripe = require("./server/stripe");
 const { Db } = require("./server/db");
+const email = require("./server/email");
 
 const ROOT = __dirname;
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -66,6 +72,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 const ADMIN_SECRET = process.env.ADMIN_SECRET || (ADMIN_PASSWORD ? "s:" + ADMIN_PASSWORD : "");
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || "";
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
+const SITE_URL = (process.env.SITE_URL || "").replace(/\/$/, "");
 const SESSION_HOURS = 12;
 
 // How long a slot stays held while the customer pays. A Checkout Session is
@@ -366,6 +373,32 @@ async function takenNow(av, now) {
   return db.takenByDate(avail.keyOf(now), avail.keyOf(avail.window(av, now)), now);
 }
 
+// The confirmation emails, on the way out of a confirmation.
+//
+// Deliberately not awaited. The webhook caller must answer Stripe quickly, and
+// a non-200 there makes Stripe retry the whole event and re-run a confirmation
+// that already happened; the success page caller must not make a customer who
+// has just paid watch a spinner while two HTTP calls to EmailJS finish. So this
+// is started and left to run, and every outcome is logged with the booking id,
+// which is the only thing that makes a missing email findable afterwards.
+//
+// The claim is what stops the webhook and the success page both sending.
+function notify(b) {
+  if (!b || !db) return;
+  db.claimNotify(b.id).then(async claimed => {
+    if (!claimed) return;
+    const r = await email.notifyBooked(publicBooking(b), SITE_URL);
+    if (r.owner || r.customer) {
+      console.log(`[ez-shots] ${b.id} emailed:${r.owner ? " owner" : ""}${r.customer ? " customer" : ""}`);
+    }
+    for (const e of r.errors) console.error(`[ez-shots] ${b.id} email failed, ${e}`);
+    // Nothing got out. Hand the claim back so a retry, or the success page
+    // arriving after the webhook, can try again instead of the booking being
+    // marked notified forever on the strength of two failures.
+    if (!r.owner && !r.customer) await db.releaseNotify(b.id).catch(() => {});
+  }).catch(e => console.error(`[ez-shots] ${b.id} could not send confirmations:`, e.message));
+}
+
 // Paid, as far as Stripe is concerned. Both the webhook and the success page
 // end up here, and the second caller finds it already confirmed.
 async function confirmFromSession(session, source) {
@@ -383,6 +416,7 @@ async function confirmFromSession(session, source) {
       status: "confirmed"
     });
     console.log(`[ez-shots] ${c.id} confirmed by the ${source}`);
+    notify(c);
     return c;
   } catch (e) {
     // The only way here is the unique index refusing a second confirmed
@@ -694,7 +728,7 @@ async function api(req, res, url) {
   if (pathname === "/api/ics" && req.method === "GET") return ics(req, res, url);
 
   if (pathname === "/api/admin/session" && req.method === "GET") {
-    return json(res, 200, { enabled: !!ADMIN_PASSWORD, authed: authed(req), stripe: !!STRIPE_KEY, webhook: !!WEBHOOK_SECRET, bookings: !!db });
+    return json(res, 200, { enabled: !!ADMIN_PASSWORD, authed: authed(req), stripe: !!STRIPE_KEY, webhook: !!WEBHOOK_SECRET, bookings: !!db, email: email.configured() });
   }
 
   if (pathname === "/api/admin/login" && req.method === "POST") {
@@ -792,7 +826,11 @@ server.listen(PORT, () => {
   console.log(`[ez-shots] listening on ${PORT}, timezone ${process.env.TZ}`);
   console.log(`[ez-shots] admin ${ADMIN_PASSWORD ? "on" : "OFF (set ADMIN_PASSWORD)"}` +
     `, stripe ${STRIPE_KEY ? "server side sessions" : "payment links"}` +
-    `, webhook ${WEBHOOK_SECRET ? "on" : "off"}`);
+    `, webhook ${WEBHOOK_SECRET ? "on" : "off"}` +
+    `, confirmation emails ${email.configured() ? "on" : "OFF"}`);
+  // Named at boot, because the first time anybody notices a missing variable
+  // should not be the first booking that goes unconfirmed.
+  if (!email.configured()) console.log(`[ez-shots] no confirmation emails, missing: ${email.why().join(", ")}`);
   if (process.env.DATABASE_URL) keepConnecting(process.env.DATABASE_URL);
   else console.log(`[ez-shots] no DATABASE_URL: config from ${DATA_DIR}, online booking OFF`);
 });

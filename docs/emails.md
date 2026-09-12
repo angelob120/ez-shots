@@ -8,9 +8,9 @@ The owner wants three emails, all through EmailJS:
 3. The same shoot is paid for, and the customer gets a confirmation with the
    instructions for the day.
 
-Only the first one is built. This file is the design for the other two, written
-before the Railway project was deleted on 2026-09-12 so the next session does
-not have to work it out again.
+All three are built as of 2026-09-12. 2 and 3 live in `server/email.js`, called
+from `notify()` in `server.js`. This file is why they are shaped the way they
+are.
 
 ## The thing that decides the whole design
 
@@ -93,6 +93,44 @@ has to grow a variable per field.
 
 Set its id as `EMAILJS_TEMPLATE_BOOKING`. `EMAILJS_TEMPLATE_CONTACT` stays
 pointed at the existing form template.
+
+## Turning it on
+
+Four variables. Two are set on the Railway service already:
+
+| Variable | Value | Set? |
+|---|---|---|
+| `EMAILJS_SERVICE_ID` | `service_dburs96` | yes |
+| `EMAILJS_PUBLIC_KEY` | `ki7V3klQWzRzeIMte` | yes |
+| `OWNER_EMAIL` | `angelobrown1000@gmail.com,hello@ezorders.shop` | yes |
+| `EMAILJS_PRIVATE_KEY` | the account private key | **no, owner only** |
+| `EMAILJS_TEMPLATE_BOOKING` | the new template's id | **no, template not made yet** |
+
+The template to create: To Email `{{to_email}}`, Subject `{{subject}}`, Content
+`{{message}}`, Reply To `{{reply_to}}`. Nothing else. The body must be exactly
+`{{message}}` and nothing around it, because the server sends a finished plain
+text email and anything the template adds shows up inside it.
+
+And in EmailJS, Account, Security: turn on API access for non-browser
+applications. Without it every send comes back `403 API calls in strict mode`.
+
+Until both missing variables are set the site books and charges exactly as
+before and simply sends nothing, which the boot log says out loud and
+`/api/admin/session` reports as `email: false`.
+
+## Two owner inboxes
+
+`OWNER_EMAIL` is a comma separated list and both addresses go out on ONE EmailJS
+request, because the free plan counts requests and not addresses, and a second
+inbox should not halve the month's quota. If EmailJS turns out to refuse several
+addresses in `{{to_email}}`, the send is retried one address at a time, which
+costs an extra request but does not lose the notification. The first address in
+the list is the one the customer's confirmation replies to.
+
+The CONTACT form is not covered by this. It is still client side and its
+recipient is the To Email set on `template_qlotxua` in the EmailJS dashboard,
+not anything in this repo. To have form leads reach both inboxes as well, add
+the second address to that template's To Email field.
 
 ## Still unresolved
 

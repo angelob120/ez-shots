@@ -194,6 +194,25 @@ class Db {
     return this.update(id, Object.assign({ status: "confirmed", paid: true, paidAt: now, expiresAt: null }, payment), now);
   }
 
+  // Claim the right to send the confirmation emails for this booking. The
+  // webhook and the success page both reach confirmFromSession, and on a fast
+  // redirect both get there; whichever wins this update sends, and the other
+  // gets no row back and sends nothing. It has to be claimed BEFORE the emails
+  // go out, not after, or the race is still open for the length of two HTTP
+  // calls to EmailJS.
+  async claimNotify(id, now = new Date()) {
+    const r = await this.query(
+      "UPDATE bookings SET notified_at = $2 WHERE id = $1 AND notified_at IS NULL RETURNING id",
+      [id, now]);
+    return r.rowCount === 1;
+  }
+
+  // Give the claim back, so a send that failed outright can be retried by the
+  // next caller rather than being silently swallowed for good.
+  async releaseNotify(id) {
+    await this.query("UPDATE bookings SET notified_at = NULL WHERE id = $1", [id]);
+  }
+
   async cancel(id, by, now = new Date()) {
     return this.update(id, { status: "cancelled", cancelledAt: now, cancelledBy: by || "owner" }, now);
   }

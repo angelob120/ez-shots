@@ -24,6 +24,14 @@ This file is the memory between sessions. Read it at the start of every session 
   was actually paid for still exists in Stripe, with `booking_id`, `address`,
   `shoot_date` and `shoot_time` in the session metadata, so the calendar can be
   rebuilt from Stripe if a restore is refused.
+- **Two variables to finish the confirmation emails.** The code is in and does
+  nothing until both are set. `EMAILJS_PRIVATE_KEY`, the account private key,
+  which is what lets the server send off a browser. And
+  `EMAILJS_TEMPLATE_BOOKING`, the id of a new EmailJS template with To Email
+  `{{to_email}}`, Subject `{{subject}}`, Content exactly `{{message}}` and Reply
+  To `{{reply_to}}`. Also EmailJS, Account, Security: turn on API access for
+  non-browser applications, or every send is `403 API calls in strict mode`.
+  `docs/emails.md` has the whole thing.
 - **Rotate the EmailJS private key.** It was shown on screen in a shared
   screenshot on 2026-09-12. "Refresh Keys" in the EmailJS account rotates the
   public key with it, and the public key is hardcoded in `js/contact-form.js`,
@@ -145,6 +153,42 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-09-12 (later) - Confirmation and notification emails on a paid booking
+- `server/email.js` is new. When a shoot is paid for, the owner gets a notification
+  with the whole booking and the customer gets a confirmation with the prep
+  instructions, a manage link and an .ics link.
+- **Sent from the server, not the browser**, unlike the contact form. The only
+  reliable moment a booking becomes real is Stripe's webhook, which arrives with no
+  browser involved. Sending from `booked.html` would mean every customer who closes
+  the tab on the redirect gets no confirmation and the owner no notification, for a
+  shoot that is paid for and on the calendar. EmailJS's REST endpoint plus the
+  private key does this; `accessToken` in the body is the private key.
+- Migration `002_notified_at.sql` adds `notified_at`, and `db.claimNotify()` claims
+  it with a conditional update before anything is sent. The webhook and the success
+  page both reach `confirmFromSession`, and on a fast redirect both get there; the
+  loser of that update sends nothing. `db.releaseNotify()` hands the claim back when
+  neither email got out, so a retry can still work.
+- `notify()` in `server.js` is deliberately not awaited. A slow or failing EmailJS
+  must not make the webhook answer Stripe late or non-200, which would make Stripe
+  retry the whole event; and it must not make a customer who has just paid watch a
+  spinner. Every outcome is logged with the booking id.
+- The two emails go out 1.1 seconds apart, because EmailJS allows one request a
+  second.
+- Boot now prints whether the emails are on, and names the missing variables when
+  they are not. `/api/admin/session` gained an `email` flag for the same reason.
+- `OWNER_EMAIL` set to `angelobrown1000@gmail.com,hello@ezorders.shop`: a comma
+  separated list, sent as one request with both recipients so a second inbox does
+  not cost double the monthly quota, with a one-at-a-time retry if EmailJS refuses
+  the multi recipient send. The contact form is separate and still delivers to
+  whatever the EmailJS template says; add the second address there too if wanted. Verified by
+  rendering both emails against a stubbed `fetch`: correct recipients, subjects and
+  bodies, blank optional fields omitted rather than printed as empty labels, and
+  `reply_to` crossed over so replying to the notification reaches the customer.
+  Also verified that an unconfigured emailer and a 403 from EmailJS both return
+  their errors instead of throwing.
+- Free plan is 200 requests a month. A booking now costs 2 of them and a contact
+  form 1.
 
 ### 2026-09-12 - The Railway project was deleted, and the site was rebuilt onto a new one
 - The owner deleted the `WEBSITE EZ Shots` Railway project by accident. Not just the
