@@ -4,6 +4,10 @@
 This file is the memory between sessions. Read it at the start of every session along with `CLAUDE.md`. At the end of every session, append a new dated entry to the top of the Work Log describing what changed and anything the next session would otherwise have to rediscover. "Blocked on a human" lists things only the owner can do (accounts, keys, DNS, deploy clicks). Detailed per-area status lives in `docs/site.md`.
 
 ## Blocked on a human
+- **The owner's photo for the About section.** He sent it in chat on
+  2026-09-12, which does not put a file on disk. Save it as `img/owner.jpg`,
+  then point the two stock Unsplash portraits at it: `about.html` line 25 and
+  `index.html` line 279, alt text "Angelo, the photographer".
 - **`GOOGLE_SCRIPT_SECRET` in Railway is unused** since the Google sync was
   removed on 2026-09-12. Delete it from the ez-shots service variables when
   convenient; nothing reads it.
@@ -160,6 +164,35 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-09-12 (night) - Full site check, new logo and favicon
+- **Checked everything** the owner asked about. `npm test` (4 forms, 15
+  availability rules) and `npm run check:bookings` (26 checks: book, pay,
+  webhook, both emails, refunds, admin) all pass. All 19 pages return 200 on
+  both ezshots.org and the Railway host, `/api/config` and
+  `/api/availability` answer, admin sign in is on (a wrong password gets 401).
+  Locally every page renders its header and footer, no broken images, no
+  unfilled `data-price`, no dashes in visible text, no console errors, and all
+  five portfolio detail pages load their photos. No broken local links in any
+  HTML, JS or CSS file.
+- **Production boot log** says admin on, Stripe server side sessions, webhook on,
+  confirmation emails on, Postgres connected, online booking ON. So the Blocked
+  items about `ADMIN_PASSWORD` and the Stripe keys on the new service look done;
+  confirm with the owner before deleting them from the list.
+- **ezshots.org serves the site** and Railway reports the certificate valid, but
+  the record still points at `pq6e6bom.up.railway.app` while Railway asks for
+  `4q8ksdco.up.railway.app` (not the `a4clpd3t` value written in Blocked). It
+  works today; change the CNAME so it does not break when Railway notices.
+- **New logo.** The camera icon in a glowing blue rounded square was replaced
+  by a viewfinder frame around a house, and the wordmark is now uppercase
+  EZ in 900 and SHOTS in 500, one colour. The frame takes the text colour and
+  the house takes `--accent` (`#60a5fa` in the footer), the door is an evenodd
+  cutout so it works on the translucent header. The mark is defined once as
+  `MARK` in `js/site.js`; the footer used to carry its own copy.
+- **New favicon.svg** is the same mark, white frame and blue house on navy.
+- **Waiting on the owner's photo** for the About section (see Blocked).
+- Verified by screenshots of the header in light and dark, the footer, and the
+  favicon at 16, 32 and 64 px, plus `npm test`.
 
 ### 2026-09-12 (last) - Kept simple: book, pay, emails, Add to Google Calendar
 - The owner asked to keep it simple: clients book and pay, the owner gets the

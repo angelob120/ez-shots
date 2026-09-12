@@ -29,7 +29,7 @@
     close: '<svg class="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
   };
 
-  var MARK = '<span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.6-2.2A1 1 0 0 1 9.4 5.4h5.2a1 1 0 0 1 .8.4L17 8h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/></svg></span>';
+  var MARK = '<span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M4 10V4h6M22 4h6v6M28 22v6h-6M10 28H4v-6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"/><path class="brand-house" fill-rule="evenodd" d="M9.5 23.5v-7L16 10l6.5 6.5v7zM14.2 18.2v5.3h3.6v-5.3z"/></svg></span>';
 
   var header =
     '<a class="skip-link" href="#main">Skip to content</a>' +
@@ -54,7 +54,7 @@
     '<footer class="footer"><div class="container">' +
       '<div class="footer-top">' +
         '<div class="footer-brand">' +
-          '<div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.6-2.2A1 1 0 0 1 9.4 5.4h5.2a1 1 0 0 1 .8.4L17 8h3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/></svg></span>EZ <span>Shots</span></div>' +
+          '<div class="brand">' + MARK + 'EZ <span>Shots</span></div>' +
           '<p>Real estate photography, video and FAA licensed drone work for realtors across Metro Detroit. MLS ready galleries delivered the next day on average.</p>' +
           '<div class="footer-contact">' +
             '<a href="mailto:bigmoneygelo2@gmail.com">bigmoneygelo2@gmail.com</a>' +
