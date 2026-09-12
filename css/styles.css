@@ -969,20 +969,12 @@ button.cal-day.on small { color: rgba(255,255,255,.85); }
   .admin-savebar .btn-lg { padding: 14px 22px; font-size: 15.5px; }
 }
 
-/* ---- Money going back: declines and refunds ------------------------------
-   The only buttons on the site that move money back to a card, so they look
-   different from everything else and always sit behind a second ask. */
-/* .btn-row is display:flex, which beats the hidden attribute. decide.html and
-   booked.html both hide a row until it applies. */
+/* ---- Money going back: refunds --------------------------------------------
+   The only button on the site that moves money back to a card, so it looks
+   different from everything else and always sits behind a second ask. */
+/* .btn-row is display:flex, which beats the hidden attribute. booked.html
+   hides a row until it applies. */
 .btn-row[hidden] { display: none; }
 .btn-danger { background: #b91c1c; border-color: #b91c1c; color: #fff; }
 .btn-danger:hover { background: #991b1b; border-color: #991b1b; color: #fff; }
-.decide-explain { font-size: 15px; margin: 18px 0 0; }
-.decide-row { margin-top: 18px; }
-.decide-confirm { margin-top: 18px; padding: 18px; border: 1.5px solid #fecaca; background: #fef2f2; border-radius: var(--radius-sm); }
-.decide-confirm p { margin: 0 0 12px; color: #991b1b; }
-.decide-foot { margin-top: 22px; }
-[data-theme="dark"] .decide-confirm { background: #2a1215; border-color: #7f1d1d; }
-[data-theme="dark"] .decide-confirm p { color: #fca5a5; }
-.bk-decide { margin-top: 10px; }
-.bk-refund { margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); display: grid; gap: 10px; }
+[data-theme="dark"] [data-theme="dark"] .bk-refund { margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); display: grid; gap: 10px; }

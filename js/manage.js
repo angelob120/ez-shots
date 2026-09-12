@@ -35,13 +35,8 @@
 
   function paint(b) {
     var LABEL = { confirmed: "Booked and paid", held: "Booked, payment pending", expired: "Not completed", cancelled: "Cancelled" };
-    // A paid booking waits for me to confirm it, so it is not "booked" until I have.
-    var refunded = b.refunded ? "$" + (b.refunded % 1 ? b.refunded.toFixed(2) : b.refunded) : "";
-    var label = b.state === "confirmed" && b.awaiting ? "Paid, waiting for me to confirm"
-      : b.state === "cancelled" && refunded ? "Cancelled, " + refunded + " refunded"
-      : (LABEL[b.state] || b.state);
     title.textContent = b.address;
-    lead.textContent = b.when + ". " + label + ".";
+    lead.textContent = b.when + ". " + (LABEL[b.state] || b.state) + ".";
     var rows = [
       ["Booking", b.id],
       ["What", b.package],
@@ -49,7 +44,7 @@
       ["Where", b.address],
       ["Access", b.access + (b.accessNotes ? ". " + b.accessNotes : "")],
       ["Notes", b.notes],
-      ["Status", label]
+      ["Status", LABEL[b.state] || b.state]
     ].filter(function (r) { return r[1]; });
     rows.push([b.paid ? "Paid" : "Price", "$" + b.amount]);
     summary.innerHTML = rows.map(function (r, i) {

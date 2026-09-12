@@ -39,30 +39,23 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   transaction behind an advisory lock (`server/db.js`), so two agents cannot
   both get one time. The hold lasts 32 minutes with Stripe Checkout, 24 hours
   with payment links, and becomes a confirmed booking when Stripe says paid
-  (webhook or success page) or when the owner marks it paid in admin. Held
-  is not booked, see the next point.
-- **A paid booking waits for the owner's OK.** Since 2026-09-12 paid does not
-  mean booked. Status stays `confirmed`, so the slot stays taken and the unique
-  index still guards it, and `decision` is NULL until the owner answers. He
-  answers from the Accept and Decline buttons in his email, which open
-  `decide.html` with a link HMAC signed for that booking and that action (key:
-  `link_secret` in the settings table, never derived from the admin password),
-  or from `admin-bookings.html`. The customer gets "payment received, your
-  request is in" on payment and "you are booked" only on accept, so copy must
-  never promise a booking is final at payment. `booked.html` says payment
-  received for that reason.
-- **Refunds go through Stripe from the site.** Decline refunds everything left
-  and cancels. Admin Refund takes any amount, with an optional cancel. Money
-  moves first: if Stripe refuses, nothing about the booking changes and no email
-  goes out. Both ask twice in the UI and the server refuses either without
-  `confirm: true`. Refunds are counted in `refunded_cents` and recorded once per
-  Stripe refund id. `npm run check:decisions` runs the whole flow against a
-  local Postgres with fake Stripe, EmailJS and Google; run it after touching any
-  of this.
-- **Paid bookings sync to Google Calendar and a Sheet** through an Apps Script
-  web app the owner runs (`server/google.js`, `server/google-apps-script.gs`,
-  `docs/google.md`). Fire and forget, whole booking every time, older updates
-  ignored by the script.
+  (webhook or success page) or when the owner marks it paid in admin. The copy
+  may say the time is held and locked in on payment.
+- **Paid is booked.** Stripe's webhook, or the success page, confirms the
+  booking and the server emails the owner and the client straight away. The
+  owner's email has an Add to Google Calendar button: a plain
+  calendar.google.com link with the shoot filled in, no Google sign in and no
+  API. An accept or decline step, a Google sign in and a Calendar and Sheets
+  sync were built on 2026-09-12 and taken out the same day because the owner
+  wants it simple. Do not bring them back unasked.
+- **Refunds go through Stripe from admin.** A booking card's Refund takes any
+  amount up to what is left, with an optional cancel, behind a panel and a
+  confirm dialog, and the server refuses one without `confirm: true`. Money
+  moves first: if Stripe refuses, nothing changes and no email goes out. Each
+  Stripe refund id is recorded once, so a double click is one refund.
+  `npm run check:bookings` runs pay, both emails and refunds against a throwaway
+  local Postgres with a fake Stripe and EmailJS; run it after touching any of
+  this.
 - **Look busy is cosmetic.** `availability.lookBusy` hides a share of each day's
   genuinely open times, always the same ones, never a day's last one, and the
   hold check ignores it. It only changes what is shown. Do not let it leak into
@@ -103,8 +96,7 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
 - Env vars the server reads: `DATABASE_URL` (the Railway Postgres; without it
   prices come from `DATA_DIR` or the seed and online booking is off),
   `ADMIN_PASSWORD` (admin is off without it, and there is no default),
-  `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ADMIN_SECRET`, `SITE_URL`, `GOOGLE_SCRIPT_URL`,
-  `GOOGLE_SCRIPT_SECRET`, `TZ`
+  `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ADMIN_SECRET`, `SITE_URL`, `TZ`
   (defaults to America/Detroit in `server.js` and the `Dockerfile`). `DATA_DIR`
   only matters with no database. Locally, `npm run dev` reads them from a
   gitignored `.env`.

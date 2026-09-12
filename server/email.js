@@ -1,10 +1,8 @@
 // The emails a booking sends. All of them go from the server through EmailJS.
 //
-//   paid       owner:    new booking, with Accept and Decline and refund buttons
-//              customer: payment received, your request is in
-//   accepted   customer: you are booked, with the prep list
-//   declined   customer: I cannot make that time, and the refund
-//   refunded   customer: money on its way back, full or partial, from admin
+//   paid      owner:    new booking, with an Add to Google Calendar button
+//             customer: you are booked, with the prep list
+//   refunded  customer: money on its way back, when the owner refunds in admin
 //
 // WHY THIS IS ON THE SERVER AND NOT IN THE BROWSER
 // EmailJS is a browser library and the rest of the site uses it that way, in
@@ -15,6 +13,11 @@
 // notification, for a shoot that is paid for and on the calendar. EmailJS has a
 // REST endpoint for exactly this; the private key is what makes it work off a
 // browser.
+//
+// THE GOOGLE CALENDAR BUTTON
+// A plain calendar.google.com link with the shoot filled in: title, time,
+// address and the client's details. The owner taps it, checks it and saves.
+// No Google sign in, no API, nothing stored.
 //
 // ENV
 //   EMAILJS_SERVICE_ID        the Gmail service, service_dburs96
@@ -33,7 +36,7 @@
 //                             recipients, because the free plan counts
 //                             requests, not addresses. If EmailJS refuses that,
 //                             the addresses are retried one at a time.
-//   EMAILJS_ENDPOINT          only for scripts/check-decisions.mjs, which points
+//   EMAILJS_ENDPOINT          only for scripts/check-bookings.mjs, which points
 //                             it at a fake EmailJS.
 //
 // EmailJS also has to be told to allow this. Account, Security, API access for
@@ -52,6 +55,7 @@ const TEMPLATE = env("EMAILJS_TEMPLATE_BOOKING");
 // the customer sees, so order matters.
 const OWNERS = env("OWNER_EMAIL").split(",").map(s => s.trim()).filter(Boolean);
 const OWNER = OWNERS[0] || "";
+const SHOOT_MS = 90 * 60 * 1000;
 
 // Everything must be present or nothing is sent. A half configured emailer that
 // throws on every booking is worse than one that says, once, at boot, that it
@@ -71,7 +75,7 @@ function why() {
 }
 
 // EmailJS allows one request a second across the whole account. Every send
-// waits its turn here, so an accept pressed while the paid emails are still
+// waits its turn here, so a refund pressed while the booking emails are still
 // going out is not refused for going too fast.
 let nextSlot = 0;
 async function pace() {
@@ -143,10 +147,6 @@ const PREP_INTRO = "The shoot takes about 90 minutes. The house photographs best
   "before I get there, because time spent tidying is time the light is moving.";
 const PREP_AFTER = "I will photograph every room plus the exterior from all sides, and fly the " +
   "drone if the weather allows. Finished photos come back within 24 hours.";
-const NEXT = "I check every booking myself. You will get one more email from me confirming the " +
-  "shoot, with how to get the house ready.";
-const PROMISE = "If I cannot make that time for any reason, every dollar goes back to your card. " +
-  "You do not have to ask.";
 const BANK = "It goes back to the card you paid with. Most banks show it within 5 to 10 business days.";
 
 function ownerRows(b) {
@@ -176,6 +176,39 @@ function customerRows(b) {
     ["Paid", money(b.amount)],
     ["Booking", b.id]
   ];
+}
+
+// A Google Calendar "create event" link with the shoot filled in. Google reads
+// the times as UTC when they end in Z, so no timezone guessing is involved.
+function googleCalendarUrl(b, site) {
+  const start = Date.parse(b.startsAt);
+  if (!start) return "";
+  const stamp = ms => new Date(ms).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const details = [
+    `${b.packageName}, paid ${money(b.amount)}`,
+    "",
+    lines([
+      ["Client", b.name],
+      ["Phone", b.phone],
+      ["Email", b.email],
+      ["Brokerage", b.brokerage],
+      ["Size", b.size],
+      ["Occupancy", b.occupancy],
+      ["Access", b.access],
+      ["Access notes", b.accessNotes],
+      ["Notes", String(b.notes || "").slice(0, 600)]
+    ]),
+    "",
+    `Booking ${b.id}`,
+    site ? `${site}/admin` : ""
+  ].join("\n").trim();
+  return "https://calendar.google.com/calendar/render?" + new URLSearchParams({
+    action: "TEMPLATE",
+    text: `EZ Shots: ${b.address}`,
+    dates: `${stamp(start)}/${stamp(start + SHOOT_MS)}`,
+    location: b.address,
+    details
+  }).toString();
 }
 
 // ---------------------------------------------------------------------------
@@ -256,16 +289,16 @@ function layout({ preheader, eyebrow, heading, intro, actions, body, buttons, fo
 }
 
 // ---------------------------------------------------------------------------
-// The five emails
+// The three emails
 // ---------------------------------------------------------------------------
 
-// To the owner when a booking is paid. `links` is { accept, decline }, signed
-// by the server for this booking; without it the email points at admin.
-function ownerMail(b, site, links) {
+// To the owner when a booking is paid.
+function ownerMail(b, site) {
   const first = firstName(b);
-  const bookings = `${site}/admin-bookings.html`;
-  const text = [`${b.name} booked ${b.packageName} and paid. It needs your OK.`, "", lines(ownerRows(b)), ""];
-  if (links) text.push(`Accept: ${links.accept}`, `Decline and refund ${money(b.amount)}: ${links.decline}`);
+  const bookings = `${site}/admin`;
+  const gcal = googleCalendarUrl(b, site);
+  const text = [`${b.name} booked ${b.packageName} and paid.`, "", lines(ownerRows(b)), ""];
+  if (gcal) text.push(`Add to Google Calendar: ${gcal}`);
   text.push(`Bookings: ${bookings}`);
 
   const contact = [];
@@ -274,50 +307,22 @@ function ownerMail(b, site, links) {
   contact.push(button(bookings, "Open bookings", false));
 
   return {
-    subject: `Needs your OK: ${b.when}, ${b.address}`,
+    subject: `Booked: ${b.when}, ${b.address}`,
     text: text.join("\n"),
     html: layout({
-      preheader: `${b.name} paid for ${b.packageName} on ${b.when}. Accept or decline.`,
-      eyebrow: "New booking, needs your OK",
+      preheader: `${b.name} paid for ${b.packageName} on ${b.when}.`,
+      eyebrow: "New booking, paid",
       heading: `${b.name} booked ${b.packageName}`,
       intro: `<strong>${esc(b.when)}</strong><br>${esc(b.address)}`,
-      actions: links ? [button(links.accept, "Accept", true), button(links.decline, "Decline and refund", false)] : [],
+      actions: gcal ? [button(gcal, "Add to Google Calendar", true)] : [],
       body: detailsBox(ownerRows(b)),
       buttons: contact,
-      footer: links
-        ? `Accept emails ${esc(first)} that the shoot is on, with the prep list. Decline refunds ${esc(money(b.amount))} to their card and tells them. Each button opens a page on the site first, and nothing happens until you press the button there.`
-        : "Sent by ezshots.org when Stripe confirmed the payment."
+      footer: "Sent by ezshots.org when Stripe confirmed the payment. Reply to this email to reach the client."
     })
   };
 }
 
-// To the customer when they pay, before the owner has answered.
-function requestMail(b, site) {
-  const first = firstName(b);
-  const manage = `${site}/manage.html?t=${b.token}`;
-  return {
-    subject: `Request received for ${b.when}`,
-    text: [
-      `Hi ${first},`, "",
-      "Thanks for booking. Your payment went through and your time is held for you:", "",
-      lines(customerRows(b)), "",
-      "WHAT HAPPENS NOW", NEXT, "", PROMISE, "",
-      `Need to change or cancel? ${manage}`, "",
-      "Talk soon,", "Angelo", "EZ Shots"
-    ].join("\n"),
-    html: layout({
-      preheader: "Your payment went through. I will confirm your shoot by email.",
-      eyebrow: "Payment received",
-      heading: `Thanks, ${first}. Your request is in`,
-      intro: `Your payment went through and <strong>${esc(b.when)}</strong> is held for you.`,
-      body: detailsBox(customerRows(b)) + label("What happens now") + para(NEXT) + note(PROMISE) + signoff("Talk soon,"),
-      buttons: [button(manage, "Change or cancel", false)],
-      footer: "Questions? Just reply to this email.<br>EZ Shots, real estate photography in Metro Detroit"
-    })
-  };
-}
-
-// To the customer when the owner accepts.
+// To the customer when they pay.
 function bookedMail(b, site) {
   const first = firstName(b);
   const manage = `${site}/manage.html?t=${b.token}`;
@@ -329,7 +334,7 @@ function bookedMail(b, site) {
     subject: `You are booked for ${b.when}`,
     text: [
       `Hi ${first},`, "",
-      "Good news, your shoot is confirmed. Here are the details:", "",
+      "You are booked and paid for. Here are the details:", "",
       lines(customerRows(b)), "",
       "BEFORE I ARRIVE", PREP_INTRO, "",
       PREP.map(p => "- " + p).join("\n"), "",
@@ -339,44 +344,14 @@ function bookedMail(b, site) {
       "See you then,", "Angelo", "EZ Shots"
     ].join("\n"),
     html: layout({
-      preheader: `Your shoot is confirmed for ${b.when}. Here is how to get the house ready.`,
-      eyebrow: "Confirmed",
+      preheader: `Your shoot is booked for ${b.when}. Here is how to get the house ready.`,
+      eyebrow: "Booked and paid",
       heading: `You are booked, ${first}`,
-      intro: `I have confirmed your shoot for <strong>${esc(b.when)}</strong>.`,
+      intro: `I will see you on <strong>${esc(b.when)}</strong>.`,
       body: detailsBox(customerRows(b)) + label("Before I arrive") + para(PREP_INTRO) +
         `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:6px;">${prep}</table>` +
         note(PREP_AFTER) + signoff("See you then,"),
       buttons: [button(ics, "Add to calendar", true), button(manage, "Change or cancel", false)],
-      footer: "Questions? Just reply to this email.<br>EZ Shots, real estate photography in Metro Detroit"
-    })
-  };
-}
-
-// To the customer when the owner declines. `o.refundedCents` went back through
-// Stripe; `o.manualCents` is owed but has to be refunded by hand.
-function declinedMail(b, site, o) {
-  const first = firstName(b);
-  const back = o.refundedCents
-    ? `${cents(o.refundedCents)} is on its way back to the card you paid with. Most banks show it within 5 to 10 business days.`
-    : o.manualCents ? `Your ${cents(o.manualCents)} is being refunded to you separately. You do not need to do anything.` : "";
-  const sorry = `I am sorry. I am not able to shoot ${b.address} on ${b.when}, so I have cancelled the booking.`;
-  const again = "If another day works for you, I would still love to shoot it.";
-  return {
-    subject: `About your shoot on ${b.when}`,
-    text: [`Hi ${first},`, "", sorry, "", back, "", `${again} ${site}/book.html`, "", "Sorry again,", "Angelo", "EZ Shots"]
-      .filter((l, i, all) => l !== "" || all[i - 1] !== "").join("\n"),
-    html: layout({
-      preheader: "I cannot make that time, and your payment is being refunded in full.",
-      eyebrow: "Booking cancelled",
-      heading: `I cannot make that time, ${first}`,
-      intro: `I am sorry. I am not able to shoot <strong>${esc(b.address)}</strong> on <strong>${esc(b.when)}</strong>, so I have cancelled the booking.`,
-      body: detailsBox([
-        ["Booking", b.id],
-        ["Package", b.packageName],
-        ["Paid", money(b.amount)],
-        ["Refunded", o.refundedCents ? cents(o.refundedCents) : ""]
-      ]) + note(back) + para(again) + signoff("Sorry again,"),
-      buttons: [button(`${site}/book.html`, "Pick another time", true)],
       footer: "Questions? Just reply to this email.<br>EZ Shots, real estate photography in Metro Detroit"
     })
   };
@@ -419,10 +394,8 @@ function refundedMail(b, site, o) {
 function render(booking, siteUrl, opts = {}) {
   const site = trimSite(siteUrl);
   return {
-    owner: ownerMail(booking, site, opts.links || null),
-    request: requestMail(booking, site),
+    owner: ownerMail(booking, site),
     booked: bookedMail(booking, site),
-    declined: declinedMail(booking, site, { refundedCents: opts.refundedCents || 0, manualCents: opts.manualCents || 0 }),
     refunded: refundedMail(booking, site, { cents: opts.cents || 0, cancelled: !!opts.cancelled })
   };
 }
@@ -434,12 +407,12 @@ function render(booking, siteUrl, opts = {}) {
 // ---------------------------------------------------------------------------
 function result() { return { owner: false, customer: false, errors: [] }; }
 
-async function notifyPaid(b, siteUrl, links) {
+async function notifyBooked(b, siteUrl) {
   const out = result();
   if (!configured()) { out.errors.push("not configured: " + why().join(", ")); return out; }
   const site = trimSite(siteUrl);
   if (OWNERS.length) {
-    const m = ownerMail(b, site, links);
+    const m = ownerMail(b, site);
     try {
       await send(OWNERS.join(","), m, b.email);
       out.owner = true;
@@ -457,32 +430,26 @@ async function notifyPaid(b, siteUrl, links) {
     }
   }
   if (b.email) {
-    try { await send(b.email, requestMail(b, site), OWNER); out.customer = true; }
+    try { await send(b.email, bookedMail(b, site), OWNER); out.customer = true; }
     catch (e) { out.errors.push("customer: " + e.message); }
   }
   return out;
 }
 
-async function toCustomer(b, mail) {
+async function notifyRefunded(b, siteUrl, o) {
   const out = result();
   if (!configured()) { out.errors.push("not configured: " + why().join(", ")); return out; }
   if (!b.email) { out.errors.push("the booking has no customer email"); return out; }
-  try { await send(b.email, mail, OWNER); out.customer = true; }
+  try { await send(b.email, refundedMail(b, trimSite(siteUrl), o || {}), OWNER); out.customer = true; }
   catch (e) { out.errors.push("customer: " + e.message); }
   return out;
 }
 
-function notifyAccepted(b, siteUrl) { return toCustomer(b, bookedMail(b, trimSite(siteUrl))); }
-function notifyDeclined(b, siteUrl, o) { return toCustomer(b, declinedMail(b, trimSite(siteUrl), o || {})); }
-function notifyRefunded(b, siteUrl, o) { return toCustomer(b, refundedMail(b, trimSite(siteUrl), o || {})); }
-
-// The owner's email and the customer's first email for a made up booking, sent
-// to the owner inboxes only, never to a customer. Behind the admin sign in as
-// POST /api/admin/test-email. Costs two of the month's requests. The Accept and
-// Decline buttons in it lead to a page that says the link is not valid, which
-// is right: there is no such booking.
+// Both booking emails for a made up booking, sent to the owner inboxes only,
+// never to a customer. Behind the admin sign in as POST /api/admin/test-email.
+// Costs two of the month's requests.
 const SAMPLE = {
-  id: "EZ-TEST01", when: "Saturday, October 10 at 8:00 PM",
+  id: "EZ-TEST01", when: "Saturday, October 10 at 8:00 PM", startsAt: "2026-10-11T00:00:00.000Z",
   address: "1841 Maplehurst Drive, Birmingham MI 48009",
   packageName: "Listing Pro", amount: 125, firstShoot: true,
   name: "Test Customer", email: "", phone: "(313) 555-0142",
@@ -498,9 +465,8 @@ async function sendTest(siteUrl) {
     return out;
   }
   const site = trimSite(siteUrl);
-  const links = { accept: `${site}/decide.html?b=EZ-TEST01&a=accept&s=test`, decline: `${site}/decide.html?b=EZ-TEST01&a=decline&s=test` };
-  const owner = ownerMail(SAMPLE, site, links);
-  const customer = requestMail(SAMPLE, site);
+  const owner = ownerMail(SAMPLE, site);
+  const customer = bookedMail(SAMPLE, site);
   try {
     await send(OWNERS.join(","), Object.assign({}, owner, { subject: "[Test] " + owner.subject }), OWNER);
     out.owner = true;
@@ -512,4 +478,4 @@ async function sendTest(siteUrl) {
   return out;
 }
 
-module.exports = { notifyPaid, notifyAccepted, notifyDeclined, notifyRefunded, configured, why, render, sendTest };
+module.exports = { notifyBooked, notifyRefunded, configured, why, render, sendTest, googleCalendarUrl };

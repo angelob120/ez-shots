@@ -100,17 +100,6 @@ class Db {
       [JSON.stringify(cfg)]);
   }
 
-  // A value made once and then never changed, like the key that signs the
-  // accept and decline links. Two instances booting together both try to
-  // insert; the loser's insert does nothing and both read back the winner's.
-  async ensureSetting(key, make) {
-    await this.query(
-      "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING",
-      [key, JSON.stringify(make())]);
-    const r = await this.query("SELECT value FROM settings WHERE key = $1", [key]);
-    return r.rowCount ? r.rows[0].value : null;
-  }
-
   // ---- bookings ---------------------------------------------------------
   // The SQL for "this booking owns its slot": confirmed, or held with time left.
   static get ACTIVE() { return "(status = 'confirmed' OR (status = 'held' AND expires_at > $NOW))"; }
@@ -225,17 +214,6 @@ class Db {
     await this.query("UPDATE bookings SET notified_at = NULL WHERE id = $1", [id]);
   }
 
-  // The owner's yes on a paid booking. Only one nobody has answered yet can be
-  // accepted, so an accept link pressed twice, or pressed after a decline,
-  // changes nothing and returns null.
-  async accept(id, by, now = new Date()) {
-    const r = await this.query(
-      "UPDATE bookings SET decision = 'accepted', decided_at = $2, decided_by = $3, updated_at = $2 " +
-      "WHERE id = $1 AND status = 'confirmed' AND decision IS NULL RETURNING *",
-      [id, now, by]);
-    return fromRow(r.rows[0]);
-  }
-
   // Money that went back, added once per Stripe refund id. Two clicks that reach
   // Stripe with the same idempotency key get the same refund back, and the
   // second update here finds that id already recorded and changes nothing.
@@ -248,9 +226,8 @@ class Db {
     return fromRow(r.rows[0]);
   }
 
-  // `extra` carries the decline: decision, decidedAt, decidedBy.
-  async cancel(id, by, now = new Date(), extra = {}) {
-    return this.update(id, Object.assign({ status: "cancelled", cancelledAt: now, cancelledBy: by || "owner" }, extra), now);
+  async cancel(id, by, now = new Date()) {
+    return this.update(id, { status: "cancelled", cancelledAt: now, cancelledBy: by || "owner" }, now);
   }
 
   // Let a hold go early: the Stripe session expired, or the customer went back

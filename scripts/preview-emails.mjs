@@ -10,7 +10,7 @@ const require = createRequire(import.meta.url);
 const email = require("../server/email.js");
 
 const booking = {
-  id: "EZ-000002", when: "Saturday, October 10 at 8:00 PM",
+  id: "EZ-000002", when: "Saturday, October 10 at 8:00 PM", startsAt: "2026-10-11T00:00:00.000Z",
   address: "1841 Maplehurst Drive, Birmingham MI 48009",
   packageName: "Listing Pro", amount: 125, firstShoot: true, refunded: 62.5,
   name: "Dana <b>Ruiz</b>", email: "dana.ruiz@example.com", phone: "(313) 555-0142",
@@ -18,11 +18,7 @@ const booking = {
   access: "Lockbox", accessNotes: "", notes: "Please shoot the back deck & the pond from the air.",
   token: "75c159a6deadbeef"
 };
-const links = {
-  accept: "https://ezshots.org/decide.html?b=EZ-000002&a=accept&s=abc",
-  decline: "https://ezshots.org/decide.html?b=EZ-000002&a=decline&s=abc"
-};
-const out = email.render(booking, "https://ezshots.org/", { links, refundedCents: 12500, cents: 6250 });
+const out = email.render(booking, "https://ezshots.org/", { cents: 6250 });
 
 let bad = 0;
 const fail = m => { console.error("FAIL " + m); bad++; };
@@ -37,16 +33,15 @@ for (const [who, m] of Object.entries(out)) {
   if (m.html.includes("ezshots.org//")) fail(`${who} doubles the slash in links`);
 }
 const has = (who, s, what) => { if (!(out[who].html.includes(s) && out[who].text.includes(s))) fail(`${who} is missing ${what}`); };
-has("owner", "a=accept", "the accept link");
-has("owner", "a=decline", "the decline link");
-has("owner", "admin-bookings.html", "the bookings link");
-has("request", "/manage.html?t=75c159a6deadbeef", "the manage link");
+has("owner", "calendar.google.com/calendar/render?action=TEMPLATE", "the Google Calendar link");
+has("owner", "dates=20261011T000000Z%2F20261011T013000Z", "the right shoot times in the calendar link");
+has("owner", "ezshots.org/admin", "the bookings link");
 has("booked", "/api/ics?t=75c159a6deadbeef", "the calendar link");
-has("declined", "$125", "the refunded amount");
-has("declined", "/book.html", "the link to book again");
+has("booked", "/manage.html?t=75c159a6deadbeef", "the manage link");
 has("refunded", "$62.50", "the refund amount");
-if (!/^Needs your OK/.test(out.owner.subject)) fail("owner subject does not lead with Needs your OK");
-if (!/^Request received/.test(out.request.subject)) fail("request subject is wrong");
+if (!out.owner.html.includes(">Add to Google Calendar<")) fail("owner email has no Add to Google Calendar button");
+if (!/^Booked: /.test(out.owner.subject)) fail("owner subject does not start with Booked:");
+if (!/^You are booked/.test(out.booked.subject)) fail("customer subject is wrong");
 
 const dir = process.argv[2];
 if (dir) {

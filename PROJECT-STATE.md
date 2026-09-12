@@ -4,12 +4,9 @@
 This file is the memory between sessions. Read it at the start of every session along with `CLAUDE.md`. At the end of every session, append a new dated entry to the top of the Work Log describing what changed and anything the next session would otherwise have to rediscover. "Blocked on a human" lists things only the owner can do (accounts, keys, DNS, deploy clicks). Detailed per-area status lives in `docs/site.md`.
 
 ## Blocked on a human
-- **Set up the Google Calendar and Sheet sync.** Code is live and does nothing
-  until `GOOGLE_SCRIPT_URL` is set. `GOOGLE_SCRIPT_SECRET` is already in Railway.
-  Make a sheet, paste `server/google-apps-script.gs` into Extensions, Apps
-  Script, add the script property `SECRET` with the same value, run
-  `authorize`, deploy as a web app (Me, Anyone), put the URL in Railway.
-  `docs/google.md` has every click.
+- **`GOOGLE_SCRIPT_SECRET` in Railway is unused** since the Google sync was
+  removed on 2026-09-12. Delete it from the ez-shots service variables when
+  convenient; nothing reads it.
 - **Change the contact form template's To Email to hello@ezorders.shop** if form
   leads should go there too. The owner made `OWNER_EMAIL` hello@ezorders.shop
   only on 2026-09-12, which covers the booking emails; `template_qlotxua` still
@@ -163,6 +160,35 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-09-12 (last) - Kept simple: book, pay, emails, Add to Google Calendar
+- The owner asked to keep it simple: clients book and pay, the owner gets the
+  booking email with a button to add it to Google Calendar, and that is it.
+- **Removed:** the accept or decline step (`decide.html`, `js/decide.js`, the
+  signed links, `/api/decide`, the request received, booked on accept and decline
+  emails) and the Google Apps Script sync (`server/google.js`,
+  `server/google-apps-script.gs`, `docs/google.md`). A Google OAuth sign in, a
+  setup checklist and legal page rewrites were started and never shipped.
+- **Paid is booked again.** The client gets You are booked with the prep list on
+  payment, and `booked.html`, `book.html`, `manage.js` and `intake.html` are back
+  to saying so. Migration 003's `decision` columns stay, unused, because applied
+  migrations are never edited.
+- **Owner email** now leads with an Add to Google Calendar button: a
+  calendar.google.com render link with title, UTC start and end, address and the
+  client's details. `publicBooking` gained `startsAt` for it.
+- **Kept:** admin Refund (any amount, optional cancel, two asks, money first,
+  once per Stripe refund id), `/admin` and the footer Admin link, env trimming,
+  `.btn-row[hidden]`.
+- **Privacy page** now names the services the site actually uses (Stripe,
+  EmailJS and Gmail, Railway, TidyCal) instead of FormSubmit, and says what is
+  kept and why. Terms and refund pages unchanged.
+- **Verified** with `npm run check:bookings` (replaces check:decisions): book and
+  pay through a signed webhook, owner email with a correctly filled Google
+  Calendar link and escaped name, client You are booked, no duplicate emails on a
+  repeated webhook or the success page, partial refund with the right cents and
+  idempotency key, a double click refunded once, over refunding refused, full
+  refund with cancel frees the slot, a Stripe refusal changes nothing, `/admin`
+  serves and the decide page is gone. Plus `npm test` and `npm run check:emails`.
 
 ### 2026-09-12 (late) - Accept or decline from the email, refunds from the site, Google sync
 - **Paid is no longer booked.** A paid booking keeps status `confirmed` (the slot

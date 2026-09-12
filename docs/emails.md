@@ -5,20 +5,13 @@ Every email a booking sends goes from the server through EmailJS, built in
 
 | When | To | Subject starts |
 |---|---|---|
-| Paid | owner (`OWNER_EMAIL`) | `Needs your OK:` with Accept and Decline and refund buttons |
-| Paid | customer | `Request received for` |
-| Owner accepts | customer | `You are booked for`, with the prep list and calendar link |
-| Owner declines | customer | `About your shoot on`, with the refund |
-| Owner refunds in admin | customer | `Refund of $X` |
+| Paid | owner (`OWNER_EMAIL`) | `Booked:`, with an Add to Google Calendar button |
+| Paid | client | `You are booked for`, with the prep list and calendar file |
+| Owner refunds in admin | client | `Refund of $X` |
 
-Since 2026-09-12 paying is not booking: the customer is told the request is in,
-and only the accept says booked. The Accept and Decline buttons open
-`decide.html` with a link signed for that booking and that action. Opening the
-link changes nothing (mail scanners open links); accept takes one press on the
-page, decline takes two. See CLAUDE.md for the rules.
-
-A booking now costs 3 of the 200 free monthly requests (2 on payment, 1 on the
-answer), 4 if it is later refunded.
+The Google Calendar button is a plain `calendar.google.com/calendar/render`
+link with the title, time, address and client details filled in. No sign in,
+no API. A booking costs 2 of the 200 free monthly requests, 3 if refunded.
 
 The contact form is separate: client side, `js/contact-form.js`, template
 `template_qlotxua`.
