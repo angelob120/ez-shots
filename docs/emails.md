@@ -1,16 +1,27 @@
-# Confirmation and notification emails
+# Booking emails
 
-The owner wants three emails, all through EmailJS:
+Every email a booking sends goes from the server through EmailJS, built in
+`server/email.js`, one template (`EMAILJS_TEMPLATE_BOOKING`) for all of them:
 
-1. A contact or intake form is submitted, and the owner gets it. **This already
-   works**, client side, in `js/contact-form.js`.
-2. A shoot is paid for, and the owner gets a booking notification.
-3. The same shoot is paid for, and the customer gets a confirmation with the
-   instructions for the day.
+| When | To | Subject starts |
+|---|---|---|
+| Paid | owner (`OWNER_EMAIL`) | `Needs your OK:` with Accept and Decline and refund buttons |
+| Paid | customer | `Request received for` |
+| Owner accepts | customer | `You are booked for`, with the prep list and calendar link |
+| Owner declines | customer | `About your shoot on`, with the refund |
+| Owner refunds in admin | customer | `Refund of $X` |
 
-All three are built as of 2026-09-12. 2 and 3 live in `server/email.js`, called
-from `notify()` in `server.js`. This file is why they are shaped the way they
-are.
+Since 2026-09-12 paying is not booking: the customer is told the request is in,
+and only the accept says booked. The Accept and Decline buttons open
+`decide.html` with a link signed for that booking and that action. Opening the
+link changes nothing (mail scanners open links); accept takes one press on the
+page, decline takes two. See CLAUDE.md for the rules.
+
+A booking now costs 3 of the 200 free monthly requests (2 on payment, 1 on the
+answer), 4 if it is later refunded.
+
+The contact form is separate: client side, `js/contact-form.js`, template
+`template_qlotxua`.
 
 ## The thing that decides the whole design
 

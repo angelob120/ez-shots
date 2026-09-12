@@ -7,7 +7,9 @@
     "dev": "node --env-file-if-exists=.env server.js",
     "start:static": "serve . -l ${PORT:-3000}",
     "check:forms": "node scripts/check-forms.mjs",
-    "test": "node scripts/check-forms.mjs && node scripts/check-availability.mjs"
+    "test": "node scripts/check-forms.mjs && node scripts/check-availability.mjs",
+    "check:decisions": "node scripts/check-decisions.mjs",
+    "check:emails": "node scripts/preview-emails.mjs"
   },
   "dependencies": {
     "pg": "^8.23.0",

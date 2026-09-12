@@ -4,6 +4,19 @@
 This file is the memory between sessions. Read it at the start of every session along with `CLAUDE.md`. At the end of every session, append a new dated entry to the top of the Work Log describing what changed and anything the next session would otherwise have to rediscover. "Blocked on a human" lists things only the owner can do (accounts, keys, DNS, deploy clicks). Detailed per-area status lives in `docs/site.md`.
 
 ## Blocked on a human
+- **Set up the Google Calendar and Sheet sync.** Code is live and does nothing
+  until `GOOGLE_SCRIPT_URL` is set. `GOOGLE_SCRIPT_SECRET` is already in Railway.
+  Make a sheet, paste `server/google-apps-script.gs` into Extensions, Apps
+  Script, add the script property `SECRET` with the same value, run
+  `authorize`, deploy as a web app (Me, Anyone), put the URL in Railway.
+  `docs/google.md` has every click.
+- **Change the contact form template's To Email to hello@ezorders.shop** if form
+  leads should go there too. The owner made `OWNER_EMAIL` hello@ezorders.shop
+  only on 2026-09-12, which covers the booking emails; `template_qlotxua` still
+  has its own To Email in the EmailJS dashboard.
+- **Customer self cancellations are not refunded automatically.** A customer who
+  cancels from the manage page frees the slot and nothing else, and the owner is
+  not emailed. The refund is his to do from admin, where Refund now works.
 - **The Railway project was deleted on 2026-09-12 and the site now runs from a
   rebuilt one.** Everything below is what only the owner can finish.
 - **Point `ezshots.org` at the new service.** The root record is still the CNAME
@@ -150,6 +163,48 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-09-12 (late) - Accept or decline from the email, refunds from the site, Google sync
+- **Paid is no longer booked.** A paid booking keeps status `confirmed` (the slot
+  stays taken) with `decision` NULL until the owner answers. Migration
+  `003_decisions_and_refunds.sql` adds `decision`, `decided_at`, `decided_by`,
+  `refunded_cents`, `refunded_at`, `stripe_refund_ids`, and marks every booking
+  already confirmed as accepted, since those customers were told they were booked.
+- **Emails.** Owner: `Needs your OK` with Accept and Decline and refund buttons.
+  Customer: `Request received` on payment, `You are booked` on accept, a decline
+  email with the refund, and a refund email for admin refunds. Owner chose the
+  request received flow over booked right away.
+- **`decide.html`** is where the email buttons land. Links are HMAC signed per
+  booking and per action with `link_secret`, generated once into the settings
+  table rather than derived from the guessable admin password, because a forged
+  decline link would refund a real customer. GET changes nothing; accept is one
+  press, decline is two, and the server refuses a decline without `confirm: true`.
+- **Refunds** through Stripe's refunds API (`server/stripe.js`). Decline refunds
+  everything left. Admin Refund takes any amount (owner chose full or partial)
+  plus an optional cancel, behind a panel and a confirm dialog. Money moves first,
+  so a refused refund leaves the booking untouched and sends nothing. Idempotency
+  key `refund-<id>-<refundedBefore>-<cents>`, and `recordRefund` adds each Stripe
+  refund id once, so a double click is one refund.
+- **Google Calendar and Sheet** via an Apps Script web app the owner deploys:
+  `server/google.js`, `server/google-apps-script.gs`, `docs/google.md`. Waiting on
+  him, see Blocked.
+- **`/admin`** now opens the bookings page, linked from the footer only, not the nav.
+- **Copy.** `booked.html` says Payment received, `book.html` says the time is held
+  and confirmed by email, `manage.js` shows "Paid, waiting for me to confirm" and
+  refunded amounts, `intake.html` eyebrow no longer says You are booked.
+- **`TZ` had a tab in front of it** in Railway after the owner edited variables,
+  and the boot log printed `timezone \tAmerica/Detroit`. Reset it; `server.js` and
+  `server/email.js` now trim every env value they read.
+- **Verified** with `npm run check:decisions` (new): real server, throwaway local
+  Postgres, fake Stripe, EmailJS and Google. It books and pays through the signed
+  webhook, checks both emails and the signed links, a tampered or cross action
+  signature is refused, accept twice sends once, partial refund hits Stripe with
+  the right cents and key, a double clicked refund is recorded once, over refunding
+  is refused, decline refunds exactly what is left and pulls the calendar event, a
+  Stripe refusal changes nothing, `/admin` and `decide.html` serve. Plus `npm test`
+  and `npm run check:emails`.
+- Not checked in a browser: the admin page's new buttons, because signing in would
+  mean typing the admin password. The API behind them is covered by the check.
 
 ### 2026-09-12 (night) - Booking emails proven end to end
 - Owner turned on EmailJS non-browser API access. `POST /api/admin/test-email` then

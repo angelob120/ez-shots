@@ -42,6 +42,9 @@
 //   EMAILJS_*              the confirmation emails. See server/email.js for the
 //                          full list and for why they are sent from here and
 //                          not from the browser like the contact form is.
+//   GOOGLE_SCRIPT_URL      optional, the Apps Script web app that copies paid
+//   GOOGLE_SCRIPT_SECRET   bookings into the owner's calendar and sheet. See
+//                          server/google.js and server/google-apps-script.gs.
 //   SITE_URL               optional, the public origin used to build Stripe's
 //                          return URLs. Worked out from the request when unset.
 //   TZ                     the business timezone. Defaulted below to Detroit so
@@ -50,7 +53,9 @@
 "use strict";
 
 // Before anything touches a Date. Node reads TZ when it first needs it.
-process.env.TZ = process.env.TZ || "America/Detroit";
+// Trimmed: on 2026-09-12 a tab pasted in front of the Railway value made the
+// zone unreadable, and Node quietly falls back to UTC when that happens.
+process.env.TZ = String(process.env.TZ || "").trim() || "America/Detroit";
 
 const http = require("node:http");
 const fs = require("node:fs");
@@ -62,6 +67,7 @@ const avail = require("./server/availability");
 const stripe = require("./server/stripe");
 const { Db } = require("./server/db");
 const email = require("./server/email");
+const google = require("./server/google");
 
 const ROOT = __dirname;
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -72,7 +78,7 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 const ADMIN_SECRET = process.env.ADMIN_SECRET || (ADMIN_PASSWORD ? "s:" + ADMIN_PASSWORD : "");
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || "";
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
-const SITE_URL = (process.env.SITE_URL || "").replace(/\/$/, "");
+const SITE_URL = String(process.env.SITE_URL || "").trim().replace(/\/$/, "");
 const SESSION_HOURS = 12;
 
 // How long a slot stays held while the customer pays. A Checkout Session is
@@ -303,7 +309,9 @@ function publicBooking(b) {
   if (!b) return null;
   return {
     id: b.id, status: b.status, date: b.date, time: b.time, when: longDate(b.date) + " at " + b.time,
-    package: b.packageName, amount: b.amount, firstShoot: b.firstShoot, paid: b.paid,
+    package: b.packageName, packageName: b.packageName, amount: b.amount, firstShoot: b.firstShoot, paid: b.paid,
+    decision: b.decision || "", awaiting: b.status === "confirmed" && !b.decision,
+    refunded: Number(b.refundedCents || 0) / 100,
     name: b.name, email: b.email, phone: b.phone, brokerage: b.brokerage,
     address: b.address, size: b.size, occupancy: b.occupancy, access: b.access,
     accessNotes: b.accessNotes, notes: b.notes, token: b.token
@@ -328,6 +336,9 @@ async function serveStatic(req, res, pathname) {
   // every portfolio detail page in production once already.
   let rel = decodeURIComponent(pathname);
   if (rel === "/") rel = "/index.html";
+  // /admin is the owner's way in, linked only from the footer. It opens the
+  // day's bookings rather than the settings, because that is where a refund is.
+  else if (rel === "/admin") rel = "/admin-bookings.html";
   else if (/^\/[a-z0-9-]+$/i.test(rel)) rel = rel + ".html";
 
   if (isPrivate(rel)) return send(res, 404, "Not found", { "content-type": "text/plain" });
@@ -387,8 +398,8 @@ function notify(b) {
   if (!b || !db) return;
   db.claimNotify(b.id).then(async claimed => {
     if (!claimed) return;
-    // publicBooking names it `package`; the emails want the name spelled out.
-    const r = await email.notifyBooked(Object.assign(publicBooking(b), { packageName: b.packageName }), SITE_URL);
+    const links = await decideLinks(b).catch(e => { console.error(`[ez-shots] ${b.id} no accept or decline links:`, e.message); return null; });
+    const r = await email.notifyPaid(publicBooking(b), SITE_URL, links);
     if (r.owner || r.customer) {
       console.log(`[ez-shots] ${b.id} emailed:${r.owner ? " owner" : ""}${r.customer ? " customer" : ""}`);
     }
@@ -417,6 +428,7 @@ async function confirmFromSession(session, source) {
       status: "confirmed"
     });
     console.log(`[ez-shots] ${c.id} confirmed by the ${source}`);
+    google.sync("paid", c, SITE_URL);
     notify(c);
     return c;
   } catch (e) {
@@ -604,6 +616,7 @@ async function manage(req, res, url) {
     if (!out.canCancel) return json(res, 400, { error: "This booking can no longer be cancelled here. Email me and I will sort it." });
     const c = await db.cancel(b.id, "customer", now);
     console.log(`[ez-shots] ${b.id} cancelled by the customer`);
+    google.sync("cancelled", c, SITE_URL);
     return json(res, 200, { booking: Object.assign(publicBooking(c), { state: "cancelled", canCancel: false }) });
   }
   return json(res, 405, { error: "No." });
@@ -638,6 +651,187 @@ async function ics(req, res, url) {
 }
 
 // ---------------------------------------------------------------------------
+// Accept, decline, refund
+//
+// A paid booking waits for the owner. The customer is told the payment went
+// through and the time is held; the owner gets Accept and Decline buttons in his
+// email. He answers through decide.html, with a link signed for that one booking
+// and that one action so it works on his phone with no sign in, or from
+// admin-bookings.html while signed in. Both reach the same functions below, so
+// the rules are the same wherever the button is.
+//
+// The money always moves first. If Stripe refuses a refund nothing else about
+// the booking changes, so a decline that failed never tells a customer they
+// were refunded.
+// ---------------------------------------------------------------------------
+function userError(message, status = 400) {
+  const e = new Error(message);
+  e.status = status;
+  return e;
+}
+
+// A refusal the owner should read, as JSON. Stripe's own message is passed on,
+// because "Charge has already been refunded" is exactly what he needs to know.
+// Anything else is a real bug and goes on to the 500 handler.
+function fail(res, e) {
+  if (e && e.status) return json(res, e.status, { error: e.message });
+  if (e && e.stripe) return json(res, 502, { error: "Stripe said: " + e.message });
+  throw e;
+}
+
+function dollars(cents) { return "$" + (cents / 100).toFixed(2).replace(/\.00$/, ""); }
+function paidCents(b) { return b.paid ? Math.round(Number(b.amount || 0) * 100) : 0; }
+function refundableCents(b) { return Math.max(0, paidCents(b) - Number(b.refundedCents || 0)); }
+
+// Log an email's outcome with the booking id. Never lets a rejection escape,
+// because an unhandled one ends the process.
+function after(p, id, what) {
+  Promise.resolve(p).then(r => {
+    if (r.owner || r.customer) console.log(`[ez-shots] ${id} emailed, ${what}`);
+    for (const e of r.errors) console.error(`[ez-shots] ${id} ${what} email failed, ${e}`);
+  }).catch(e => console.error(`[ez-shots] ${id} ${what} email crashed:`, e.message));
+}
+
+// The key that signs the accept and decline links. Made once and kept in the
+// settings table, so it survives deploys and a password change does not break
+// links already sitting in the inbox. Deliberately not derived from
+// ADMIN_PASSWORD: that one is short enough to guess, and a forged decline link
+// would refund a real customer.
+let linkKey = "";
+async function linkSecret() {
+  if (linkKey || !db) return linkKey;
+  const v = await db.ensureSetting("link_secret", () => crypto.randomBytes(32).toString("hex"));
+  linkKey = typeof v === "string" ? v : "";
+  return linkKey;
+}
+
+function decideSig(secret, id, action) {
+  return crypto.createHmac("sha256", secret).update("decide|" + id + "|" + action).digest("hex").slice(0, 40);
+}
+
+async function decideLinks(b) {
+  const secret = await linkSecret();
+  if (!secret) return null;
+  const link = a => `${SITE_URL}/decide.html?b=${encodeURIComponent(b.id)}&a=${a}&s=${decideSig(secret, b.id, a)}`;
+  return { accept: link("accept"), decline: link("decline") };
+}
+
+// The payment a booking's checkout took. Stored at confirmation, and read back
+// from the session for a booking where that column never got filled.
+async function paymentIntentOf(b) {
+  if (b.stripePaymentIntent) return b.stripePaymentIntent;
+  if (!STRIPE_KEY || !b.stripeSessionId) return null;
+  const s = await stripe.getSession(STRIPE_KEY, b.stripeSessionId);
+  const pi = typeof s.payment_intent === "string" ? s.payment_intent : (s.payment_intent && s.payment_intent.id) || null;
+  if (pi) {
+    await db.update(b.id, { stripePaymentIntent: pi });
+    b.stripePaymentIntent = pi;
+  }
+  return pi;
+}
+
+async function refundMoney(b, cents, by) {
+  if (!b.paid) throw userError("Nothing was paid on this booking, so there is nothing to refund.");
+  if (!Number.isInteger(cents) || cents <= 0) throw userError("Enter an amount to refund.");
+  const left = refundableCents(b);
+  if (!left) throw userError("This booking is already refunded in full.");
+  if (cents > left) throw userError(`That is more than is left to refund. The most is ${dollars(left)}.`);
+  if (!STRIPE_KEY) throw userError("Stripe is not connected to the site, so refund this one in the Stripe dashboard.");
+  const pi = await paymentIntentOf(b);
+  if (!pi) throw userError("This booking was not paid through the site checkout, so refund it in the Stripe dashboard.");
+  // The key includes what was refunded before, so a double click sends the same
+  // key and Stripe hands back the same refund instead of making a second one.
+  const before = Number(b.refundedCents || 0);
+  const r = await stripe.refund(STRIPE_KEY, pi, cents, `refund-${b.id}-${before}-${cents}`, { booking_id: b.id, refunded_by: by });
+  const out = (await db.recordRefund(b.id, r.id, cents)) || (await db.find(b.id));
+  console.log(`[ez-shots] ${b.id} refunded ${dollars(cents)} by ${by}, ${r.id}`);
+  return out;
+}
+
+async function acceptBooking(b, by) {
+  if (b.status === "cancelled") throw userError("This booking was already cancelled, so it cannot be accepted.");
+  if (b.status !== "confirmed") throw userError("This booking has not been paid for yet, so there is nothing to accept.");
+  if (b.decision === "accepted") return { booking: b, already: true };
+  const a = await db.accept(b.id, by);
+  if (!a) {
+    const cur = await db.find(b.id);
+    if (cur && cur.decision === "accepted") return { booking: cur, already: true };
+    throw userError("This booking changed while you were looking at it. Refresh and try again.", 409);
+  }
+  console.log(`[ez-shots] ${a.id} accepted by ${by}`);
+  google.sync("accepted", a, SITE_URL);
+  after(email.notifyAccepted(publicBooking(a), SITE_URL), a.id, "accepted");
+  return { booking: a };
+}
+
+// Cancel a paid booking and give all of the money back. Allowed after an accept
+// too: an owner who can no longer make it declines then.
+async function declineBooking(b, by) {
+  if (b.status === "cancelled") throw userError(b.decision === "declined" ? "You already declined this booking." : "This booking is already cancelled.");
+  if (b.status !== "confirmed") throw userError("This booking has not been paid for yet. Cancel it from the bookings page instead.");
+  const left = refundableCents(b);
+  let cur = b, refundedCents = 0, manualCents = 0;
+  if (left > 0) {
+    const pi = STRIPE_KEY ? await paymentIntentOf(b) : null;
+    if (pi) { cur = await refundMoney(b, left, by); refundedCents = left; }
+    else manualCents = left;
+  }
+  const now = new Date();
+  const c = await db.cancel(cur.id, "owner", now, { decision: "declined", decidedAt: now, decidedBy: by });
+  console.log(`[ez-shots] ${c.id} declined by ${by}` + (manualCents ? `, ${dollars(manualCents)} still to refund by hand` : ""));
+  google.sync("declined", c, SITE_URL);
+  after(email.notifyDeclined(publicBooking(c), SITE_URL, { refundedCents, manualCents }), c.id, "declined");
+  return { booking: c, refundedCents, manualCents };
+}
+
+// What decide.html is shown. The link is the owner's, so the client's name and
+// address are fine here; nothing about Stripe beyond whether a refund can run.
+function decideView(b) {
+  return {
+    id: b.id, name: b.name, when: longDate(b.date) + " at " + b.time, address: b.address,
+    packageName: b.packageName, amount: b.amount, paid: b.paid, status: b.status, decision: b.decision || "",
+    refunded: Number(b.refundedCents || 0) / 100, refundable: refundableCents(b) / 100,
+    canRefund: !!STRIPE_KEY && !!(b.stripePaymentIntent || b.stripeSessionId)
+  };
+}
+
+async function decide(req, res, url) {
+  if (!db) return json(res, 503, { error: "Online booking is off, so there is nothing to answer." });
+  let q;
+  if (req.method === "GET") q = Object.fromEntries(url.searchParams);
+  else if (req.method === "POST") q = await body(req).catch(() => ({}));
+  else return json(res, 405, { error: "No." });
+
+  const id = str(q.b, 20), action = str(q.a, 10), sig = str(q.s, 80);
+  if (!/^EZ-\d{6}$/.test(id) || (action !== "accept" && action !== "decline")) {
+    return json(res, 404, { error: "That link is not complete. Open it again from the email." });
+  }
+  const secret = await linkSecret();
+  const want = secret ? decideSig(secret, id, action) : "";
+  if (!want || !/^[a-f0-9]+$/.test(sig) || sig.length !== want.length ||
+      !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(want))) {
+    return json(res, 403, { error: "That link is not valid. Open it again from the email, or use the bookings page." });
+  }
+  const b = await db.find(id);
+  if (!b) return json(res, 404, { error: "That booking no longer exists." });
+  if (req.method === "GET") return json(res, 200, { action, booking: decideView(b) });
+
+  // Opening the link only ever GETs, and mail scanners open links. Declining
+  // also needs the second yes from the page, so a stray POST cannot refund.
+  if (action === "decline" && q.confirm !== true) return json(res, 400, { error: "Confirm the decline first." });
+  try {
+    const r = action === "accept"
+      ? await acceptBooking(b, "owner, from email")
+      : await declineBooking(b, "owner, from email");
+    return json(res, 200, {
+      action, done: true, already: !!r.already,
+      refundedCents: r.refundedCents || 0, manualCents: r.manualCents || 0,
+      booking: decideView(r.booking)
+    });
+  } catch (e) { return fail(res, e); }
+}
+
+// ---------------------------------------------------------------------------
 // Admin bookings
 // ---------------------------------------------------------------------------
 async function adminBookings(req, res) {
@@ -647,7 +841,7 @@ async function adminBookings(req, res) {
   const today = avail.keyOf(now);
   const from = avail.keyOf(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 60));
   const to = avail.keyOf(new Date(now.getFullYear(), now.getMonth(), now.getDate() + Math.max(120, cfg.availability.maxAdvanceDays)));
-  const list = (await db.list(from, to)).map(b => Object.assign(b, { state: stateOf(b, now.getTime()), when: longDate(b.date) }));
+  const list = (await db.list(from, to)).map(b => adminView(b, now));
 
   // The six numbers at the top of the plan's admin home, worked out from what
   // is confirmed. Revenue is by shoot date, so a month reads as what the
@@ -672,26 +866,60 @@ async function adminBookings(req, res) {
   return json(res, 200, { today, now: now.toISOString(), stripe: !!STRIPE_KEY, stats, bookings: list });
 }
 
+// A booking as the admin page wants it: the state worked out, the long date,
+// whether it waits for the owner, and how much is left to refund.
+function adminView(b, now = new Date()) {
+  return Object.assign(b, {
+    state: stateOf(b, now.getTime()),
+    when: longDate(b.date),
+    awaiting: b.status === "confirmed" && !b.decision,
+    refundable: refundableCents(b) / 100
+  });
+}
+
 async function adminBooking(req, res, id) {
   if (!db) return json(res, 503, { error: "No database." });
   const b = await db.find(id);
   if (!b) return json(res, 404, { error: "No such booking." });
   const p = await body(req).catch(() => ({}));
   const now = new Date();
+  const extra = {};
   let out = b;
-  if (p.action === "confirm") {
-    if (b.status === "confirmed") return json(res, 200, { booking: b });
-    const other = await db.clash(b.date, b.time, b.id, now);
-    if (other) return json(res, 409, { error: `That slot has since gone to ${other}. Cancel that one first, or move this booking by email.` });
-    out = await db.confirm(b.id, { checkoutMode: b.checkoutMode || "manual" }, now);
-  } else if (p.action === "cancel") {
-    out = await db.cancel(b.id, "owner", now);
-  } else if (p.action === "note") {
-    out = await db.update(b.id, { internalNotes: str(p.note, 4000) }, now);
-  } else {
-    return json(res, 400, { error: "Unknown action." });
-  }
-  return json(res, 200, { booking: Object.assign(out, { state: stateOf(out, now.getTime()), when: longDate(out.date) }) });
+  try {
+    if (p.action === "confirm") {
+      if (b.status === "confirmed") return json(res, 200, { booking: adminView(b, now) });
+      const other = await db.clash(b.date, b.time, b.id, now);
+      if (other) return json(res, 409, { error: `That slot has since gone to ${other}. Cancel that one first, or move this booking by email.` });
+      // Marking it paid by hand is the owner saying yes, so it is accepted too.
+      out = await db.confirm(b.id, { checkoutMode: b.checkoutMode || "manual", decision: "accepted", decidedAt: now, decidedBy: "owner" }, now);
+      google.sync("paid", out, SITE_URL);
+    } else if (p.action === "accept") {
+      out = (await acceptBooking(b, "owner")).booking;
+    } else if (p.action === "decline") {
+      if (p.confirm !== true) return json(res, 400, { error: "Confirm the decline first." });
+      const r = await declineBooking(b, "owner");
+      out = r.booking;
+      extra.refundedCents = r.refundedCents;
+      extra.manualCents = r.manualCents;
+    } else if (p.action === "refund") {
+      if (p.confirm !== true) return json(res, 400, { error: "Confirm the refund first." });
+      const cents = Math.round(Number(p.amount) * 100);
+      out = await refundMoney(b, cents, "owner");
+      const cancelled = p.cancel === true && out.status !== "cancelled";
+      if (cancelled) out = await db.cancel(out.id, "owner", new Date());
+      extra.refundedCents = cents;
+      google.sync(cancelled ? "cancelled" : "refunded", out, SITE_URL);
+      after(email.notifyRefunded(publicBooking(out), SITE_URL, { cents, cancelled }), out.id, "refund");
+    } else if (p.action === "cancel") {
+      out = await db.cancel(b.id, "owner", now);
+      google.sync("cancelled", out, SITE_URL);
+    } else if (p.action === "note") {
+      out = await db.update(b.id, { internalNotes: str(p.note, 4000) }, now);
+    } else {
+      return json(res, 400, { error: "Unknown action." });
+    }
+  } catch (e) { return fail(res, e); }
+  return json(res, 200, Object.assign({ booking: adminView(out, now) }, extra));
 }
 
 // ---------------------------------------------------------------------------
@@ -727,6 +955,7 @@ async function api(req, res, url) {
   if (pathname === "/api/stripe/webhook" && req.method === "POST") return webhook(req, res);
   if (pathname === "/api/manage" || pathname === "/api/manage/cancel") return manage(req, res, url);
   if (pathname === "/api/ics" && req.method === "GET") return ics(req, res, url);
+  if (pathname === "/api/decide") return decide(req, res, url);
 
   if (pathname === "/api/admin/session" && req.method === "GET") {
     return json(res, 200, { enabled: !!ADMIN_PASSWORD, authed: authed(req), stripe: !!STRIPE_KEY, webhook: !!WEBHOOK_SECRET, bookings: !!db, email: email.configured() });

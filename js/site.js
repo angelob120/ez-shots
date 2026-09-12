@@ -92,7 +92,7 @@
       '</div>' +
       '<div class="footer-bottom">' +
         '<p>&copy; ' + new Date().getFullYear() + ' EZ Shots. Serving Wayne, Oakland and Macomb counties.</p>' +
-        '<p><a href="terms.html">Terms</a> &nbsp;&middot;&nbsp; <a href="refund.html">Refunds</a> &nbsp;&middot;&nbsp; <a href="privacy.html">Privacy</a></p>' +
+        '<p><a href="terms.html">Terms</a> &nbsp;&middot;&nbsp; <a href="refund.html">Refunds</a> &nbsp;&middot;&nbsp; <a href="privacy.html">Privacy</a> &nbsp;&middot;&nbsp; <a href="/admin">Admin</a></p>' +
       '</div>' +
     '</div></footer>';
 

@@ -15,7 +15,8 @@
 // slot even if every line of this file is wrong.
 //
 // Schema changes are SQL files in server/migrations, applied in name order on
-// boot and recorded in schema_migrations. Never edit an applied one, add 002.
+// boot and recorded in schema_migrations. Never edit an applied one, add the
+// next number.
 //
 // The booking object the rest of the server sees is camelCase; the columns are
 // snake_case. row() and col() translate, nothing else knows the difference.
@@ -97,6 +98,17 @@ class Db {
       "INSERT INTO settings (key, value, updated_at) VALUES ('config', $1, now()) " +
       "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()",
       [JSON.stringify(cfg)]);
+  }
+
+  // A value made once and then never changed, like the key that signs the
+  // accept and decline links. Two instances booting together both try to
+  // insert; the loser's insert does nothing and both read back the winner's.
+  async ensureSetting(key, make) {
+    await this.query(
+      "INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO NOTHING",
+      [key, JSON.stringify(make())]);
+    const r = await this.query("SELECT value FROM settings WHERE key = $1", [key]);
+    return r.rowCount ? r.rows[0].value : null;
   }
 
   // ---- bookings ---------------------------------------------------------
@@ -213,8 +225,32 @@ class Db {
     await this.query("UPDATE bookings SET notified_at = NULL WHERE id = $1", [id]);
   }
 
-  async cancel(id, by, now = new Date()) {
-    return this.update(id, { status: "cancelled", cancelledAt: now, cancelledBy: by || "owner" }, now);
+  // The owner's yes on a paid booking. Only one nobody has answered yet can be
+  // accepted, so an accept link pressed twice, or pressed after a decline,
+  // changes nothing and returns null.
+  async accept(id, by, now = new Date()) {
+    const r = await this.query(
+      "UPDATE bookings SET decision = 'accepted', decided_at = $2, decided_by = $3, updated_at = $2 " +
+      "WHERE id = $1 AND status = 'confirmed' AND decision IS NULL RETURNING *",
+      [id, now, by]);
+    return fromRow(r.rows[0]);
+  }
+
+  // Money that went back, added once per Stripe refund id. Two clicks that reach
+  // Stripe with the same idempotency key get the same refund back, and the
+  // second update here finds that id already recorded and changes nothing.
+  async recordRefund(id, refundId, cents, now = new Date()) {
+    const r = await this.query(
+      "UPDATE bookings SET refunded_cents = refunded_cents + $3, refunded_at = $4, updated_at = $4, " +
+      "stripe_refund_ids = CASE WHEN stripe_refund_ids = '' THEN $2::text ELSE stripe_refund_ids || ',' || $2::text END " +
+      "WHERE id = $1 AND position(',' || $2::text || ',' IN ',' || stripe_refund_ids || ',') = 0 RETURNING *",
+      [id, refundId, cents, now]);
+    return fromRow(r.rows[0]);
+  }
+
+  // `extra` carries the decline: decision, decidedAt, decidedBy.
+  async cancel(id, by, now = new Date(), extra = {}) {
+    return this.update(id, Object.assign({ status: "cancelled", cancelledAt: now, cancelledBy: by || "owner" }, extra), now);
   }
 
   // Let a hold go early: the Stripe session expired, or the customer went back

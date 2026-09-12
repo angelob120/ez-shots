@@ -39,9 +39,30 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   transaction behind an advisory lock (`server/db.js`), so two agents cannot
   both get one time. The hold lasts 32 minutes with Stripe Checkout, 24 hours
   with payment links, and becomes a confirmed booking when Stripe says paid
-  (webhook or success page) or when the owner marks it paid in admin. The copy
-  may say the time is held and locked in on payment. It used to say the exact
-  time was confirmed by email, because nothing held anything; that is over.
+  (webhook or success page) or when the owner marks it paid in admin. Held
+  is not booked, see the next point.
+- **A paid booking waits for the owner's OK.** Since 2026-09-12 paid does not
+  mean booked. Status stays `confirmed`, so the slot stays taken and the unique
+  index still guards it, and `decision` is NULL until the owner answers. He
+  answers from the Accept and Decline buttons in his email, which open
+  `decide.html` with a link HMAC signed for that booking and that action (key:
+  `link_secret` in the settings table, never derived from the admin password),
+  or from `admin-bookings.html`. The customer gets "payment received, your
+  request is in" on payment and "you are booked" only on accept, so copy must
+  never promise a booking is final at payment. `booked.html` says payment
+  received for that reason.
+- **Refunds go through Stripe from the site.** Decline refunds everything left
+  and cancels. Admin Refund takes any amount, with an optional cancel. Money
+  moves first: if Stripe refuses, nothing about the booking changes and no email
+  goes out. Both ask twice in the UI and the server refuses either without
+  `confirm: true`. Refunds are counted in `refunded_cents` and recorded once per
+  Stripe refund id. `npm run check:decisions` runs the whole flow against a
+  local Postgres with fake Stripe, EmailJS and Google; run it after touching any
+  of this.
+- **Paid bookings sync to Google Calendar and a Sheet** through an Apps Script
+  web app the owner runs (`server/google.js`, `server/google-apps-script.gs`,
+  `docs/google.md`). Fire and forget, whole booking every time, older updates
+  ignored by the script.
 - **Look busy is cosmetic.** `availability.lookBusy` hides a share of each day's
   genuinely open times, always the same ones, never a day's last one, and the
   hold check ignores it. It only changes what is shown. Do not let it leak into
@@ -66,7 +87,9 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
 - **Two admin pages, one sign in.** `admin.html` is settings (prices, hours,
   days, cap, look busy, days off), `admin-bookings.html` is the day (today,
   needs attention, upcoming, mark paid, cancel, private note). Both boot
-  through `js/admin-core.js`. Add a third and it boots the same way.
+  through `js/admin-core.js`. Add a third and it boots the same way. `/admin`
+  opens the bookings page and is linked only from the footer. Never put admin
+  in the nav.
 - **Schema changes are migration files** in `server/migrations`, applied on
   boot in name order and recorded in `schema_migrations`. Never edit an applied
   one, add the next number. Never create a table by hand in the Railway
@@ -80,7 +103,8 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
 - Env vars the server reads: `DATABASE_URL` (the Railway Postgres; without it
   prices come from `DATA_DIR` or the seed and online booking is off),
   `ADMIN_PASSWORD` (admin is off without it, and there is no default),
-  `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ADMIN_SECRET`, `SITE_URL`, `TZ`
+  `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ADMIN_SECRET`, `SITE_URL`, `GOOGLE_SCRIPT_URL`,
+  `GOOGLE_SCRIPT_SECRET`, `TZ`
   (defaults to America/Detroit in `server.js` and the `Dockerfile`). `DATA_DIR`
   only matters with no database. Locally, `npm run dev` reads them from a
   gitignored `.env`.

@@ -1,9 +1,13 @@
-// The four things this server says to Stripe, with no SDK: create a Checkout
-// Session, read one back, and check a webhook signature. Node's fetch and
+// The five things this server says to Stripe, with no SDK: create a Checkout
+// Session, read one back, refund one, and check a webhook signature. Node's fetch and
 // crypto are enough, and the one dependency this repo had was already too many.
 "use strict";
 
 const crypto = require("node:crypto");
+
+// Overridable only so scripts/check-decisions.mjs can point it at a fake Stripe
+// and prove the refund path without moving a cent.
+const API = (process.env.STRIPE_API_BASE || "https://api.stripe.com").replace(/\/$/, "");
 
 // Stripe wants form encoded bodies with bracketed keys.
 function formEncode(obj, prefix = "", out = []) {
@@ -23,7 +27,7 @@ async function call(key, method, route, payload, extra = {}) {
     headers["content-type"] = "application/x-www-form-urlencoded";
     body = formEncode(payload);
   }
-  const r = await fetch("https://api.stripe.com" + route, { method, headers, body });
+  const r = await fetch(API + route, { method, headers, body });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) {
     const err = new Error((data.error && data.error.message) || ("Stripe replied " + r.status));
@@ -37,6 +41,16 @@ async function call(key, method, route, payload, extra = {}) {
 // for the same hold gets the same session back instead of a second one.
 function createSession(key, payload, bookingId) {
   return call(key, "POST", "/v1/checkout/sessions", payload, { "idempotency-key": "book-" + bookingId });
+}
+
+// Money back on the payment a Checkout Session took, in cents. The caller builds
+// the idempotency key from the booking and what had already been refunded, so a
+// double click is one refund, and a later second partial refund is not mistaken
+// for the first.
+function refund(key, paymentIntent, cents, idempotencyKey, metadata) {
+  return call(key, "POST", "/v1/refunds",
+    { payment_intent: paymentIntent, amount: cents, reason: "requested_by_customer", metadata },
+    { "idempotency-key": idempotencyKey });
 }
 
 function getSession(key, id) {
@@ -57,4 +71,4 @@ function verifySignature(secret, header, raw, now = Date.now(), toleranceSec = 3
   return sigs.some(s => s.length === want.length && crypto.timingSafeEqual(Buffer.from(s), Buffer.from(want)));
 }
 
-module.exports = { createSession, getSession, verifySignature };
+module.exports = { createSession, getSession, refund, verifySignature };
