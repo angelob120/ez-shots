@@ -387,7 +387,8 @@ function notify(b) {
   if (!b || !db) return;
   db.claimNotify(b.id).then(async claimed => {
     if (!claimed) return;
-    const r = await email.notifyBooked(publicBooking(b), SITE_URL);
+    // publicBooking names it `package`; the emails want the name spelled out.
+    const r = await email.notifyBooked(Object.assign(publicBooking(b), { packageName: b.packageName }), SITE_URL);
     if (r.owner || r.customer) {
       console.log(`[ez-shots] ${b.id} emailed:${r.owner ? " owner" : ""}${r.customer ? " customer" : ""}`);
     }
@@ -765,6 +766,11 @@ async function api(req, res, url) {
         await writeConfig(b);
         return json(res, 200, { ok: true, config: b });
       }
+    }
+
+    if (pathname === "/api/admin/test-email" && req.method === "POST") {
+      const r = await email.sendTest(SITE_URL);
+      return json(res, r.owner && r.customer ? 200 : 502, r);
     }
 
     if (pathname === "/api/admin/bookings" && req.method === "GET") return adminBookings(req, res);

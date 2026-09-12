@@ -24,14 +24,18 @@ This file is the memory between sessions. Read it at the start of every session 
   was actually paid for still exists in Stripe, with `booking_id`, `address`,
   `shoot_date` and `shoot_time` in the session metadata, so the calendar can be
   rebuilt from Stripe if a restore is refused.
-- **Two variables to finish the confirmation emails.** The code is in and does
-  nothing until both are set. `EMAILJS_PRIVATE_KEY`, the account private key,
-  which is what lets the server send off a browser. And
-  `EMAILJS_TEMPLATE_BOOKING`, the id of a new EmailJS template with To Email
-  `{{to_email}}`, Subject `{{subject}}`, Content exactly `{{message}}` and Reply
-  To `{{reply_to}}`. Also EmailJS, Account, Security: turn on API access for
-  non-browser applications, or every send is `403 API calls in strict mode`.
-  `docs/emails.md` has the whole thing.
+- **Finish the booking email template in EmailJS.** Both variables are set and
+  the server boots with `confirmation emails on`. In the template that
+  `EMAILJS_TEMPLATE_BOOKING` names: To Email `{{to_email}}`, Subject
+  `{{subject}}`, Reply To `{{reply_to}}`, Content in raw HTML mode exactly
+  `{{{message_html}}}` with three braces. Account, Security: allow API access for
+  non-browser applications. Then sign in to admin and send the test (see
+  `docs/emails.md`); both emails should land in the owner inboxes.
+- **The booking form still offers "Door code" and a free text access notes box.**
+  CLAUDE.md says never collect lockbox or gate codes, and whatever a customer
+  types there is now emailed to the owner inboxes. The owner should decide
+  whether to drop the "Door code" option and reword the notes placeholder to ask
+  where the lockbox is, not what the code is.
 - **Rotate the EmailJS private key.** It was shown on screen in a shared
   screenshot on 2026-09-12. "Refresh Keys" in the EmailJS account rotates the
   public key with it, and the public key is hardcoded in `js/contact-form.js`,
@@ -153,6 +157,23 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-09-12 (latest) - HTML booking emails, a test send, and a bug that would have said "undefined"
+- Both booking emails are now designed HTML, built in `server/email.js` from the
+  same rows and prep list as the plain text, so the two versions cannot drift. The
+  template content must be `{{{message_html}}}`, three braces; `docs/emails.md`
+  has the steps.
+- **Bug fixed before it shipped a single email.** `publicBooking()` in `server.js`
+  names the package `package`, but the emails read `packageName`, so every email
+  would have said "Dana booked undefined". `notify()` now passes `packageName`.
+- The owner email linked "Calendar" to `admin.html`, which is settings. It now
+  goes to `admin-bookings.html`, and has Call and Email buttons for the customer.
+- `POST /api/admin/test-email`, signed in, sends both emails for a made up booking
+  to `OWNER_EMAIL` only.
+- `scripts/preview-emails.mjs` renders both emails and fails on `undefined`,
+  unescaped input, empty optional rows and dashes.
+- Owner added `EMAILJS_PRIVATE_KEY` and `EMAILJS_TEMPLATE_BOOKING` in Railway; the
+  redeploy logged `confirmation emails on`.
 
 ### 2026-09-12 (later) - Confirmation and notification emails on a paid booking
 - `server/email.js` is new. When a shoot is paid for, the owner gets a notification

@@ -96,37 +96,46 @@ pointed at the existing form template.
 
 ## Turning it on
 
-Four variables. Two are set on the Railway service already:
+Five variables, all set on the Railway service as of 2026-09-12:
 
 | Variable | Value | Set? |
 |---|---|---|
 | `EMAILJS_SERVICE_ID` | `service_dburs96` | yes |
 | `EMAILJS_PUBLIC_KEY` | `ki7V3klQWzRzeIMte` | yes |
 | `OWNER_EMAIL` | `angelobrown1000@gmail.com,hello@ezorders.shop` | yes |
-| `EMAILJS_PRIVATE_KEY` | the account private key | **no, owner only** |
-| `EMAILJS_TEMPLATE_BOOKING` | the new template's id | **no, template not made yet** |
+| `EMAILJS_PRIVATE_KEY` | the account private key | yes, 2026-09-12 |
+| `EMAILJS_TEMPLATE_BOOKING` | the new template's id | yes, 2026-09-12 |
 
 The template to create: To Email `{{to_email}}`, Subject `{{subject}}`, Reply To
 `{{reply_to}}`, From Name `EZ Shots`, default From Email. Nothing in Bcc or Cc.
 
-The body is the part with a trap in it. **EmailJS renders template content as
-HTML**, so a bare `{{message}}` arrives as one paragraph with every line break
-gone: the booking details, the prep list and the signature all run together.
-Click Edit Content for raw HTML mode, clear it, and paste exactly this and
-nothing else:
+The body is where the design lives, and the server builds all of it. Since
+2026-09-12 both emails are HTML: a wordmark, a card with the booking details,
+buttons (Open bookings, Call, Email for the owner; Add to calendar, Change or
+cancel for the customer) and the prep list as a checklist. Tables and inline
+styles only, because Gmail strips `<style>` and Outlook lays out with Word.
+Every customer value is escaped before it goes in.
 
-```html
-<pre style="margin:0; white-space:pre-wrap; word-wrap:break-word; font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; line-height:1.55; color:#111;">{{message}}</pre>
+The server sends two versions of each email: `message` (plain text) and
+`message_html` (the finished HTML). In the template, click Edit Content, switch
+to raw HTML mode, clear it, and paste exactly this and nothing else:
+
+```
+{{{message_html}}}
 ```
 
-`white-space:pre-wrap` keeps the newlines and still wraps long lines, so a long
-address does not force sideways scrolling on a phone. The font-family overrides
-the monospace `<pre>` inherits, so it reads as an email and not as code.
-`margin:0` removes the gap `<pre>` adds above itself.
+Three braces, not two. Two braces makes EmailJS escape the HTML and the email
+arrives as a page of visible tags. Nothing else belongs in the template: no
+greeting, no signature, no logo, because anything around it appears outside
+the card.
 
-Nothing else belongs in the template: no greeting, no signature, no logo. The
-server sends a finished email and anything the template wraps around it appears
-INSIDE the message, between the booking details and the instructions.
+`scripts/preview-emails.mjs` renders both emails for a sample booking without
+sending, fails on an `undefined`, an unescaped value, an empty optional row or
+a dash, and with a directory argument writes the `.html` files to look at.
+
+`POST /api/admin/test-email`, signed in to admin, sends both emails for a made
+up booking to `OWNER_EMAIL` only. It is the way to prove the keys, the template
+and the non-browser switch without booking a shoot. It costs two requests.
 
 And in EmailJS, Account, Security: turn on API access for non-browser
 applications. Without it every send comes back `403 API calls in strict mode`.
