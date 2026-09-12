@@ -24,13 +24,13 @@ This file is the memory between sessions. Read it at the start of every session 
   was actually paid for still exists in Stripe, with `booking_id`, `address`,
   `shoot_date` and `shoot_time` in the session metadata, so the calendar can be
   rebuilt from Stripe if a restore is refused.
-- **Finish the booking email template in EmailJS.** Both variables are set and
-  the server boots with `confirmation emails on`. In the template that
-  `EMAILJS_TEMPLATE_BOOKING` names: To Email `{{to_email}}`, Subject
-  `{{subject}}`, Reply To `{{reply_to}}`, Content in raw HTML mode exactly
-  `{{{message_html}}}` with three braces. Account, Security: allow API access for
-  non-browser applications. Then sign in to admin and send the test (see
-  `docs/emails.md`); both emails should land in the owner inboxes.
+- **Turn on EmailJS non-browser API access. This is the one thing stopping the
+  booking emails.** Account, Security, "API access from non-browser
+  environments". Checked on 2026-09-12: a server side send came back `403 API
+  access from non-browser environments is currently disabled`. Until it is on,
+  every paid booking logs `email failed` and neither the owner nor the customer
+  hears anything. Both templates are made and Railway points at the right one.
+  Then sign in and `POST /api/admin/test-email` to prove it.
 - **The booking form still offers "Door code" and a free text access notes box.**
   CLAUDE.md says never collect lockbox or gate codes, and whatever a customer
   types there is now emailed to the owner inboxes. The owner should decide
@@ -157,6 +157,25 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-09-12 (evening) - EmailJS templates made, and a full check of the live site
+- Two EmailJS templates now. `template_lybu0cj` (was named Contact Us, rename to EZ
+  Shots Booking) is the booking template: To `{{to_email}}`, Subject `{{subject}}`,
+  Reply To `{{reply_to}}`, content `{{{message_html}}}`. Railway
+  `EMAILJS_TEMPLATE_BOOKING` set to it; redeploy logged `confirmation emails on`.
+- `template_qlotxua` (My Default Template) is the form template used by
+  `js/contact-form.js`. Its dashboard URL is `/4f1brpw`, which settles the old
+  question: it is the gmail one, so form leads have been reaching the right inbox.
+  The owner was given a branded HTML body for it that keeps `{{message}}` in a
+  `white-space:pre-wrap` block so intake lines survive.
+- Live checks, both `ezshots.org` and the Railway domain: every page and
+  `/api/config`, `/api/availability`, `/api/admin/session` 200; bad manage and ics
+  tokens 404; unsigned webhook `Bad signature.`; session reports stripe, webhook,
+  bookings and email all true. `ezshots.org` serves the new service even though its
+  CNAME still reads `pq6e6bom.up.railway.app`, confirmed by the `email` flag, which
+  only exists in the new code.
+- A server side EmailJS send was refused with 403, non-browser access disabled.
+  That is now the top blocker.
 
 ### 2026-09-12 (latest) - HTML booking emails, a test send, and a bug that would have said "undefined"
 - Both booking emails are now designed HTML, built in `server/email.js` from the
