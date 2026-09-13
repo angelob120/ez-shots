@@ -743,29 +743,43 @@ async function adminBookings(req, res) {
   const today = avail.keyOf(now);
   const from = avail.keyOf(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 60));
   const to = avail.keyOf(new Date(now.getFullYear(), now.getMonth(), now.getDate() + Math.max(120, cfg.availability.maxAdvanceDays)));
-  const list = (await db.list(from, to)).map(b => adminView(b, now));
+  const counts = await db.clientCounts();
+  const list = (await db.list(from, to)).map(b => Object.assign(adminView(b, now), {
+    clientBookings: counts.get(String(b.email || "").toLowerCase()) || 0
+  }));
 
-  // The six numbers at the top of the plan's admin home, worked out from what
-  // is confirmed. Revenue is by shoot date, so a month reads as what the
-  // month's shoots are worth.
+  // The numbers at the top of the admin home, worked out from what is
+  // confirmed. Revenue is by shoot date, so a month reads as what the month's
+  // shoots are worth, and it is net of refunds, because money that went back
+  // was never earned.
   const confirmed = list.filter(b => b.state === "confirmed");
+  const net = b => (b.paid ? b.amount : 0) - Number(b.refundedCents || 0) / 100;
   const monthKey = today.slice(0, 7);
+  const lastMonthKey = avail.keyOf(new Date(now.getFullYear(), now.getMonth() - 1, 1)).slice(0, 7);
   const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
   const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
   const inWeek = b => b.date >= avail.keyOf(weekStart) && b.date <= avail.keyOf(weekEnd);
   const month = confirmed.filter(b => b.date.slice(0, 7) === monthKey);
-  const revenue = month.reduce((s, b) => s + b.amount, 0);
-  const repeats = await db.query(
-    "SELECT count(*) AS n FROM (SELECT lower(email) FROM bookings WHERE status = 'confirmed' GROUP BY lower(email) HAVING count(*) > 1) t");
+  // Refunds on cancelled bookings still came out of a month's money.
+  const moneyIn = key => list.filter(b => b.date.slice(0, 7) === key && b.paid).reduce((s, b) => s + net(b), 0);
+  const revenue = Math.round(moneyIn(monthKey) * 100) / 100;
+  const upcoming = confirmed.filter(b => b.date >= today);
   const stats = {
     today: confirmed.filter(b => b.date === today).length,
     week: confirmed.filter(inWeek).length,
     month: month.length,
     revenue,
-    ticket: month.length ? Math.round(revenue / month.length) : 0,
-    repeat: Number(repeats.rows[0].n)
+    lastMonthRevenue: Math.round(moneyIn(lastMonthKey) * 100) / 100,
+    ticket: month.length ? Math.round(month.reduce((s, b) => s + b.amount, 0) / month.length) : 0,
+    upcoming: upcoming.length,
+    upcomingValue: upcoming.reduce((s, b) => s + b.amount, 0),
+    unpaid: list.filter(b => b.date >= today && (b.state === "held" || b.state === "expired" || (b.state === "confirmed" && !b.paid))).length,
+    repeat: [...counts.values()].filter(n => n > 1).length
   };
-  return json(res, 200, { today, now: now.toISOString(), stripe: !!STRIPE_KEY, stats, bookings: list });
+  return json(res, 200, {
+    today, now: now.toISOString(), stripe: !!STRIPE_KEY, email: email.configured(), stats, bookings: list,
+    packages: cfg.packages.map(p => ({ id: p.id, name: p.name, price: p.price, firstPrice: p.firstPrice, active: p.active !== false }))
+  });
 }
 
 // A booking as the admin page wants it: the state worked out, the long date,
@@ -778,6 +792,56 @@ function adminView(b, now = new Date()) {
   });
 }
 
+// A booking the owner adds by hand, for a client who phoned or texted. It takes
+// the slot the same way the site does, behind the same lock, and is booked
+// straight away: paid if he says it is, otherwise booked and waiting on
+// payment. Any real time works, the public schedule does not apply to him.
+// The client gets the You are booked email only when it is paid and he asks,
+// because that email says paid.
+async function adminCreate(req, res) {
+  if (!db) return json(res, 503, { error: "No database." });
+  const cfg = await readConfig();
+  const p = await body(req).catch(() => null);
+  if (!p) return json(res, 400, { error: "That did not arrive as valid JSON." });
+  const pkg = cfg.packages.find(x => x.id === p.packageId);
+  if (!pkg) return json(res, 400, { error: "Pick a package." });
+  const date = str(p.date, 10);
+  const time = avail.normalize(p.time);
+  const name = str(p.name, 120), mail = str(p.email, 200), phone = str(p.phone, 40), address = str(p.address, 300);
+  if (!avail.isKey(date) || !time) return json(res, 400, { error: "Pick a day and a time." });
+  if (name.length < 2) return json(res, 400, { error: "Enter the client's name." });
+  if (mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return json(res, 400, { error: "That email address does not look right." });
+  if (address.length < 6) return json(res, 400, { error: "Enter the property address." });
+  const first = p.firstShoot === true;
+  let amount = first ? pkg.firstPrice : pkg.price;
+  if (p.amount !== undefined && p.amount !== "" && p.amount !== null) {
+    const v = Number(p.amount);
+    if (!Number.isFinite(v) || v < 0 || v > 100000) return json(res, 400, { error: "The price has to be a number of dollars." });
+    amount = Math.round(v);
+  }
+  const now = new Date();
+  const held = await db.hold({
+    date, time, startsAt: avail.slotAt(date, time),
+    packageId: pkg.id, packageName: pkg.name, firstShoot: first, amount, listPrice: pkg.price,
+    name, email: mail, phone, brokerage: str(p.brokerage, 120), address,
+    access: str(p.access, 60), notes: str(p.notes, 2000), internalNotes: str(p.internalNotes, 4000),
+    checkoutMode: "manual", checkoutUrl: "", source: "admin"
+  }, 60 * 1000, now);
+  if (!held) return json(res, 409, { error: "Another booking already has that time. Pick a different one." });
+  const paid = p.paid === true;
+  let b;
+  try {
+    b = await db.update(held.id, { status: "confirmed", paid, paidAt: paid ? now : null, expiresAt: null }, now);
+  } catch (e) {
+    await db.release(held.id, now).catch(() => {});
+    return json(res, 409, { error: "Another booking already has that time. Pick a different one." });
+  }
+  console.log(`[ez-shots] ${b.id} added by the owner for ${date} ${time}${paid ? ", paid" : ", unpaid"}`);
+  let emailed = false;
+  if (paid && p.notify === true && mail) { emailed = email.configured(); notify(b); }
+  return json(res, 200, { booking: adminView(b, now), emailed });
+}
+
 async function adminBooking(req, res, id) {
   if (!db) return json(res, 503, { error: "No database." });
   const b = await db.find(id);
@@ -788,10 +852,35 @@ async function adminBooking(req, res, id) {
   let out = b;
   try {
     if (p.action === "confirm") {
-      if (b.status === "confirmed") return json(res, 200, { booking: adminView(b, now) });
-      const other = await db.clash(b.date, b.time, b.id, now);
-      if (other) return json(res, 409, { error: `That slot has since gone to ${other}. Cancel that one first, or move this booking by email.` });
-      out = await db.confirm(b.id, { checkoutMode: b.checkoutMode || "manual" }, now);
+      if (b.status === "confirmed" && b.paid) return json(res, 200, { booking: adminView(b, now) });
+      if (b.status === "cancelled") return json(res, 400, { error: "This booking is cancelled. Add a new booking instead." });
+      if (b.status === "confirmed") {
+        // Booked by hand and paid since, in cash or by Zelle.
+        out = await db.update(b.id, { paid: true, paidAt: now }, now);
+      } else {
+        const other = await db.clash(b.date, b.time, b.id, now);
+        if (other) return json(res, 409, { error: `That slot has since gone to ${other}. Cancel that one first, or reschedule this booking.` });
+        out = await db.confirm(b.id, { checkoutMode: b.checkoutMode || "manual" }, now);
+      }
+    } else if (p.action === "move") {
+      // The owner can put a shoot at any real time, including one the public
+      // calendar would not offer, because he is the one driving there. The only
+      // thing refused is a slot another booking owns.
+      if (b.status === "cancelled") return json(res, 400, { error: "This booking is cancelled, so there is nothing to move." });
+      const date = str(p.date, 10);
+      const time = avail.normalize(p.time);
+      if (!avail.isKey(date) || !time) return json(res, 400, { error: "Pick a new day and time." });
+      if (date === b.date && time === b.time) return json(res, 400, { error: "That is the time it is already booked for." });
+      const was = longDate(b.date) + " at " + b.time;
+      const moved = await db.move(b.id, date, time, avail.slotAt(date, time), now);
+      if (!moved) return json(res, 409, { error: "Another booking already has that time. Pick a different one." });
+      out = moved;
+      console.log(`[ez-shots] ${b.id} moved from ${b.date} ${b.time} to ${date} ${time}`);
+      extra.emailed = false;
+      if (p.notify === true && out.email) {
+        extra.emailed = email.configured();
+        after(email.notifyMoved(publicBooking(out), SITE_URL, { was }), out.id, "reschedule");
+      }
     } else if (p.action === "refund") {
       if (p.confirm !== true) return json(res, 400, { error: "Confirm the refund first." });
       const cents = Math.round(Number(p.amount) * 100);
@@ -901,6 +990,7 @@ async function api(req, res, url) {
     }
 
     if (pathname === "/api/admin/bookings" && req.method === "GET") return adminBookings(req, res);
+    if (pathname === "/api/admin/bookings" && req.method === "POST") return adminCreate(req, res);
     const m = /^\/api\/admin\/bookings\/(EZ-\d{6})$/.exec(pathname);
     if (m && req.method === "PATCH") return adminBooking(req, res, m[1]);
   }

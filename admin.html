@@ -3,157 +3,166 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Settings | EZ Shots</title>
+  <title>Settings | EZ Shots Admin</title>
   <meta name="robots" content="noindex, nofollow" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/admin.css" />
   <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 </head>
-<body data-page="admin">
-  <div id="site-header"></div>
+<body class="adm" data-page="admin">
+  <div id="adm-top"></div>
 
-  <section class="page-head" id="main">
-    <div class="container">
-      <p class="eyebrow">Owner only</p>
-      <h1>Prices and availability</h1>
-      <p class="lead">What you change here is what the booking page charges and offers. Nothing needs a deploy.</p>
-      <nav class="admin-nav" aria-label="Admin">
-        <a href="admin-bookings.html">Bookings</a>
-        <a href="admin.html" aria-current="page">Settings</a>
-      </nav>
+  <div id="adm-boot" class="adm-gate"><p class="adm-muted">Loading...</p></div>
+
+  <div id="adm-off" class="adm-gate" hidden>
+    <div class="adm-card">
+      <h1>Admin is not switched on</h1>
+      <p>This page needs the EZ Shots server running with an <code>ADMIN_PASSWORD</code> set. On Railway that is Variables on the ez-shots service, then redeploy. Until then the site runs on <code>config.json</code> in the repo.</p>
     </div>
-  </section>
+  </div>
 
-  <section class="section">
-    <div class="container form-narrow">
+  <div id="adm-login" class="adm-gate" hidden>
+    <form class="adm-card" id="adm-login-form">
+      <h1>Sign in</h1>
+      <p>One password, yours, from the Railway variables.</p>
+      <label class="adm-field"><span>Password</span>
+        <input class="adm-input" id="adm-password" type="password" autocomplete="current-password" required />
+      </label>
+      <p class="adm-error" id="adm-login-error" role="alert"></p>
+      <button type="submit" class="adm-btn adm-btn-primary adm-btn-lg">Sign in</button>
+    </form>
+  </div>
 
-      <!-- Shown while we ask the server who you are. -->
-      <div id="admin-boot"><p class="form-help">Checking...</p></div>
-
-      <!-- No server, or admin switched off. -->
-      <div id="admin-off" hidden>
-        <div class="form-block">
-          <p class="form-legend"><b>Admin is not switched on</b><span>Nothing here can save yet.</span></p>
-          <p>This page needs the EZ Shots server running with an <code>ADMIN_PASSWORD</code> set. On Railway that is Variables, add <code>ADMIN_PASSWORD</code>, then redeploy. Add a volume mounted at <code>/data</code> and set <code>DATA_DIR</code> to <code>/data</code> in the same place, or every price you set here goes back to the shipped default on the next deploy.</p>
-          <p class="form-note">Until then the site runs on <code>config.json</code> in the repo, which is a code edit and a deploy.</p>
+  <main id="adm-app" class="adm-main" hidden>
+    <div class="adm-wrap">
+      <div class="adm-head">
+        <div>
+          <h1>Settings</h1>
+          <p>Prices, hours and the rules the booking calendar follows. Live the moment you save, no deploy.</p>
+        </div>
+        <div class="adm-head-actions">
+          <a class="adm-btn" href="book.html" target="_blank" rel="noopener" id="view-booking"></a>
         </div>
       </div>
 
-      <!-- Login. -->
-      <div id="admin-login" hidden>
-        <form class="admin-form" id="login-form">
-          <div class="form-block">
-            <p class="form-legend"><b>Sign in</b><span>One password, yours, from the Railway variables.</span></p>
-            <div class="field">
-              <label for="admin-password">Password</label>
-              <input id="admin-password" type="password" autocomplete="current-password" />
+      <div class="adm-settings">
+        <nav class="adm-side" id="side" aria-label="Settings sections">
+          <a href="#packages">Packages</a>
+          <a href="#schedule">Weekly hours</a>
+          <a href="#rules">Booking rules</a>
+          <a href="#daysoff">Days off</a>
+          <a href="#oneoff">One off days</a>
+          <a href="#preview">Calendar preview</a>
+          <a href="#system">System</a>
+        </nav>
+
+        <div>
+          <section class="adm-card adm-section" id="packages">
+            <div class="adm-card-head">
+              <div><h2>Packages</h2><p>What the pricing and booking pages sell. Every price on the site follows these.</p></div>
+              <button type="button" class="adm-btn" id="add-package"></button>
             </div>
-            <div class="form-submit">
-              <button type="submit" class="btn">Sign in</button>
-              <p class="form-status" id="login-status" role="status" aria-live="polite"></p>
+            <div class="adm-card-pad">
+              <p class="adm-help" id="stripe-note"></p>
+              <div id="pkg-editor"></div>
             </div>
+          </section>
+
+          <section class="adm-card adm-section" id="schedule">
+            <div class="adm-card-head"><div><h2>Weekly hours</h2><p>Which start times a client can pick, day by day. Tap a time to turn it off for that weekday.</p></div></div>
+            <div class="adm-card-pad">
+              <div class="adm-grid3">
+                <label class="adm-field"><span>First shoot of the day</span><select class="adm-select" id="hours-start"></select></label>
+                <label class="adm-field"><span>Last shoot of the day</span><select class="adm-select" id="hours-end"></select></label>
+                <label class="adm-field"><span>How far apart</span><select class="adm-select" id="hours-every"></select></label>
+              </div>
+              <div><button type="button" class="adm-btn" id="apply-hours">Reset every open day to these hours</button></div>
+              <div class="adm-week-edit" id="week-editor"></div>
+            </div>
+          </section>
+
+          <section class="adm-card adm-section" id="rules">
+            <div class="adm-card-head"><div><h2>Booking rules</h2><p>How far ahead, how much notice, how many in a day.</p></div></div>
+            <div class="adm-card-pad">
+              <div class="adm-grid3">
+                <label class="adm-field"><span>Minimum notice</span>
+                  <div class="adm-suffix"><input class="adm-input" id="minNotice" type="number" min="0" max="720" /><em>hours</em></div>
+                  <p class="adm-help" id="minNotice-help"></p></label>
+                <label class="adm-field"><span>Book how far ahead</span>
+                  <div class="adm-suffix"><input class="adm-input" id="maxAdvance" type="number" min="1" max="365" /><em>days</em></div>
+                  <p class="adm-help" id="maxAdvance-help"></p></label>
+                <label class="adm-field"><span>Most shoots in a day</span>
+                  <div class="adm-suffix"><input class="adm-input" id="maxPerDay" type="number" min="1" max="50" /><em>shoots</em></div>
+                  <p class="adm-help">The day closes once it has this many.</p></label>
+              </div>
+              <div class="adm-field">
+                <span>Look busy</span>
+                <div class="adm-range"><input id="lookBusy" type="range" min="0" max="90" step="5" aria-label="Look busy percentage" /><output id="lookBusy-out" for="lookBusy"></output></div>
+                <p class="adm-help" id="lookBusy-help"></p>
+              </div>
+            </div>
+          </section>
+
+          <section class="adm-card adm-section" id="daysoff">
+            <div class="adm-card-head">
+              <div><h2>Days off</h2><p>Nobody can book these. The reason is only for you.</p></div>
+              <button type="button" class="adm-btn adm-btn-quiet" id="clear-past" hidden>Remove past dates</button>
+            </div>
+            <div class="adm-card-pad">
+              <div id="blocked-editor"></div>
+              <div class="adm-add-row">
+                <label class="adm-field"><span>From</span><input class="adm-input" type="date" id="block-from" /></label>
+                <label class="adm-field"><span>To, for a trip</span><input class="adm-input" type="date" id="block-to" /></label>
+                <label class="adm-field"><span>Reason, private</span><input class="adm-input" id="block-reason" placeholder="Vacation" /></label>
+                <button type="button" class="adm-btn adm-btn-primary" id="add-block">Block</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="adm-card adm-section" id="oneoff">
+            <div class="adm-card-head"><div><h2>One off days</h2><p>A different set of times for one date. Open a Sunday, or shorten a busy Tuesday.</p></div></div>
+            <div class="adm-card-pad">
+              <div id="override-editor"></div>
+              <div class="adm-field">
+                <span>Date</span>
+                <input class="adm-input" type="date" id="ov-date" style="max-width:220px" />
+              </div>
+              <div class="adm-field">
+                <span>Times offered that day</span>
+                <div class="adm-slots" id="ov-pills"></div>
+                <p class="adm-help">Pick none to close the day.</p>
+              </div>
+              <div><button type="button" class="adm-btn adm-btn-primary" id="add-override">Set this date</button></div>
+            </div>
+          </section>
+
+          <section class="adm-card adm-section" id="preview">
+            <div class="adm-card-head">
+              <div><h2>Calendar preview</h2><p id="preview-sub">What a client sees on the booking page for the next two weeks, from what is saved.</p></div>
+              <button type="button" class="adm-icon" id="preview-refresh" aria-label="Refresh the preview"></button>
+            </div>
+            <div class="adm-card-pad"><div class="adm-preview" id="preview-grid"></div></div>
+          </section>
+
+          <section class="adm-card adm-section" id="system">
+            <div class="adm-card-head">
+              <div><h2>System</h2><p>What is switched on at the server. These are Railway variables, not settings here.</p></div>
+              <button type="button" class="adm-btn" id="test-email">Send a test email</button>
+            </div>
+            <div class="adm-card-pad"><div class="adm-sys" id="sys-grid"></div></div>
+          </section>
+
+          <div class="adm-savebar" id="savebar">
+            <span class="adm-savebar-state"><span class="adm-dot"></span><span id="save-state">Everything saved</span></span>
+            <button type="button" class="adm-btn" id="discard-btn" hidden>Discard</button>
+            <button type="button" class="adm-btn adm-btn-primary adm-btn-lg" id="save-btn" disabled>Save changes</button>
           </div>
-        </form>
+        </div>
       </div>
-
-      <!-- The real thing. -->
-      <div id="admin-panel" hidden>
-        <div class="admin-bar">
-          <span id="admin-mode" class="admin-pill"></span>
-          <span id="admin-store" class="admin-pill"></span>
-          <button type="button" class="btn btn-ghost" id="logout-btn">Sign out</button>
-        </div>
-
-        <div class="form-block">
-          <p class="form-legend"><b>Packages</b><span>The price on the left is what a returning client pays. The first shoot price is what the button says by default.</span></p>
-          <div id="pkg-editor"></div>
-          <button type="button" class="btn btn-ghost" id="add-package">Add a package</button>
-        </div>
-
-        <div class="form-block">
-          <p class="form-legend"><b>Hours</b><span>The start times a shoot can have. These build the pills below; tap a pill to turn one time off for that day.</span></p>
-          <div class="row3">
-            <div class="field">
-              <label for="hours-start">First shoot of the day</label>
-              <select id="hours-start"></select>
-            </div>
-            <div class="field">
-              <label for="hours-end">Last shoot of the day</label>
-              <select id="hours-end"></select>
-            </div>
-            <div class="field">
-              <label for="hours-every">How far apart</label>
-              <select id="hours-every"></select>
-            </div>
-          </div>
-          <button type="button" class="btn btn-ghost" id="apply-hours">Apply these hours to every open day</button>
-        </div>
-
-        <div class="form-block">
-          <p class="form-legend"><b>Bookable days</b><span>Untick a day to close it. Tap a time to take it off that day only.</span></p>
-          <div id="week-editor"></div>
-        </div>
-
-        <div class="form-block">
-          <p class="form-legend"><b>Booking window and capacity</b><span>The calendar on the booking page follows these.</span></p>
-          <div class="row3">
-            <div class="field">
-              <label for="minNotice">Minimum notice, hours</label>
-              <input id="minNotice" type="number" min="0" max="720" />
-              <p class="form-help">Nothing inside this window can be booked.</p>
-            </div>
-            <div class="field">
-              <label for="maxAdvance">Book how far ahead, days</label>
-              <input id="maxAdvance" type="number" min="1" max="365" />
-              <p class="form-help">28 is four weeks.</p>
-            </div>
-            <div class="field">
-              <label for="maxPerDay">Most shoots in a day</label>
-              <input id="maxPerDay" type="number" min="1" max="50" />
-              <p class="form-help">The day closes once it has this many.</p>
-            </div>
-          </div>
-          <div class="field">
-            <label for="lookBusy">Look busy: <output id="lookBusy-out" for="lookBusy"></output></label>
-            <input id="lookBusy" type="range" min="0" max="90" step="5" />
-            <p class="form-help">Hides a share of the open times so the calendar reads as in demand rather than wide open. Always the same times for everyone, never a day's last time, and a hidden time comes back as real bookings fill the day. It does not stop anyone booking, it only changes what is shown.</p>
-          </div>
-        </div>
-
-        <div class="form-block">
-          <p class="form-legend"><b>Days off</b><span>Nobody can book these. The reason is for you, a client only ever sees that the day is not offered.</span></p>
-          <div id="blocked-editor"></div>
-          <div class="admin-add">
-            <input type="date" id="block-date" aria-label="Date to block" />
-            <input type="text" id="block-reason" placeholder="Reason, private" aria-label="Reason" />
-            <button type="button" class="btn btn-ghost" id="add-block">Block this date</button>
-          </div>
-        </div>
-
-        <div class="form-block">
-          <p class="form-legend"><b>One off days</b><span>A different time list for one date. Opens a closed Saturday, or shortens a busy Tuesday.</span></p>
-          <div id="override-editor"></div>
-          <div class="admin-add">
-            <input type="date" id="ov-date" aria-label="Date to change" />
-            <input type="text" id="ov-times" placeholder="9:00 AM, 11:00 AM" aria-label="Times for that date" />
-            <button type="button" class="btn btn-ghost" id="add-override">Set this date</button>
-          </div>
-        </div>
-
-        <p class="form-note">Saved changes are live on <a href="book.html">the booking page</a> and in the copy on every other page straight away. Bookings already taken are unaffected, they were charged at the price that was live then.</p>
-
-        <!-- Sticky, so Save is never a scroll away from whatever you just typed. -->
-        <div class="admin-savebar">
-          <span class="admin-savebar-state" id="save-state">Everything saved</span>
-          <button type="button" class="btn btn-lg" id="save-btn" disabled>Save changes</button>
-          <p class="form-status" id="save-status" role="status" aria-live="polite"></p>
-        </div>
-      </div>
-
     </div>
-  </section>
+  </main>
 
-  <div id="site-footer"></div>
   <script src="js/site.js"></script>
   <script src="js/admin-core.js"></script>
   <script src="js/admin.js"></script>

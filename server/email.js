@@ -389,6 +389,44 @@ function refundedMail(b, site, o) {
   };
 }
 
+// To the customer when the owner moves the shoot from admin, and ticks the box
+// to tell them. `o.was` is the old date and time as words.
+function movedMail(b, site, o) {
+  const first = firstName(b);
+  const manage = `${site}/manage.html?t=${b.token}`;
+  const ics = `${site}/api/ics?t=${b.token}`;
+  return {
+    subject: `Your shoot is now ${b.when}`,
+    text: [
+      `Hi ${first},`, "",
+      `Your shoot at ${b.address} has moved to ${b.when}.`, o.was ? `It was ${o.was}.` : "", "",
+      lines(customerRows(b)), "",
+      `Add the new time to your calendar: ${ics}`,
+      `Need to change or cancel? ${manage}`, "",
+      "Thanks,", "Angelo", "EZ Shots"
+    ].join("\n"),
+    html: layout({
+      preheader: `Your shoot has moved to ${b.when}.`,
+      eyebrow: "New time",
+      heading: `Your shoot is now ${b.when}`,
+      intro: `Hi ${esc(first)}, the shoot at <strong>${esc(b.address)}</strong> has moved.` +
+        (o.was ? ` It was ${esc(o.was)}.` : ""),
+      body: detailsBox(customerRows(b)) + signoff("Thanks,"),
+      buttons: [button(ics, "Add the new time to your calendar", true), button(manage, "Change or cancel", false)],
+      footer: "Questions? Just reply to this email.<br>EZ Shots, real estate photography in Metro Detroit"
+    })
+  };
+}
+
+async function notifyMoved(b, siteUrl, o) {
+  const out = result();
+  if (!configured()) { out.errors.push("not configured: " + why().join(", ")); return out; }
+  if (!b.email) { out.errors.push("the booking has no customer email"); return out; }
+  try { await send(b.email, movedMail(b, trimSite(siteUrl), o || {}), OWNER); out.customer = true; }
+  catch (e) { out.errors.push("customer: " + e.message); }
+  return out;
+}
+
 // Every email for one booking, without sending anything. Used by
 // scripts/preview-emails.mjs.
 function render(booking, siteUrl, opts = {}) {
@@ -478,4 +516,4 @@ async function sendTest(siteUrl) {
   return out;
 }
 
-module.exports = { notifyBooked, notifyRefunded, configured, why, render, sendTest, googleCalendarUrl };
+module.exports = { notifyBooked, notifyRefunded, notifyMoved, configured, why, render, sendTest, googleCalendarUrl };

@@ -77,12 +77,31 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   on the pricing page, so it is not a regression. The bookings table now holds
   every email, so a check is a small query away; until it exists do not
   describe the discount as verified anywhere in the copy.
-- **Two admin pages, one sign in.** `admin.html` is settings (prices, hours,
-  days, cap, look busy, days off), `admin-bookings.html` is the day (today,
-  needs attention, upcoming, mark paid, cancel, private note). Both boot
-  through `js/admin-core.js`. Add a third and it boots the same way. `/admin`
+- **Two admin pages, one sign in, one look.** `admin-bookings.html` is the day
+  (next shoot, numbers, list or week, a drawer per booking) and `admin.html` is
+  settings (packages, weekly hours, rules, days off, one off days, a calendar
+  preview, system status and a test email). Both boot through
+  `EZAdmin.boot(page, onReady)` in `js/admin-core.js`, which also draws the top
+  bar and owns toasts, the confirm dialog and icons. Add a third and it boots the
+  same way. They load `css/admin.css` after `styles.css`, every admin rule is
+  namespaced `.adm`, and nothing admin lives in `styles.css` any more: the old
+  admin `.stat` rule had been restyling the public stat boxes. They carry no
+  site header or footer; `site.js` still loads for `window.EZ_MARK`. `/admin`
   opens the bookings page and is linked only from the footer. Never put admin
   in the nav.
+- **What the owner can do to a booking.** `PATCH /api/admin/bookings/:id` takes
+  `confirm` (mark paid, also for a hand booking that was booked unpaid),
+  `move` (any real date and time, refused only when another live booking owns
+  the slot, taken behind the same advisory lock as a hold, optional `notify`
+  sends the client the new time), `refund`, `cancel` and `note`.
+  `POST /api/admin/bookings` adds a booking by hand for a client who phoned:
+  status confirmed, `source` admin, paid or not as the owner says, any price,
+  and the You are booked email only when it is paid and he ticks it, because that
+  email says paid. The public schedule does not bind the owner, only clashes do.
+- **The list flags a returning client at the first shoot price.**
+  `clientBookings` on each booking is that email's confirmed count. It is the
+  only check on the half price radio button, and it is a flag for the owner, not
+  a block, so the copy still must not call the discount verified.
 - **Schema changes are migration files** in `server/migrations`, applied on
   boot in name order and recorded in `schema_migrations`. Never edit an applied
   one, add the next number. Never create a table by hand in the Railway

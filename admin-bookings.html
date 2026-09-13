@@ -3,96 +3,82 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bookings | EZ Shots</title>
+  <title>Bookings | EZ Shots Admin</title>
   <meta name="robots" content="noindex, nofollow" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/admin.css" />
   <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 </head>
-<body data-page="admin">
-  <div id="site-header"></div>
+<body class="adm" data-page="admin">
+  <div id="adm-top"></div>
 
-  <section class="page-head" id="main">
-    <div class="container">
-      <p class="eyebrow">Owner only</p>
-      <h1>Bookings</h1>
-      <p class="lead">Where you are going, who booked you, what they bought and whether they paid.</p>
-      <nav class="admin-nav" aria-label="Admin">
-        <a href="admin-bookings.html" aria-current="page">Bookings</a>
-        <a href="admin.html">Settings</a>
-      </nav>
+  <div id="adm-boot" class="adm-gate"><p class="adm-muted">Loading...</p></div>
+
+  <div id="adm-off" class="adm-gate" hidden>
+    <div class="adm-card">
+      <h1>Admin is not switched on</h1>
+      <p>This page needs the EZ Shots server running with an <code>ADMIN_PASSWORD</code> set, and a <code>DATABASE_URL</code> for the bookings. On Railway that is Variables on the ez-shots service.</p>
     </div>
-  </section>
+  </div>
 
-  <section class="section">
-    <div class="container form-narrow">
+  <div id="adm-login" class="adm-gate" hidden>
+    <form class="adm-card" id="adm-login-form">
+      <h1>Sign in</h1>
+      <p>One password, yours, from the Railway variables.</p>
+      <label class="adm-field"><span>Password</span>
+        <input class="adm-input" id="adm-password" type="password" autocomplete="current-password" required />
+      </label>
+      <p class="adm-error" id="adm-login-error" role="alert"></p>
+      <button type="submit" class="adm-btn adm-btn-primary adm-btn-lg">Sign in</button>
+    </form>
+  </div>
 
-      <div id="admin-boot"><p class="form-help">Checking...</p></div>
-
-      <div id="admin-off" hidden>
-        <div class="form-block">
-          <p class="form-legend"><b>Admin is not switched on</b><span>Nothing here can load yet.</span></p>
-          <p>This page needs the EZ Shots server running with an <code>ADMIN_PASSWORD</code> set and a <code>DATABASE_URL</code> for the bookings. On Railway that is Variables on the ez-shots service.</p>
+  <main id="adm-app" class="adm-main" hidden>
+    <div class="adm-wrap">
+      <div class="adm-head">
+        <div>
+          <h1 id="greet">Bookings</h1>
+          <p id="greet-sub"></p>
+        </div>
+        <div class="adm-head-actions">
+          <span class="adm-updated" id="updated" aria-live="polite"></span>
+          <button type="button" class="adm-icon" id="refresh-btn" title="Refresh" aria-label="Refresh"></button>
+          <button type="button" class="adm-btn" id="export-btn"></button>
+          <button type="button" class="adm-btn adm-btn-primary" id="add-btn"></button>
         </div>
       </div>
 
-      <div id="admin-login" hidden>
-        <form class="admin-form" id="login-form">
-          <div class="form-block">
-            <p class="form-legend"><b>Sign in</b><span>One password, yours, from the Railway variables.</span></p>
-            <div class="field">
-              <label for="admin-password">Password</label>
-              <input id="admin-password" type="password" autocomplete="current-password" />
-            </div>
-            <div class="form-submit">
-              <button type="submit" class="btn">Sign in</button>
-              <p class="form-status" id="login-status" role="status" aria-live="polite"></p>
-            </div>
+      <section id="next" aria-label="Next shoot"></section>
+      <section class="adm-kpis" id="kpis" aria-label="Numbers"></section>
+
+      <section class="adm-card" aria-label="Bookings">
+        <div class="adm-toolbar">
+          <div class="adm-seg" id="filters" role="group" aria-label="Show"></div>
+          <div class="adm-search" id="search-wrap">
+            <label class="adm-sr" for="search">Search bookings</label>
+            <input class="adm-input" id="search" type="search" placeholder="Search address, client, email, phone, id" autocomplete="off" />
+            <kbd>/</kbd>
           </div>
-        </form>
-      </div>
-
-      <div id="admin-panel" hidden>
-        <div class="admin-bar">
-          <span id="admin-mode" class="admin-pill"></span>
-          <button type="button" class="btn btn-ghost" id="refresh-btn">Refresh</button>
-          <button type="button" class="btn btn-ghost" id="logout-btn">Sign out</button>
+          <div class="adm-seg" id="views" role="group" aria-label="View"></div>
         </div>
-
-        <!-- The six numbers from the plan. Filled by js/admin-bookings.js. -->
-        <div class="stat-grid" id="stats"></div>
-
-        <div class="form-block" id="attention-block" hidden>
-          <p class="form-legend"><b>Needs attention</b><span id="attention-sub"></span></p>
-          <div id="attention"></div>
-        </div>
-
-        <div class="form-block">
-          <p class="form-legend"><b>Today</b><span id="today-sub"></span></p>
-          <div id="today"></div>
-        </div>
-
-        <div class="form-block">
-          <p class="form-legend"><b>Upcoming</b><span id="upcoming-sub"></span></p>
-          <div class="field">
-            <label for="search">Find a booking</label>
-            <input id="search" type="search" placeholder="Address, name, email or phone" autocomplete="off" />
+        <div class="adm-toolbar" id="weeknav" hidden>
+          <div class="adm-weeknav">
+            <button type="button" class="adm-icon" id="week-prev" aria-label="Previous week"></button>
+            <b id="week-label"></b>
+            <button type="button" class="adm-icon" id="week-next" aria-label="Next week"></button>
           </div>
-          <div id="upcoming"></div>
+          <button type="button" class="adm-btn" id="week-today">This week</button>
         </div>
-
-        <details class="form-block admin-past">
-          <summary><b>Past and cancelled</b><span id="past-sub"></span></summary>
-          <div id="past"></div>
-        </details>
-
-        <p class="form-status" id="list-status" role="status" aria-live="polite"></p>
-      </div>
-
+        <div id="list"></div>
+        <div id="week" class="adm-week" hidden></div>
+      </section>
     </div>
-  </section>
+  </main>
 
-  <div id="site-footer"></div>
+  <div class="adm-scrim" id="scrim" hidden></div>
+  <aside class="adm-drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden></aside>
+
   <script src="js/site.js"></script>
   <script src="js/admin-core.js"></script>
   <script src="js/admin-bookings.js"></script>

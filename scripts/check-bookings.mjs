@@ -222,7 +222,42 @@ try {
     { refused: refused.json, state: still.state });
   check("and sends no refund email", !mailsTo("dana1@example.com", /^Refund/).length);
 
-  // ---- 4. pages
+  // ---- 4. reschedule and add a booking by hand
+  const movePath = "/api/admin/bookings/" + two.id;
+  const addDate = days[2];
+  const made = await call("POST", "/api/admin/bookings", {
+    packageId: pkg.id, date: addDate, time: "7:15 AM", name: "Phone Client", email: "phone@example.com",
+    phone: "(248) 555-0100", address: "400 Phone Booking Lane, Troy MI 48084", paid: false, amount: 90
+  });
+  check("the owner can add a booking by hand, unpaid, at his own price", made.status === 200 && made.json.booking.state === "confirmed" &&
+    made.json.booking.paid === false && made.json.booking.amount === 90 && made.json.booking.source === "admin", made.json);
+  const onto = await call("PATCH", movePath, { action: "move", date: addDate, time: "7:15 AM" });
+  check("a move onto another booking's time is refused", onto.status === 409, onto.json);
+  const target = days[days.length - 1];
+  const beforeMove = mails.length;
+  const moved = await call("PATCH", movePath, { action: "move", date: target, time: "9:30 am", notify: true });
+  check("the owner can move a booking to any real time", moved.status === 200 && moved.json.booking.date === target &&
+    moved.json.booking.time === "9:30 AM" && moved.json.booking.state === "confirmed", moved.json);
+  const movedMail = await waitFor(() => mails.slice(beforeMove).find(m => m.to_email === "dana1@example.com" && /^Your shoot is now /.test(m.subject)));
+  check("and the client is emailed the new time when he asks", !!movedMail);
+  const oldSlot = (await call("GET", "/api/availability")).json.days[two.date] || [];
+  check("the old time opens back up", oldSlot.indexOf(two.time) !== -1, oldSlot);
+  const quiet = await call("PATCH", movePath, { action: "move", date: target, time: "10:30 AM" });
+  await sleep(1500);
+  check("a move without notify sends nothing", quiet.status === 200 && !mails.slice(beforeMove + 1).some(m => /^Your shoot is now 10:30/.test(m.subject) || /10:30 AM/.test(m.subject)));
+
+  const clashAdd = await call("POST", "/api/admin/bookings", {
+    packageId: pkg.id, date: addDate, time: "7:15 AM", name: "Second Client", address: "401 Phone Booking Lane, Troy MI"
+  });
+  check("adding a second booking at that time is refused", clashAdd.status === 409, clashAdd.json);
+  const markPaid = await call("PATCH", "/api/admin/bookings/" + made.json.booking.id, { action: "confirm" });
+  check("marking the hand booking paid records the payment", markPaid.status === 200 && markPaid.json.booking.paid === true && !!markPaid.json.booking.paidAt, markPaid.json);
+  const list = (await call("GET", "/api/admin/bookings")).json;
+  check("the admin list counts each client's bookings and reports net revenue",
+    list.bookings.every(b => typeof b.clientBookings === "number") && typeof list.stats.revenue === "number" &&
+    typeof list.stats.unpaid === "number" && Array.isArray(list.packages), list.stats);
+
+  // ---- 5. pages
   const adminPage = await fetch(SITE + "/admin").then(r => r.text().then(t => ({ status: r.status, t })));
   check("/admin opens the bookings page", adminPage.status === 200 && adminPage.t.includes("js/admin-bookings.js"));
   check("the removed accept and decline page is gone", (await fetch(SITE + "/decide.html")).status === 404 && (await call("GET", "/api/decide?b=EZ-000001")).status === 404);

@@ -247,6 +247,41 @@ class Db {
     return r.rowCount ? r.rows[0].id : null;
   }
 
+  // Move a booking to another date and time, for the owner rescheduling from
+  // admin. Same lock and clash check as hold(), so a move cannot land on a slot
+  // somebody is paying for right now. Returns null when the slot is taken.
+  async move(id, date, time, startsAt, now = new Date()) {
+    const c = await this.pool.connect();
+    try {
+      await c.query("BEGIN");
+      await c.query("SELECT pg_advisory_xact_lock(hashtext($1))", [date + "|" + time]);
+      const clash = await c.query(
+        `SELECT id FROM bookings WHERE date = $1 AND time = $2 AND id <> $3 AND ${this.active("$4")} LIMIT 1`,
+        [date, time, id, now]);
+      if (clash.rowCount) { await c.query("ROLLBACK"); return null; }
+      const r = await c.query(
+        "UPDATE bookings SET date = $2, time = $3, starts_at = $4, updated_at = $5 WHERE id = $1 RETURNING *",
+        [id, date, time, startsAt, now]);
+      await c.query("COMMIT");
+      return fromRow(r.rows[0]);
+    } catch (e) {
+      await c.query("ROLLBACK").catch(() => {});
+      throw e;
+    } finally {
+      c.release();
+    }
+  }
+
+  // How many confirmed bookings each client has ever had, by lowercased email.
+  // The admin page uses it to spot a returning client who took the first shoot
+  // price, which nothing else checks.
+  async clientCounts() {
+    const r = await this.query("SELECT lower(email) AS email, count(*) AS n FROM bookings WHERE status = 'confirmed' GROUP BY lower(email)");
+    const out = new Map();
+    for (const row of r.rows) out.set(row.email, Number(row.n));
+    return out;
+  }
+
   // Everything from a date on, newest first within a day, for the admin list.
   async list(from, to) {
     const r = await this.query(

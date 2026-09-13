@@ -803,68 +803,6 @@ button.cal-day.on small { color: rgba(255,255,255,.85); }
   .book-bar-actions .btn-lg { padding: 15px 20px; font-size: 16px; }
 }
 
-/* ==========================================================================
-   Admin settings (admin.html). Owner only, one screen, phone sized.
-   ========================================================================== */
-.admin-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
-.admin-pill {
-  font-size: 12.5px; font-weight: 700; padding: 7px 14px; border-radius: 999px;
-  background: var(--tint); color: var(--accent); border: 1px solid var(--line-2);
-}
-.admin-pill.warn { background: #fef3c7; color: #92400e; border-color: #fde68a; }
-[data-theme="dark"] .admin-pill.warn { background: rgba(146,64,14,.28); color: #fcd34d; border-color: rgba(146,64,14,.6); }
-.admin-bar .btn { margin-left: auto; }
-
-.admin-card {
-  border: 1px solid var(--line); border-radius: var(--radius); padding: 20px;
-  margin-bottom: 16px; background: var(--surface); display: grid; gap: 12px;
-}
-.admin-card-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.admin-card-head b { font-size: 17px; letter-spacing: -.02em; }
-.admin-toggle { font-size: 13px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 7px; cursor: pointer; }
-.admin-toggle input { width: 18px; height: 18px; accent-color: var(--brand); cursor: pointer; }
-.admin-x {
-  margin-left: auto; font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
-  background: none; border: 1px solid var(--line); color: var(--muted);
-  border-radius: 999px; padding: 6px 13px;
-}
-.admin-x:hover { border-color: #ef4444; color: #ef4444; }
-
-.a-field { display: block; }
-.a-field span { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
-.a-field input, .a-field textarea {
-  width: 100%; padding: 11px 13px; border: 1.5px solid var(--line); border-radius: var(--radius-sm);
-  font-size: 15px; font-family: inherit; background: var(--bg); color: var(--ink);
-}
-.a-field textarea { resize: vertical; }
-.a-field input:focus, .a-field textarea:focus { outline: none; border-color: var(--brand); box-shadow: var(--ring); }
-.form-help.warn { color: #92400e; font-weight: 600; }
-[data-theme="dark"] .form-help.warn { color: #fcd34d; }
-
-/* Where the two admin pages are. */
-.admin-nav { display: flex; gap: 8px; margin-top: 18px; }
-.admin-nav a {
-  font-size: 13.5px; font-weight: 700; color: var(--muted); text-decoration: none;
-  padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
-}
-.admin-nav a[aria-current="page"] { color: #fff; background: var(--brand); border-color: var(--brand); }
-.admin-nav a:hover { border-color: var(--line-2); }
-
-/* A weekday: an on switch, then a pill per start time. */
-.admin-day { display: grid; grid-template-columns: 118px 1fr; align-items: start; gap: 12px; margin-bottom: 12px; }
-.admin-day-name { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; padding-top: 8px; }
-.admin-day-name input { width: 18px; height: 18px; accent-color: var(--brand); cursor: pointer; margin: 0; }
-.admin-day.off .admin-day-name { color: var(--muted); font-weight: 600; }
-.admin-day.off .admin-slots { opacity: .45; pointer-events: none; }
-.admin-slots { display: flex; flex-wrap: wrap; gap: 6px; }
-.slot-pill {
-  font-family: inherit; cursor: pointer; font-size: 13px; font-weight: 700; min-height: 36px; padding: 7px 12px;
-  color: var(--muted); background: var(--card); border: 1.5px solid var(--line); border-radius: 999px;
-  text-decoration: line-through; transition: background .15s, border-color .15s, color .15s;
-}
-.slot-pill.on { color: #fff; background: var(--brand); border-color: var(--brand); text-decoration: none; }
-.slot-pill:hover { border-color: var(--line-2); }
-.slot-pill:focus-visible { outline: none; box-shadow: var(--ring); }
 .field select, .field input[type="range"] { width: 100%; }
 .field select {
   font: inherit; color: var(--ink); background: var(--card); border: 1.5px solid var(--line);
@@ -873,67 +811,7 @@ button.cal-day.on small { color: rgba(255,255,255,.85); }
 .field select:focus { outline: none; border-color: var(--brand); box-shadow: var(--ring); }
 .field input[type="range"] { accent-color: var(--brand); height: 44px; }
 .field output { color: var(--accent); }
-
-.admin-row {
-  display: flex; align-items: center; gap: 12px; padding: 11px 14px; margin-bottom: 8px;
-  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
-}
-.admin-row b { font-size: 14.5px; flex: none; }
-.admin-row span { color: var(--muted); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.admin-add { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
-.admin-add input {
-  flex: 1 1 150px; padding: 11px 13px; border: 1.5px solid var(--line); border-radius: var(--radius-sm);
-  font-size: 14.5px; font-family: inherit; background: var(--bg); color: var(--ink);
-}
-.admin-add input:focus { outline: none; border-color: var(--brand); box-shadow: var(--ring); }
-.admin-save { display: grid; gap: 14px; justify-items: start; }
-.admin-form { display: grid; gap: 0; }
-
-/* The bookings page: six numbers, then cards. */
-.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
-.stat { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 4px; }
-.stat span { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-.stat b { font-size: 22px; font-weight: 900; letter-spacing: -.02em; }
-.bk-day { font-size: 14px; font-weight: 800; color: var(--muted); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .05em; }
-.bk-day:first-child { margin-top: 0; }
-.bk { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; display: grid; gap: 10px; }
-.bk-held { border-left-color: #f59e0b; }
-.bk-expired, .bk-cancelled { border-left-color: var(--line-2); opacity: .8; }
-.bk-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.bk-head b { font-size: 17px; letter-spacing: -.02em; }
-.bk-main { display: grid; gap: 2px; }
-.bk-main b { font-size: 15.5px; }
-.bk-main span { font-size: 14px; color: var(--muted); }
-.bk-links, .bk-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.btn-sm { padding: 9px 14px; font-size: 13.5px; min-height: 40px; box-shadow: none; }
-.btn-sm:hover { transform: none; }
-.bk-detail { display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 12px; }
-.bk-detail[hidden], .form-block[hidden] { display: none; }
-.bk-row { display: flex; gap: 14px; font-size: 14px; }
-.bk-row span { flex: 0 0 110px; color: var(--muted); font-weight: 600; }
-.bk-row b { font-weight: 600; word-break: break-word; }
-.bk-notes b { white-space: pre-wrap; }
-.bk-internal { margin-top: 6px; }
 .pill { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; padding: 5px 10px; border-radius: 999px; white-space: nowrap; }
-.pill-confirmed { background: #dcfce7; color: #166534; }
-.pill-held { background: #fef3c7; color: #92400e; }
-.pill-expired, .pill-cancelled { background: var(--surface-2); color: var(--muted); }
-[data-theme="dark"] .pill-confirmed { background: rgba(22,101,52,.35); color: #86efac; }
-[data-theme="dark"] .pill-held { background: rgba(146,64,14,.28); color: #fcd34d; }
-.admin-past summary { cursor: pointer; font-size: 17px; letter-spacing: -.02em; }
-.admin-past summary span { color: var(--muted); font-weight: 600; font-size: 14px; }
-.admin-past[open] summary { margin-bottom: 14px; }
-
-@media (max-width: 720px) {
-  .admin-day { grid-template-columns: 1fr; gap: 6px; }
-  .admin-day-name { padding-top: 0; }
-  .stat-grid { grid-template-columns: 1fr 1fr; }
-  .stat b { font-size: 19px; }
-  .bk-row { flex-direction: column; gap: 1px; }
-  .bk-row span { flex: none; }
-  .admin-bar .btn { margin-left: 0; }
-}
-
 /* ---------- Booking confirmation (booked.html) ---------- */
 .booked-card {
   text-align: center; background: var(--card); border: 1px solid var(--line);
@@ -951,30 +829,6 @@ button.cal-day.on small { color: rgba(255,255,255,.85); }
   .booked-card h1 { font-size: 30px; }
 }
 
-/* The save bar follows you down the settings page. Reaching for Save should
-   never mean scrolling past four blocks of fields to find it. */
-.admin-savebar {
-  position: sticky; bottom: 0; z-index: 40; margin-top: 26px;
-  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 14px;
-  background: var(--header-bg); backdrop-filter: saturate(180%) blur(12px);
-  border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 14px 16px; box-shadow: var(--shadow-md);
-}
-.admin-savebar-state { font-size: 13.5px; font-weight: 700; color: var(--muted); }
-.admin-savebar.dirty .admin-savebar-state { color: var(--accent); }
-.admin-savebar .form-status { grid-column: 1 / -1; }
-.admin-savebar .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
-@media (max-width: 720px) {
-  .admin-savebar { padding: 12px 14px; }
-  .admin-savebar .btn-lg { padding: 14px 22px; font-size: 15.5px; }
-}
-
-/* ---- Money going back: refunds --------------------------------------------
-   The only button on the site that moves money back to a card, so it looks
-   different from everything else and always sits behind a second ask. */
 /* .btn-row is display:flex, which beats the hidden attribute. booked.html
    hides a row until it applies. */
 .btn-row[hidden] { display: none; }
-.btn-danger { background: #b91c1c; border-color: #b91c1c; color: #fff; }
-.btn-danger:hover { background: #991b1b; border-color: #991b1b; color: #fff; }
-[data-theme="dark"] [data-theme="dark"] .bk-refund { margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); display: grid; gap: 10px; }

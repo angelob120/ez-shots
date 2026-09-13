@@ -165,6 +165,56 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-09-12 (admin) - Admin rebuilt as a real work tool
+- **Why.** The owner called the admin panel bad and missing a lot. It was the
+  marketing site with a form on it: announcement bar, site nav, a hero, a narrow
+  column, status messages at the bottom of a long page, `window.confirm`, no way
+  to move a shoot or add one for a client who phoned, and `/api/admin/test-email`
+  existed with no button.
+- **Shell.** Own top bar (mark, Bookings with a needs attention count, Settings,
+  setup status dot, view site, theme, sign out), no site header or footer,
+  toasts, an accessible confirm dialog, and a 401 mid use brings the sign in
+  back. `js/admin-core.js`, `css/admin.css` (new, namespaced `.adm`).
+- **Bookings page.** Greeting and summary, next shoot card with directions and
+  text, four numbers (today, this week, revenue this month net of refunds with
+  the change on last month, needs attention), filters with counts (upcoming,
+  needs attention, past, cancelled, all), search across everything with `/`,
+  list grouped by day with day totals, a week calendar, CSV export of what is on
+  screen, auto refresh every minute when idle, `n` for a new booking, deep
+  links `#EZ-000123`. A drawer per booking: call, text, email, directions, copy
+  buttons, client history, payment with a link to the Stripe payment, private
+  note (Cmd or Ctrl Enter), timeline, reschedule with the day's open and taken
+  times, refund with All, Half and $20 chips, cancel, copy the client's manage
+  link, and a flag for a returning client who took the first shoot price.
+- **New booking by hand** in the same drawer: day and time (open times or any
+  time), package, price, first shoot, client details, paid or not, and the
+  booked email when paid.
+- **Settings page.** Sticky section list, packages as collapsible rows with a
+  Live switch, reorder, duplicate and the discount shown as a percent; weekly
+  hours Monday first with switches and Copy to open days; rules that explain
+  themselves (days of notice, bookable through a date, what look busy hides);
+  days off as a date range for a trip with Remove past dates; one off days
+  picked as time pills and editable; a two week calendar preview from
+  `/api/availability`; system status and Send a test email; unsaved changes are
+  compared with the saved copy, with Discard and Cmd or Ctrl S.
+- **Server.** `db.move`, `db.clientCounts`, `adminCreate`, the `move` action,
+  `confirm` for confirmed but unpaid, stats `revenue` net of refunds,
+  `lastMonthRevenue`, `upcoming`, `upcomingValue`, `unpaid`; the bookings reply
+  also carries `packages` and `email`. `email.notifyMoved` is the new time email.
+- **Bugs fixed on the way.** The admin `.stat` rules in `styles.css` were
+  restyling the stat boxes on index, about and portfolio (left aligned, small).
+  The refund panel CSS never applied (a doubled `[data-theme="dark"]` selector).
+- **Verified.** `npm test`; `npm run check:bookings` with seven new checks (hand
+  booking unpaid at a custom price, a move onto a taken time refused, a move to
+  any time, the client emailed only with notify, the old time opening up, a
+  second hand booking at a taken time refused, marking a hand booking paid, the
+  list carrying client counts and net revenue). In the browser against a
+  throwaway `ez_shots_admin_demo` database with no Stripe and no emails: sign
+  in, list, drawer, reschedule, new booking, week view in dark, phone width with
+  no sideways scroll, settings sections, dirty state and Discard, no console
+  errors. The `ez-shots-admin-demo` entry in `.claude/launch.json` is local
+  only and was not committed.
+
 ### 2026-09-12 (night) - Full site check, new logo and favicon
 - **Checked everything** the owner asked about. `npm test` (4 forms, 15
   availability rules) and `npm run check:bookings` (26 checks: book, pay,
