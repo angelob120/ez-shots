@@ -94,9 +94,10 @@ This file is the memory between sessions. Read it at the start of every session 
   and the owner's own photo is `img/owner.jpg` on `about.html` and the home About block
   since 2026-09-12. Still Unsplash stock: the hero and the three aerials in the drone
   section of `index.html`.
-- **More portfolio shoots.** The portfolio is five entries because five photos were
-  supplied. Each detail page therefore shows one frame. Send more per property and the
-  `gallery` arrays fill out without any code change.
+- **The Troy colonial still shows one frame.** On 2026-09-12 the owner pasted 16 more
+  frames and four of the five detail pages now show five each. Nothing came for
+  `troy-brick-colonial`, so it is the one listing left with only its cover. Send frames
+  for it and they go into its `gallery` array like the others, no code change.
 - **Real testimonials.** The three fake quotes were REMOVED on 2026-09-01 and replaced
   with an honest "I do not have reviews yet" section built on the refund window, the $75
   first shoot and the portfolio. When real clients exist, their quotes can go back in as
@@ -157,6 +158,36 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-09-12 (portfolio) - Four listings get their supporting frames
+- **Why.** The owner pasted 18 photos in chat and asked for them on the listings
+  as supporting frames. Until now every detail page showed one frame, the cover.
+- **What went where.** Sorted by looking at each photo against the five covers.
+  Birmingham: the angled front, the rear patio, the living room and the kitchen.
+  Royal Oak: the porch close up, the garage, the rear porch and a second front.
+  Rochester: a sunny front, the porch, the kitchen and the living room.
+  Northville: a second front, the porch, the garage side and the rear with the
+  fire pit, all twilight. Two of the 18 were not new: one was byte for byte the
+  Birmingham cover already in `img/` and one was a repeat of the Rochester front.
+  Nothing matched the Troy colonial (all brick, no siding), so it keeps one frame.
+- **Files.** 16 WebP frames in `img/`, named `<listing>-<view>.webp`, 1448x1086,
+  metadata stripped with exiftool (only an sRGB profile was in them). Kept as
+  WebP rather than re-encoded to JPEG, since `server.js` already serves
+  `.webp` with its type and the week long image cache, and a JPEG pass would
+  add a second round of loss. The bytes came out of the session transcript the
+  same way the owner's photo did on 2026-09-12.
+- **Data.** `js/projects.js` only: each `gallery` array is the cover first,
+  then the four new frames. `project.html` and the gallery CSS already handled
+  more than one frame (lead 16:9 full width, the rest 3:2 in two columns, one
+  column on a phone), so no code changed.
+- **Not changed.** The Rochester description still says "Flat overcast light was
+  the right call", and its new front frame is in sun under a blue sky. Copy was
+  not in the ask; the owner may want to soften that sentence.
+- **Verified.** `npm test` (4 forms, 16 rules). In the browser against the
+  local server: all 21 gallery URLs 200 with `image/webp` or `image/jpeg` and
+  `max-age=604800`, every frame loads at natural size, no console errors, no
+  sideways scroll, the two column grid at 1280 and the one column stack at
+  phone width, screenshots of the Northville and Birmingham pages.
 
 ### 2026-09-12 (end to end) - Whole site driven up and down, two bugs fixed, owner photo in
 - **The owner's photo is on the site.** He pasted it in chat again; this time

@@ -16,7 +16,13 @@ window.EZ_PROJECTS = [
     short: "Full interior, exterior, aerials and a one minute walkthrough.",
     description: "A colonial a few streets off downtown Birmingham that needed to look as good online as it does on the street. Shot in the last hour of light so the front rooms read warm and the brick keeps its colour. Listing went live the next morning.",
     services: ["Interior photos", "Exterior photos", "Drone aerials", "1 minute video"],
-    gallery: ["img/birmingham-colonial.jpg"]
+    gallery: [
+      "img/birmingham-colonial.jpg",
+      "img/birmingham-colonial-front.webp",
+      "img/birmingham-colonial-rear.webp",
+      "img/birmingham-colonial-living.webp",
+      "img/birmingham-colonial-kitchen.webp"
+    ]
   },
   {
     id: "royal-oak-craftsman",
@@ -31,7 +37,13 @@ window.EZ_PROJECTS = [
     short: "Stone, timber and autumn colour, shot before the leaves went.",
     description: "Craftsman detail is the selling point here, so the exterior set gets in close on the stone piers, the timber brackets and the wood garage doors rather than settling for one wide shot from the curb. Booked and shot inside the same week the colour turned.",
     services: ["Interior photos", "Exterior photos", "Drone aerials"],
-    gallery: ["img/royal-oak-craftsman.jpg"]
+    gallery: [
+      "img/royal-oak-craftsman.jpg",
+      "img/royal-oak-craftsman-porch.webp",
+      "img/royal-oak-craftsman-garage.webp",
+      "img/royal-oak-craftsman-rear.webp",
+      "img/royal-oak-craftsman-front.webp"
+    ]
   },
   {
     id: "rochester-new-build",
@@ -46,7 +58,13 @@ window.EZ_PROJECTS = [
     short: "Builder spec home shot for both the MLS and the builder's site.",
     description: "New construction is unforgiving, every line shows. Straight verticals, consistent white balance room to room, and an aerial set showing the lot and how the home sits in the new section of the subdivision. Flat overcast light was the right call on white board and batten.",
     services: ["Interior photos", "Exterior photos", "Drone aerials", "1 minute video"],
-    gallery: ["img/rochester-new-build.jpg"]
+    gallery: [
+      "img/rochester-new-build.jpg",
+      "img/rochester-new-build-front.webp",
+      "img/rochester-new-build-porch.webp",
+      "img/rochester-new-build-kitchen.webp",
+      "img/rochester-new-build-living.webp"
+    ]
   },
   {
     id: "northville-estate",
@@ -61,7 +79,13 @@ window.EZ_PROJECTS = [
     short: "Twilight exteriors, aerials and a house lit from the inside out.",
     description: "Twilight is twenty minutes of usable light, so the whole visit is planned backwards from it. Interior lamps on, drapes open, exterior lights on early, then one set of frames while the sky still has blue in it. The agent used the lead shot for print and social.",
     services: ["Interior photos", "Drone aerials", "Twilight", "1 minute video"],
-    gallery: ["img/northville-estate.jpg"]
+    gallery: [
+      "img/northville-estate.jpg",
+      "img/northville-estate-front.webp",
+      "img/northville-estate-porch.webp",
+      "img/northville-estate-garage.webp",
+      "img/northville-estate-rear.webp"
+    ]
   },
   {
     id: "troy-brick-colonial",
