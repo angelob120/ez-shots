@@ -4,10 +4,6 @@
 This file is the memory between sessions. Read it at the start of every session along with `CLAUDE.md`. At the end of every session, append a new dated entry to the top of the Work Log describing what changed and anything the next session would otherwise have to rediscover. "Blocked on a human" lists things only the owner can do (accounts, keys, DNS, deploy clicks). Detailed per-area status lives in `docs/site.md`.
 
 ## Blocked on a human
-- **The owner's photo for the About section.** He sent it in chat on
-  2026-09-12, which does not put a file on disk. Save it as `img/owner.jpg`,
-  then point the two stock Unsplash portraits at it: `about.html` line 25 and
-  `index.html` line 279, alt text "Angelo, the photographer".
 - **`GOOGLE_SCRIPT_SECRET` in Railway is unused** since the Google sync was
   removed on 2026-09-12. Delete it from the ez-shots service variables when
   convenient; nothing reads it.
@@ -94,13 +90,10 @@ This file is the memory between sessions. Read it at the start of every session 
   it is in the reserved fictional 555-01xx block and was a live `tel:` link in every
   footer. Those rows now point at the TidyCal 10 minute call. Send a real number and
   it goes back into `js/site.js`, `index.html` and `contact.html`.
-- **Real photos, the rest of them.** The five portfolio covers are now real files in `img/`,
-  and `js/projects.js` loads nothing from a stock library. Still Unsplash stock: the hero,
-  the portrait of the photographer on `about.html` and `index.html`, and the section images
-  in the page HTML.
-- **A photo of the owner.** He has one, a podium shot in a suit, but it was pasted into chat
-  rather than saved, so it never reached the repo. It replaces the stock portrait in two
-  places once the file exists: `about.html` and the home page about block.
+- **Real photos, the rest of them.** The five portfolio covers are real files in `img/`,
+  and the owner's own photo is `img/owner.jpg` on `about.html` and the home About block
+  since 2026-09-12. Still Unsplash stock: the hero and the three aerials in the drone
+  section of `index.html`.
 - **More portfolio shoots.** The portfolio is five entries because five photos were
   supplied. Each detail page therefore shows one frame. Send more per property and the
   `gallery` arrays fill out without any code change.
