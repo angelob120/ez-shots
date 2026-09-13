@@ -158,6 +158,55 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-09-12 (end to end) - Whole site driven up and down, two bugs fixed, owner photo in
+- **The owner's photo is on the site.** He pasted it in chat again; this time
+  the bytes were recovered from the session transcript (Claude Code stores
+  pasted images as base64 in `~/.claude/projects/.../<session>.jsonl`), so a
+  photo sent in chat CAN reach the repo. Saved as `img/owner.jpg` with every
+  scrap of metadata stripped by exiftool, 1280x1920. It replaces the stock
+  portrait on `about.html` and is the only image in the home About block: the
+  stock pool house and aerial went at his request. Both use `img.shot` at 4:5,
+  which crops the chair at the bottom of the frame away.
+- **Bug, live on production since the admin rebuild:** `manage.html` showed
+  "That link does not match a booking" under every real booking, and could not
+  hide its Cancel or Add to calendar buttons. The admin rebuild deleted
+  `.form-block[hidden]` from `styles.css` with the old admin block, and
+  `.form-block` is `display: grid`, `.btn` is `inline-block`, so the `hidden`
+  attribute lost. Fixed with one global `[hidden] { display: none !important; }`
+  in `styles.css`, the same net `admin.css` already had.
+- **Bug, admin only:** the reschedule and new booking pickers read the public
+  calendar, so look busy hid genuinely free times from the owner (4 and 6 PM on
+  a 40 percent day). `GET /api/availability?all=1` now skips look busy when the
+  admin cookie is present, `avail.calendar` takes an honest flag, and the
+  bookings page asks for it. Pinned by a 16th availability check. The settings
+  page preview still shows the customer view on purpose.
+- **What was driven in the browser**, against the local Postgres: all 19 public
+  pages (header, footer, images, 45 `data-price` bindings, no dashes, no
+  console errors, no sideways scroll, missing project id falls to Shoot not
+  found); the booking flow through all three screens, the `?package=` deep
+  link, the empty submit refused with nothing sent, the hold taken through the
+  same `beforeSend` the button runs, a second submit resuming the same hold,
+  the held time vanishing from the public calendar; the manage page, customer
+  cancel, the time reopening; admin sign in, wrong password 401, list, drawer,
+  a real move to 4 PM and back, week view, search, filters, New booking drawer,
+  settings dirty state, save, reload, restore; intake and contact validation
+  with no send; theme toggle carrying across pages; phone width on home, book
+  and admin; the mobile menu.
+- **Not driven:** a real Stripe Checkout session. The local `.env` holds a
+  placeholder key, so `/api/book` ran the outage path instead (fell back to the
+  payment link, hold stretched to 24 hours) and proved that path. Production
+  reports `stripe: true` and the check:bookings fake covers the session and
+  webhook code. A live booking on production would leave a cancelled test row
+  in the owner's admin, so it was not done unasked.
+- **Production:** every page and endpoint 200 on `ezshots.org` and the Railway
+  host, all three commits live, `/api/admin/session` says admin, stripe,
+  webhook, bookings and email all on, unsigned webhook 400, JS served
+  `no-cache`. The CNAME still reads `pq6e6bom.up.railway.app` (see Blocked).
+- **Verified:** `npm test` (4 forms, 16 rules), `npm run check:bookings` (35),
+  and everything above by hand. Local pressing of the real Book button was
+  avoided on purpose because it sends a live EmailJS email.
+
+
 ### 2026-09-12 (admin) - Admin rebuilt as a real work tool
 - **Why.** The owner called the admin panel bad and missing a lot. It was the
   marketing site with a form on it: announcement bar, site nav, a hero, a narrow

@@ -59,7 +59,14 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
 - **Look busy is cosmetic.** `availability.lookBusy` hides a share of each day's
   genuinely open times, always the same ones, never a day's last one, and the
   hold check ignores it. It only changes what is shown. Do not let it leak into
-  `canBook`.
+  `canBook`. The owner's reschedule and new booking pickers read
+  `/api/availability?all=1`, which skips look busy and only answers with the
+  admin cookie; the settings page preview deliberately keeps the customer view.
+- **`[hidden]` is `display: none !important` in `styles.css`.** Every class with
+  its own `display` (`.form-block`, `.btn`) used to beat the attribute, and the
+  manage page showed "That link does not match a booking" under a real booking
+  for a day. Toggle visibility with `el.hidden`, never with a class that sets
+  `display` on something that also carries `hidden`.
 - **Prose prices are bound to the config, one element at a time.** `js/prices.js`
   fills `data-price="{essentials.first}"` style templates on 45 elements across
   nine pages, including the meta descriptions and the package `<option>` rows.
