@@ -281,7 +281,9 @@
 
   function fetchAvail(force) {
     if (avail && !force) return Promise.resolve(avail);
-    return fetch("/api/availability", { headers: { accept: "application/json" } })
+    // all=1 is the calendar without look busy. The owner is moving or adding
+    // a shoot and needs every time that is really free, not the customer view.
+    return fetch("/api/availability?all=1", { headers: { accept: "application/json" } })
       .then(function (r) { return r.ok ? r.json() : { days: {} }; })
       .catch(function () { return { days: {} }; })
       .then(function (d) { avail = d; return d; });

@@ -131,15 +131,18 @@ function lookBusy(av, key, slots) {
 // What the booking page shows: every open slot for every day in the window,
 // with look busy applied. `taken` is the Map the database gives back, date to
 // Set of slots, for confirmed bookings and live holds. Days with nothing open
-// are left out.
-function calendar(av, taken, now = new Date()) {
+// are left out. `honest` skips look busy: it is for the owner's own pickers,
+// which must never hide a time that is really free from the one person who
+// knows the calendar is pretending.
+function calendar(av, taken, now = new Date(), honest = false) {
   const days = {};
   const max = av.maxAdvanceDays || 28;
   for (let i = 0; i <= max; i++) {
     const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
     const key = keyOf(d);
     const t = taken.get(key) || new Set();
-    const slots = lookBusy(av, key, open(av, key, t, t.size, now));
+    const real = open(av, key, t, t.size, now);
+    const slots = honest ? real : lookBusy(av, key, real);
     if (slots.length) days[key] = slots;
   }
   return { today: keyOf(now), to: keyOf(window(av, now)), days };

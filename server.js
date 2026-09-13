@@ -935,7 +935,10 @@ async function api(req, res, url) {
     if (!db) return json(res, 503, { error: "Online booking is not switched on yet." });
     const cfg = await readConfig();
     const now = new Date();
-    return json(res, 200, avail.calendar(cfg.availability, await takenNow(cfg.availability, now), now));
+    // ?all=1 drops look busy, for the owner's reschedule and new booking
+    // pickers. It needs the admin cookie, so the public calendar cannot ask.
+    const honest = url.searchParams.get("all") === "1" && authed(req);
+    return json(res, 200, avail.calendar(cfg.availability, await takenNow(cfg.availability, now), now, honest));
   }
 
   if (pathname === "/api/book" && req.method === "POST") return book(req, res);

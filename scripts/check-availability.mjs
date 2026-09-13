@@ -84,6 +84,16 @@ ok("look busy hides a share of each day, the same share every time, never the wh
     for (const s of a.days[k]) assert.ok(thirty.days[k].includes(s), "a slot shown at 40% is shown at 30%");
   }
 });
+ok("the honest calendar skips look busy and nothing else", () => {
+  const av = Object.assign(base(), { lookBusy: 40 });
+  const taken = new Map([["2026-09-15", new Set(["8:00 AM"])]]);
+  const honest = A.calendar(av, taken, now, true);
+  const plain = A.calendar(Object.assign(base(), { lookBusy: 0 }), taken, now);
+  assert.deepEqual(honest.days, plain.days);                   // same as look busy off
+  assert.equal(honest.days["2026-09-15"].length, 6);           // the taken one is still out
+  assert.ok(!honest.days["2026-09-15"].includes("8:00 AM"));
+  assert.equal(A.calendar(av, taken, now).days["2026-09-15"].length, 4); // and the public one still hides
+});
 ok("look busy comes back off as real bookings fill the day", () => {
   const av = Object.assign(base(), { lookBusy: 40 });
   const taken = new Map([["2026-09-15", new Set(["8:00 AM", "10:00 AM", "12:00 PM", "2:00 PM"])]]);
