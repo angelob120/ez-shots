@@ -15,6 +15,11 @@
     ["contact.html", "Contact", "contact"]
   ];
 
+  // Google Voice number. Not everyone books online, so the phone sits in the
+  // header next to the CTA and in the footer contact block.
+  var PHONE = "(313) 246-3280";
+  var PHONE_HREF = "tel:+13132463280";
+
   var nav = links.map(function (l) {
     var active = l[2] === page;
     return '<a href="' + l[0] + '"' + (active ? ' class="active" aria-current="page"' : "") + ">" + l[1] + "</a>";
@@ -26,6 +31,7 @@
     moon: '<svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
     sun: '<svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
     menu: '<svg class="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+    phone: '<svg class="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.4 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>',
     close: '<svg class="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
   };
 
@@ -45,9 +51,12 @@
     '</div>' +
     '<header class="site-header"><div class="container nav">' +
       '<a href="index.html" class="brand">' + MARK + 'EZ <span>Shots</span></a>' +
-      '<nav class="nav-links" id="nav-links" aria-label="Main">' + nav + '</nav>' +
+      '<nav class="nav-links" id="nav-links" aria-label="Main">' + nav +
+        '<a class="nav-call-row" href="' + PHONE_HREF + '">' + ICON.phone + 'Call ' + PHONE + '</a>' +
+      '</nav>' +
       '<div class="nav-tools">' +
         '<button type="button" class="icon-btn theme-toggle" aria-label="Switch between light and dark theme">' + ICON.sun + ICON.moon + '</button>' +
+        '<a href="' + PHONE_HREF + '" class="nav-call">' + ICON.phone + '<span>' + PHONE + '</span></a>' +
         '<a href="book.html" class="btn nav-cta">Book a shoot</a>' +
         '<button type="button" class="icon-btn menu-btn" aria-label="Menu" aria-controls="nav-links" aria-expanded="false">' + ICON.menu + ICON.close + '</button>' +
       '</div>' +
@@ -60,6 +69,7 @@
           '<div class="brand">' + MARK + 'EZ <span>Shots</span></div>' +
           '<p>Real estate photography, video and FAA licensed drone work for realtors across Metro Detroit. MLS ready galleries delivered the next day on average.</p>' +
           '<div class="footer-contact">' +
+            '<a href="' + PHONE_HREF + '">Call or text ' + PHONE + '</a>' +
             '<a href="mailto:bigmoneygelo2@gmail.com">bigmoneygelo2@gmail.com</a>' +
             '<a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">Book a 10 minute call</a>' +
           '</div>' +

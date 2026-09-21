@@ -159,6 +159,25 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-09-21 (site) - The phone number is in the header and the footer
+- **Why.** The owner's Google Voice number, (313) 246-3280, was nowhere on the
+  site. An agent who does not want to fill in the booking flow had no way to
+  reach him except email or the TidyCal link.
+- **What changed.** `js/site.js` now holds `PHONE` and `PHONE_HREF` once and
+  draws the number in three places: a `.nav-call` pill in `.nav-tools` just
+  before the Book a shoot button, a `.nav-call-row` as the last row of the
+  mobile drawer, and a "Call or text" link at the top of the footer contact
+  block. `css/styles.css` styles the pill like the icon buttons and swaps pill
+  for drawer row at the 940px menu breakpoint, so the number is never hidden
+  behind the menu button on a phone.
+- **Why two elements and not one.** Above 940px `.nav-links` is a horizontal
+  row and a call link in it would read as a menu item; below it `.nav-tools`
+  is tight and the pill would push the CTA. Each is hidden where the other
+  shows.
+- **Verified.** `node --check js/site.js` and `npm test` (16 availability
+  checks) pass. The `tel:` href is the plain `+13132463280` form, the visible
+  text keeps the formatting.
+
 ### 2026-09-12 (portfolio) - Four listings get their supporting frames
 - **Why.** The owner pasted 18 photos in chat and asked for them on the listings
   as supporting frames. Until now every detail page showed one frame, the cover.

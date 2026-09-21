@@ -204,6 +204,19 @@ p  { margin: 0 0 16px; }
 .nav-tools { display: flex; align-items: center; gap: 10px; flex: none; }
 .nav-cta { padding: 11px 20px; font-size: 14.5px; }
 
+/* Phone next to the CTA, for the agent who would rather call than book a form.
+   In the drawer it is .nav-call-row instead, so the number is never buried
+   behind the menu button on a phone. */
+.nav-call {
+  display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+  color: var(--ink); font-weight: 700; font-size: 14.5px;
+  border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 14px;
+  transition: border-color .16s ease, background .16s ease, color .16s ease;
+}
+.nav-call:hover { border-color: var(--brand); background: var(--tint); color: var(--accent); }
+.nav-call svg { width: 16px; height: 16px; flex: none; }
+.nav-call-row { display: none; }
+
 .icon-btn {
   background: transparent; border: 1.5px solid var(--line); border-radius: 10px;
   width: 40px; height: 40px; cursor: pointer; color: var(--ink); flex: none;
@@ -617,6 +630,9 @@ form.lead-form.stacked { padding: 0; background: none; border: none; box-shadow:
   .nav-links a { padding: 13px 12px; font-size: 16px; }
   .nav-links a.active { background: var(--surface); }
   .nav-links a.active::after { left: 0; top: 10px; bottom: 10px; right: auto; width: 3px; height: auto; }
+  .nav-call { display: none; }
+  .nav-call-row { display: flex; align-items: center; gap: 9px; color: var(--accent); font-weight: 700; }
+  .nav-call-row svg { width: 17px; height: 17px; flex: none; }
 }
 @media (max-width: 560px) {
   .nav { gap: 10px; }
