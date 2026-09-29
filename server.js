@@ -64,6 +64,7 @@ const avail = require("./server/availability");
 const stripe = require("./server/stripe");
 const { Db } = require("./server/db");
 const email = require("./server/email");
+const tracker = require("./server/tracker");
 
 const ROOT = __dirname;
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -423,6 +424,7 @@ async function confirmFromSession(session, source) {
     });
     console.log(`[ez-shots] ${c.id} confirmed by the ${source}`);
     notify(c);
+    tracker.reportPaid(db, c);
     return c;
   } catch (e) {
     // The only way here is the unique index refusing a second confirmed
@@ -709,7 +711,10 @@ async function refundMoney(b, cents, by, requestId) {
   const key = requestId ? `refund-${b.id}-${requestId}` : `refund-${b.id}-${Number(b.refundedCents || 0)}-${cents}`;
   const r = await stripe.refund(STRIPE_KEY, pi, cents, key, { booking_id: b.id, refunded_by: by });
   const recorded = await db.recordRefund(b.id, r.id, cents);
-  if (recorded) console.log(`[ez-shots] ${b.id} refunded ${dollars(cents)} by ${by}, ${r.id}`);
+  if (recorded) {
+    console.log(`[ez-shots] ${b.id} refunded ${dollars(cents)} by ${by}, ${r.id}`);
+    tracker.reportRefund(b, r.id, cents);
+  }
   return { booking: recorded || (await db.find(b.id)), duplicate: !recorded };
 }
 
@@ -857,10 +862,12 @@ async function adminBooking(req, res, id) {
       if (b.status === "confirmed") {
         // Booked by hand and paid since, in cash or by Zelle.
         out = await db.update(b.id, { paid: true, paidAt: now }, now);
+        tracker.reportPaid(db, out);
       } else {
         const other = await db.clash(b.date, b.time, b.id, now);
         if (other) return json(res, 409, { error: `That slot has since gone to ${other}. Cancel that one first, or reschedule this booking.` });
         out = await db.confirm(b.id, { checkoutMode: b.checkoutMode || "manual" }, now);
+        tracker.reportPaid(db, out);
       }
     } else if (p.action === "move") {
       // The owner can put a shoot at any real time, including one the public

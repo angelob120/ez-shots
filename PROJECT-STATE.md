@@ -159,6 +159,12 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-09-29 (tracker) - Paid shoots and refunds report to Ez-Tracker
+
+- New `server/tracker.js` posts to Ez-Tracker's `POST /api/ingest`: a sale when a booking becomes paid (Stripe webhook or success page, or the owner marking it paid in admin), a signup on a client's first paid shoot, and a refund per Stripe refund id.
+- Sends only with `TRACKER_INGEST_URL` and `TRACKER_INGEST_KEY` set, so local runs and the check scripts stay silent. Never throws, 3 second cap. Only the package name leaves, never a client name or email.
+- Verified: `npm test`, and `npm run check:bookings` pointed at a local tracker, which received the sales, first-client signups and partial refunds.
+
 ### 2026-09-12 (portfolio) - Four listings get their supporting frames
 - **Why.** The owner pasted 18 photos in chat and asked for them on the listings
   as supporting frames. Until now every detail page showed one frame, the cover.
