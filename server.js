@@ -328,15 +328,28 @@ function stateOf(b, now = Date.now()) {
 // ---------------------------------------------------------------------------
 function isPrivate(p) { return PRIVATE.some(re => re.test(p)); }
 
-async function serveStatic(req, res, pathname) {
-  // The rules serve.json used to apply. cleanUrls stays off: turning it on 301s
-  // /project.html?id=x to /project and drops the query string, which broke
-  // every portfolio detail page in production once already.
+// Every page has a clean address, /services and not /services.html. Two are
+// not their file name: /admin is the bookings page, the owner's way in, linked
+// only from the footer, and /admin-settings is admin.html, because /admin was
+// already taken.
+const CLEAN = { "/": "/index.html", "/admin": "/admin-bookings.html", "/admin-settings": "/admin.html" };
+const CLEAN_OF = Object.fromEntries(Object.entries(CLEAN).map(([k, v]) => [v, k]));
+
+async function serveStatic(req, res, pathname, search = "") {
+  // The rules serve.json used to apply, plus the clean addresses. An old
+  // /page.html link is sent on with a 301, and THE QUERY STRING GOES WITH IT:
+  // serve's cleanUrls dropped it, which turned /project.html?id=x into a
+  // project page with no project and broke every portfolio detail page in
+  // production once already.
   let rel = decodeURIComponent(pathname);
-  if (rel === "/") rel = "/index.html";
-  // /admin is the owner's way in, linked only from the footer. It opens the
-  // day's bookings rather than the settings, because that is where a refund is.
-  else if (rel === "/admin") rel = "/admin-bookings.html";
+  if (/^\/[a-z0-9-]+\.html$/i.test(rel) && !isPrivate(rel)) {
+    const clean = CLEAN_OF[rel] || rel.slice(0, -5);
+    if (fs.existsSync(path.join(ROOT, rel))) {
+      res.writeHead(301, { location: clean + (search || ""), "cache-control": "public, max-age=3600" });
+      return res.end();
+    }
+  }
+  if (CLEAN[rel]) rel = CLEAN[rel];
   else if (/^\/[a-z0-9-]+$/i.test(rel)) rel = rel + ".html";
 
   if (isPrivate(rel)) return send(res, 404, "Not found", { "content-type": "text/plain" });
@@ -468,7 +481,7 @@ async function book(req, res) {
   if (address.length < 6) return json(res, 400, { error: "Please enter the property address." });
 
   const now = new Date();
-  const done = x => json(res, 200, { id: x.id, token: x.token, url: "/booked.html?t=" + x.token, mode: "booked" });
+  const done = x => json(res, 200, { id: x.id, token: x.token, url: "/booked?t=" + x.token, mode: "booked" });
 
   // A double tap, or a retry after the network dropped the first answer: the
   // same person asking for the same booking gets the one they already have,
@@ -534,7 +547,7 @@ async function pay(req, res, url) {
   }
 
   const site = origin(req);
-  const manageUrl = site + "/manage.html?t=" + b.token;
+  const manageUrl = site + "/manage?t=" + b.token;
   const payload = {
     mode: "payment",
     success_url: manageUrl + "&paid={CHECKOUT_SESSION_ID}",
@@ -689,7 +702,7 @@ async function ics(req, res, url) {
     "DTEND:" + stamp(end),
     "SUMMARY:" + esc("EZ Shots photo shoot, " + b.address),
     "LOCATION:" + esc(b.address),
-    "DESCRIPTION:" + esc(b.packageName + ". Booking " + b.id + ". Manage: " + origin(req) + "/manage.html?t=" + b.token),
+    "DESCRIPTION:" + esc(b.packageName + ". Booking " + b.id + ". Manage: " + origin(req) + "/manage?t=" + b.token),
     "END:VEVENT", "END:VCALENDAR"
   ];
   return send(res, 200, lines.join("\r\n") + "\r\n", {
@@ -1118,7 +1131,7 @@ const server = http.createServer((req, res) => {
 
   if (url.pathname.startsWith("/api/")) return done(api(req, res, url));
   if (req.method !== "GET" && req.method !== "HEAD") return send(res, 405, "Method not allowed", { "content-type": "text/plain" });
-  return done(serveStatic(req, res, url.pathname));
+  return done(serveStatic(req, res, url.pathname, url.search));
 });
 
 // The database is joined after the site is already serving, and joined again

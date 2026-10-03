@@ -331,7 +331,7 @@ function stepsText(at) {
   return ["WHAT HAPPENS NEXT", ...STEPS.map((st, i) => `${i + 1}. ${st[0]}${i === at ? " (now)" : i < at ? " (done)" : ""}: ${st[1]}`)].join("\n");
 }
 
-function manageUrl(b, site) { return `${site}/manage.html?t=${b.token}`; }
+function manageUrl(b, site) { return `${site}/manage?t=${b.token}`; }
 
 // ---------------------------------------------------------------------------
 // The emails
@@ -506,7 +506,7 @@ function deliveredMail(b, site) {
   const rows = [["Property", b.address], ["Package", b.packageName], ["Paid", money(b.amount)], ["Booking", b.id]];
   const buttons = [];
   if (b.finalUrl) buttons.push(button(b.finalUrl, "Download your files", true));
-  buttons.push(button(`${site}/book.html`, "Book another shoot", !b.finalUrl));
+  buttons.push(button(`${site}/book`, "Book another shoot", !b.finalUrl));
   return {
     subject: `Paid, here are your files: ${b.address}`,
     text: [
@@ -515,7 +515,7 @@ function deliveredMail(b, site) {
       b.finalUrl ? `Your full resolution files: ${b.finalUrl}` : "Your full resolution files are on your booking page.", "",
       lines(rows), "",
       `Your booking page keeps the link: ${manage}`,
-      `Next listing? Book in a minute: ${site}/book.html`, "",
+      `Next listing? Book in a minute: ${site}/book`, "",
       "If anything is not right, reply to this email. The guarantee still stands: not happy, your money back and $20.", "",
       "Thanks,", "Angelo", "EZ Shots"
     ].join("\n"),
@@ -540,7 +540,7 @@ function reviewMail(b, site, reviewUrl) {
   const first = firstName(b);
   const buttons = [];
   if (reviewUrl) buttons.push(button(reviewUrl, "Leave a quick review", true));
-  buttons.push(button(`${site}/book.html`, "Book your next listing", !reviewUrl));
+  buttons.push(button(`${site}/book`, "Book your next listing", !reviewUrl));
   return {
     subject: `How did the photos do, ${first}?`,
     text: [
@@ -548,7 +548,7 @@ function reviewMail(b, site, reviewUrl) {
       `Thanks again for having me shoot ${b.address}.`, "",
       reviewUrl ? `If the photos helped, a short review makes a real difference to a one person business: ${reviewUrl}` :
         "If the photos helped, reply and tell me. If anything could have been better, tell me that too.", "",
-      `Got another listing coming? Book it in a minute, nothing due until you see the photos: ${site}/book.html`, "",
+      `Got another listing coming? Book it in a minute, nothing due until you see the photos: ${site}/book`, "",
       "Thanks,", "Angelo", "EZ Shots"
     ].join("\n"),
     html: layout({
@@ -608,7 +608,7 @@ function refundedMail(b, site, o) {
   const first = firstName(b);
   const amount = cents(o.cents);
   const status = o.cancelled ? "This booking is now cancelled." : "Your shoot is still booked for that time.";
-  const manage = `${site}/manage.html?t=${b.token}`;
+  const manage = `${site}/manage?t=${b.token}`;
   return {
     subject: `Refund of ${amount} for your EZ Shots booking`,
     text: [
@@ -628,7 +628,7 @@ function refundedMail(b, site, o) {
         ["Paid", money(b.amount)],
         ["Refunded so far", money(b.refunded)]
       ]) + note(BANK) + para(status) + signoff("Thanks,"),
-      buttons: o.cancelled ? [button(`${site}/book.html`, "Book another time", true)] : [button(manage, "Change or cancel", false)],
+      buttons: o.cancelled ? [button(`${site}/book`, "Book another time", true)] : [button(manage, "Change or cancel", false)],
       footer: FOOTER
     })
   };
@@ -638,7 +638,7 @@ function refundedMail(b, site, o) {
 // to tell them. `o.was` is the old date and time as words.
 function movedMail(b, site, o) {
   const first = firstName(b);
-  const manage = `${site}/manage.html?t=${b.token}`;
+  const manage = `${site}/manage?t=${b.token}`;
   const ics = `${site}/api/ics?t=${b.token}`;
   return {
     subject: `Your shoot is now ${b.when}`,

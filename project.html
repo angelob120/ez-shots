@@ -31,8 +31,8 @@
       <h2>Want this for your listing?</h2>
       <p>Photos and drone aerials from <span data-price="{essentials}">$150</span>, $0 to book, half price on your first shoot, and nothing to pay if you are not happy.</p>
       <div class="btn-row center">
-        <a href="book.html" class="btn btn-lg btn-white">Book your shoot, $0 down</a>
-        <a href="contact.html" class="btn btn-lg btn-outline-white">Book a shoot</a>
+        <a href="/book" class="btn btn-lg btn-white">Book your shoot, $0 down</a>
+        <a href="/contact" class="btn btn-lg btn-outline-white">Book a shoot</a>
       </div>
     </div>
   </section>
@@ -55,10 +55,10 @@
 
       if (!p) {
         el.innerHTML =
-          '<a class="back" href="portfolio.html">&larr; Back to portfolio</a>' +
+          '<a class="back" href="/portfolio">&larr; Back to portfolio</a>' +
           '<h1>Shoot not found</h1>' +
           '<p class="lead">That link does not match a shoot. Everything else is on the portfolio page.</p>' +
-          '<a class="btn" href="portfolio.html">View the portfolio</a>';
+          '<a class="btn" href="/portfolio">View the portfolio</a>';
       } else {
         document.title = p.title + " | EZ Shots";
         var chips = (p.services || []).map(function (s) { return '<span class="chip">' + esc(s) + '</span>'; }).join("");
@@ -66,7 +66,7 @@
           return '<img src="' + esc(src) + '" alt="' + esc(p.title) + '" loading="lazy">';
         }).join("");
         el.innerHTML =
-          '<a class="back" href="portfolio.html">&larr; Back to portfolio</a>' +
+          '<a class="back" href="/portfolio">&larr; Back to portfolio</a>' +
           '<p class="eyebrow">' + esc(p.type) + '</p>' +
           '<h1>' + esc(p.title) + '</h1>' +
           '<p class="detail-meta">' + esc(p.location) + '</p>' +
@@ -86,7 +86,7 @@
       var more = document.getElementById("more-projects");
       if (more) {
         more.innerHTML = others.map(function (o) {
-          return '<a class="card" href="project.html?id=' + encodeURIComponent(o.id) + '">' +
+          return '<a class="card" href="/project?id=' + encodeURIComponent(o.id) + '">' +
             '<div class="thumb"><img src="' + esc(o.cover) + '" alt="' + esc(o.title) + '" loading="lazy">' +
             (o.pkg ? '<span class="pill">' + esc(o.pkg) + '</span>' : "") + '</div>' +
             '<div class="body">' +

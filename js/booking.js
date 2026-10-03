@@ -1,4 +1,4 @@
-// EZ Shots booking flow (book.html).
+// EZ Shots booking flow (/book).
 //
 // Three screens, one <form class="lead-form">, so the whole booking reaches the
 // inbox through the single handler in js/contact-form.js like every other form

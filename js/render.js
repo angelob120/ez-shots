@@ -12,7 +12,7 @@
     var list = window.EZ_PROJECTS || [];
     if (limit > 0) list = list.slice(0, limit);
     grid.innerHTML = list.map(function (p) {
-      return '<a class="card" href="project.html?id=' + encodeURIComponent(p.id) + '">' +
+      return '<a class="card" href="/project?id=' + encodeURIComponent(p.id) + '">' +
         '<div class="thumb">' +
           '<img src="' + esc(p.cover) + '" alt="' + esc(p.title) + ', ' + esc(p.location) + '" loading="lazy">' +
           (p.pkg ? '<span class="pill">' + esc(p.pkg) + '</span>' : "") +

@@ -7,12 +7,12 @@
   var page = document.body.getAttribute("data-page") || "";
 
   var links = [
-    ["services.html", "Services", "services"],
-    ["portfolio.html", "Portfolio", "portfolio"],
-    ["packages.html", "Pricing", "packages"],
-    ["guarantee.html", "Guarantee", "guarantee"],
-    ["about.html", "About", "about"],
-    ["contact.html", "Contact", "contact"]
+    ["/services", "Services", "services"],
+    ["/portfolio", "Portfolio", "portfolio"],
+    ["/packages", "Pricing", "packages"],
+    ["/guarantee", "Guarantee", "guarantee"],
+    ["/about", "About", "about"],
+    ["/contact", "Contact", "contact"]
   ];
 
   var nav = links.map(function (l) {
@@ -47,14 +47,14 @@
       '<span class="dot hide-md">|</span>' +
       '<span class="hide-md">Photos in about 24 hours</span>' +
       '<span class="dot">|</span>' +
-      '<a href="book.html">Book now</a>' +
+      '<a href="/book">Book now</a>' +
     '</div>' +
     '<header class="site-header"><div class="container nav">' +
-      '<a href="index.html" class="brand">' + MARK + 'EZ <span>Shots</span></a>' +
+      '<a href="/" class="brand">' + MARK + 'EZ <span>Shots</span></a>' +
       '<nav class="nav-links" id="nav-links" aria-label="Main">' + nav + '</nav>' +
       '<div class="nav-tools">' +
         '<button type="button" class="icon-btn theme-toggle" aria-label="Switch between light and dark theme">' + ICON.sun + ICON.moon + '</button>' +
-        '<a href="book.html" class="btn nav-cta">Book a shoot</a>' +
+        '<a href="/book" class="btn nav-cta">Book a shoot</a>' +
         '<button type="button" class="icon-btn menu-btn" aria-label="Menu" aria-controls="nav-links" aria-expanded="false">' + ICON.menu + ICON.close + '</button>' +
       '</div>' +
     '</div></header>';
@@ -72,19 +72,19 @@
         '</div>' +
         '<div class="footer-col">' +
           '<h4>Work</h4>' +
-          '<a href="services.html">Services</a>' +
-          '<a href="portfolio.html">Portfolio</a>' +
-          '<a href="areas.html">Areas we serve</a>' +
-          '<a href="about.html">About</a>' +
+          '<a href="/services">Services</a>' +
+          '<a href="/portfolio">Portfolio</a>' +
+          '<a href="/areas">Areas we serve</a>' +
+          '<a href="/about">About</a>' +
         '</div>' +
         '<div class="footer-col">' +
           '<h4>Booking</h4>' +
-          '<a href="book.html">Book a shoot</a>' +
-          '<a href="packages.html">Pricing</a>' +
-          '<a href="guarantee.html">The guarantee</a>' +
-          '<a href="faq.html">FAQ</a>' +
-          '<a href="intake.html">After you book</a>' +
-          '<a href="contact.html">Contact</a>' +
+          '<a href="/book">Book a shoot</a>' +
+          '<a href="/packages">Pricing</a>' +
+          '<a href="/guarantee">The guarantee</a>' +
+          '<a href="/faq">FAQ</a>' +
+          '<a href="/intake">After you book</a>' +
+          '<a href="/contact">Contact</a>' +
         '</div>' +
         '<div class="footer-col">' +
           '<h4>Good to know</h4>' +
@@ -100,7 +100,7 @@
       '</div>' +
       '<div class="footer-bottom">' +
         '<p>&copy; ' + new Date().getFullYear() + ' EZ Shots. Serving Wayne, Oakland and Macomb counties.</p>' +
-        '<p><a href="terms.html">Terms</a> &nbsp;&middot;&nbsp; <a href="refund.html">Refunds</a> &nbsp;&middot;&nbsp; <a href="privacy.html">Privacy</a> &nbsp;&middot;&nbsp; <a href="/admin">Admin</a></p>' +
+        '<p><a href="/terms">Terms</a> &nbsp;&middot;&nbsp; <a href="/refund">Refunds</a> &nbsp;&middot;&nbsp; <a href="/privacy">Privacy</a> &nbsp;&middot;&nbsp; <a href="/admin">Admin</a></p>' +
       '</div>' +
     '</div></footer>';
 

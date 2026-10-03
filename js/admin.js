@@ -116,7 +116,7 @@
             '<label class="adm-field"><span>Stripe link, normal price</span><input class="adm-input" type="url" data-f="checkoutFull" value="' + esc(p.checkoutFull) + '" placeholder="https://buy.stripe.com/..." /></label>' +
             '<label class="adm-field"><span>Stripe link, first shoot price</span><input class="adm-input" type="url" data-f="checkoutFirst" value="' + esc(p.checkoutFirst) + '" placeholder="https://buy.stripe.com/..." /></label>' +
           "</div>" +
-          '<p class="adm-help">Link id <code>' + esc(p.id) + "</code>. A link to <code>book.html?package=" + esc(p.id) + "</code> opens with this package picked, and renaming does not change it.</p>" +
+          '<p class="adm-help">Link id <code>' + esc(p.id) + "</code>. A link to <code>/book?package=" + esc(p.id) + "</code> opens with this package picked, and renaming does not change it.</p>" +
         "</div>" : "") +
       "</div>";
     }).join("");
@@ -365,7 +365,7 @@
     }
     if (e.target.closest("[data-remove]")) {
       if (cfg.packages.length < 2) return A.toast("Keep at least one package.", "error");
-      A.confirm({ title: "Remove " + (p.name || "this package") + "?", body: "Links to book.html?package=" + p.id + " stop picking it. Switching it off keeps the links working instead. Nothing is lost until you save.", ok: "Remove", danger: true })
+      A.confirm({ title: "Remove " + (p.name || "this package") + "?", body: "Links to /book?package=" + p.id + " stop picking it. Switching it off keeps the links working instead. Nothing is lost until you save.", ok: "Remove", danger: true })
         .then(function (yes) { if (!yes) return; cfg.packages.splice(i, 1); paintPackages(); changed(); });
     }
   });

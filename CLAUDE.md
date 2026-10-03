@@ -150,6 +150,11 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   gitignored `.env`.
 
 ## Rules that will bite you
+- **URLs have no `.html`.** Since 2026-10-03 every link is root relative and clean:
+  `/book`, `/project?id=x`, `/` for home, `/admin` for bookings and
+  `/admin-settings` for `admin.html` (the one page not named after its file).
+  `server.js` 301s any old `/page.html` to the clean address WITH its query
+  string. Write new links the same way. The files keep their `.html` names.
 - The git remote is named `ez-shots`, not `origin`. Pushes go to `git push ez-shots <branch>`. The GitHub repo is https://github.com/angelob120/ez-shots.git.
 - There are two lead forms, one in the `#contact` section of `index.html` and one on `contact.html`. Both share `js/contact-form.js` via the `form.lead-form` class. Change form behaviour in the JS once, not per page. If you add a third form, give it class `lead-form` and it wires itself up.
 - `form.name` in JavaScript returns the form's name attribute, not the input named "name". The handler reads fields with `form.elements.namedItem(...)` for this reason. Do not switch to `form.name.value`.

@@ -37,7 +37,7 @@ has("owner", "calendar.google.com/calendar/render?action=TEMPLATE", "the Google 
 has("owner", "dates=20261011T000000Z%2F20261011T013000Z", "the right shoot times in the calendar link");
 has("owner", "ezshots.org/admin", "the bookings link");
 has("booked", "/api/ics?t=75c159a6deadbeef", "the calendar link");
-has("booked", "/manage.html?t=75c159a6deadbeef", "the manage link");
+has("booked", "/manage?t=75c159a6deadbeef", "the manage link");
 has("refunded", "$62.50", "the refund amount");
 if (!out.owner.html.includes(">Add to Google Calendar<")) fail("owner email has no Add to Google Calendar button");
 if (!/^Booked: /.test(out.owner.subject)) fail("owner subject does not start with Booked:");

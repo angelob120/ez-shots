@@ -211,11 +211,11 @@
         '<a href="/admin" class="brand" aria-label="EZ Shots admin home">' + (window.EZ_MARK || "") + 'EZ <span>Shots</span></a>' +
         '<span class="adm-top-tag">Admin</span>' +
         '<nav class="adm-tabs" aria-label="Admin">' +
-          tab("admin-bookings.html", "Bookings", "bookings", '<span class="adm-count" id="adm-tab-count" hidden></span>') +
-          tab("admin.html", "Settings", "settings") +
+          tab("/admin", "Bookings", "bookings", '<span class="adm-count" id="adm-tab-count" hidden></span>') +
+          tab("/admin-settings", "Settings", "settings") +
         "</nav>" +
         '<div class="adm-top-tools">' +
-          '<a class="adm-health" id="adm-health" href="admin.html#system" hidden><span class="adm-dot"></span><span class="adm-health-text"></span></a>' +
+          '<a class="adm-health" id="adm-health" href="/admin-settings#system" hidden><span class="adm-dot"></span><span class="adm-health-text"></span></a>' +
           '<a class="adm-icon adm-viewsite" href="/" target="_blank" rel="noopener" title="View the site" aria-label="View the site">' + A.icon("external") + "</a>" +
           '<button type="button" class="adm-icon theme-toggle" title="Light or dark" aria-label="Switch between light and dark theme">' + A.icon("sun", "i-sun") + A.icon("moon", "i-moon") + "</button>" +
           '<button type="button" class="adm-icon" id="adm-logout" title="Sign out" aria-label="Sign out" hidden>' + A.icon("logout") + "</button>" +

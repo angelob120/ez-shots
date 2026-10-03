@@ -178,6 +178,19 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-03 (later) - Clean URLs, no .html anywhere
+
+- Every link in the pages, the shared header and footer, the emails, the
+  Stripe return address and the admin tabs is now root relative with no
+  `.html`: `/book?package=pro`, `/project?id=x`, `/manage?t=...`.
+- `/admin` stays the bookings page; settings moved to `/admin-settings`.
+- `server.js` answers an old `/page.html` link with a 301 to the clean address
+  and keeps the query string, so emails already sent and old `project.html?id=`
+  links still land. Private files still 404.
+- Verified: `npm test`, `npm run check:bookings` (64), `preview-emails`, curl
+  of every redirect case, the portfolio card opening `/project?id=...` in the
+  browser with no `.html` link left on the page.
+
 ### 2026-10-03 - No call funnel: book for $0, pay after the photos
 
 - **Why.** The owner pasted the no call funnel plan and asked for it done: a

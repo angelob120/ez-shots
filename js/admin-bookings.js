@@ -354,7 +354,7 @@
     var canRefund = b.paid && b.refundable > 0;
     var live = b.state !== "cancelled";
     var price = money(b.amount) + (b.firstShoot ? ", first shoot" : "") + (b.listPrice && b.listPrice !== b.amount ? " (list " + money(b.listPrice) + ")" : "");
-    var manage = location.origin + "/manage.html?t=" + b.token;
+    var manage = location.origin + "/manage?t=" + b.token;
 
     var alert = "";
     if (k === "held" || k === "expired") {

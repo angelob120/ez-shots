@@ -169,7 +169,7 @@ try {
   const b0 = await bookIt(0);
   const one = { id: b0.json && b0.json.id, token: b0.json && b0.json.token, date: b0.date, time: b0.time };
   check("booking is confirmed on the spot and sent to the confirmation page", b0.status === 200 && /^EZ-\d{6}$/.test(one.id) &&
-    b0.json.url === "/booked.html?t=" + one.token, b0.json);
+    b0.json.url === "/booked?t=" + one.token, b0.json);
   check("no Stripe call is made to book", !stripeCalls.some(c => c.url === "/v1/checkout/sessions"), stripeCalls);
   const again = await bookIt(0, { resume: { id: one.id, token: one.token } });
   check("a double tap returns the same booking", again.status === 200 && again.json.id === one.id, again.json);
@@ -218,13 +218,13 @@ try {
   const sess = stripeCalls.filter(c => c.url === "/v1/checkout/sessions").pop();
   check("Pay opens a Stripe checkout for the booked amount, set by the server", pay.status === 200 && pay.json.mode === "session" &&
     sess && sess.form["line_items[0][price_data][unit_amount]"] === String(pkg.firstPrice * 100) &&
-    sess.form["metadata[booking_id]"] === one.id && /manage\.html\?t=/.test(sess.form.success_url), { pay: pay.json, form: sess && sess.form });
+    sess.form["metadata[booking_id]"] === one.id && /\/manage\?t=/.test(sess.form.success_url), { pay: pay.json, form: sess && sess.form });
   const sid = pay.json.url.split("/").pop();
   const wh = await webhookPaid(one.id, sid, "pi_one");
   check("the Stripe webhook marks it paid", wh.status === 200, wh.json);
   const delivered = await waitFor(() => mailsTo("dana0@example.com", /^Paid, here are your files/)[0]);
   check("the client gets the files link and Book another shoot", !!delivered && delivered.message_html.includes("https://files.test/final-0") &&
-    delivered.message_html.includes("/book.html"));
+    delivered.message_html.includes("/book"));
   check("the owner is told it was paid", !!(await waitFor(() => mailsTo("owner@example.com", /^Paid \$/)[0])));
   const m2 = await manageOf(one.token);
   check("the manage page now shows the files", m2.paid === true && m2.stage === "delivered" && m2.finalUrl === "https://files.test/final-0" && !m2.canPay, m2);

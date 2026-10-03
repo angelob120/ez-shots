@@ -45,7 +45,7 @@
         mail.hidden = false;
       }
       document.getElementById("booked-ics").href = "/api/ics?t=" + encodeURIComponent(token);
-      document.getElementById("booked-manage").href = "manage.html?t=" + encodeURIComponent(token);
+      document.getElementById("booked-manage").href = "/manage?t=" + encodeURIComponent(token);
       document.getElementById("booked-actions").hidden = false;
     })
     .catch(function () {});
