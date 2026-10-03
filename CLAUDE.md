@@ -11,7 +11,10 @@ Everything on the site points at one offer. Do not water it down or contradict i
 - If the client is not happy with a delivered gallery they do not pay for it (or get a full
   refund if they already paid) plus $20 cash on top. Every gallery, the first one and every one after, with no deadline
   on the request. Never reintroduce a claim window, it was removed deliberately on 2026-09-10.
-- Average delivery about 24 hours, hard ceiling 72 hours or the shoot is free.
+- Average delivery about 24 hours, hard ceiling 72 hours from the booked shoot time or the
+  shoot is free. That covers the owner not showing up or not responding; the only way off
+  the clock is him contacting the client before the booked time to cancel or move it.
+  Added 2026-10-03. The clock starts at the booked time, not when the shoot happens.
 - Drone aerials are included in both packages, never sold as an add on.
 - $0 to book. The client pays after the shoot, once they have seen the photos.
   Since 2026-10-03; every page, email and the outreach texts say so.

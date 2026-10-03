@@ -159,7 +159,7 @@ const PREP = [
 ];
 const PREP_INTRO = "The shoot takes about 90 minutes. The house photographs best if it is ready " +
   "before I get there, because time spent tidying is time the light is moving.";
-const TURNAROUND = "Finished photos come back in about 24 hours, and never later than 72 hours or the shoot is free.";
+const TURNAROUND = "Finished photos come back in about 24 hours, and never later than 72 hours from your booked time or the shoot is free, even if I do not show up.";
 const GUARANTEE = "If you are not happy with the photos, you do not pay, and I send you $20 for the trouble.";
 const BANK = "It goes back to the card you paid with. Most banks show it within 5 to 10 business days.";
 const FOOTER = "Questions? Just reply to this email.<br>EZ Shots, real estate photography in Metro Detroit";

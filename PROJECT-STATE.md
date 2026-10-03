@@ -178,6 +178,14 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-03 (no show) - The 72 hour guarantee covers a no show
+
+- The 72 hour clock now starts at the booked shoot time, not the end of the shoot. If the owner does not show up or does not respond, the clock keeps running and past 72 hours the photos and video are free.
+- The only way off the clock is the owner contacting the client before the booked time to cancel or move the shoot. Client caused delays (twilight second visit, revisions, property not ready) still pause or restart it as before.
+- Changed on guarantee.html (card, two FAQs, closing line), refund.html (short version and section 3), terms.html, faq.html, the index FAQ, the TURNAROUND line in server/email.js, CLAUDE.md and docs/site.md.
+- Not enforced in code: nothing marks a missed booking free automatically. The owner applies it by hand (mark the job free or refund from admin).
+- Verified: npm test passes, no dashes in touched files.
+
 ### 2026-10-03 (crm) - Bookings report to the Realtor CRM
 
 - New `server/crm.js` posts each booking moment to the Realtor CRM's `POST /api/integrations/site/bookings` (repo realtor-crm, rules in its `server/bookings.js`): booked (site or admin), moved, shot, ready, paid, cancelled, unhappy.

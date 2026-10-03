@@ -9,7 +9,10 @@ offer the whole site is built around:
 - First shoot 50% off. $150 becomes $75, $250 becomes $125.
 - Not happy with a delivered gallery means you do not pay (full refund if already paid) plus $20 cash, on
   every gallery, first shoot and every one after, with no deadline on the request.
-- Average delivery about 24 hours, hard ceiling 72 hours or the shoot is free.
+- Average delivery about 24 hours, hard ceiling 72 hours from the booked shoot time or the
+  shoot is free. That covers the owner not showing up or not responding; the only way off
+  the clock is him contacting the client before the booked time to cancel or move it.
+  Added 2026-10-03. The clock starts at the booked time, not when the shoot happens.
 - Drone aerials included in both packages, not sold as an add on.
 
 ## Packages
