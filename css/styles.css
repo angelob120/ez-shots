@@ -269,7 +269,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 
 /* ---------- Offer strip ---------- */
 .offer-strip { background: var(--brand); color: #fff; padding: 22px 0; }
-.offer-strip .container { display: flex; align-items: center; justify-content: center; gap: 14px 34px; flex-wrap: wrap; text-align: center; }
+.offer-strip .container { max-width: 1320px; display: flex; align-items: center; justify-content: center; gap: 14px 24px; flex-wrap: wrap; text-align: center; }
 .offer-item { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; }
 .offer-item b { font-weight: 800; }
 .offer-item .ico { font-size: 18px; }
