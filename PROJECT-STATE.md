@@ -178,6 +178,14 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-03 (crm) - Bookings report to the Realtor CRM
+
+- New `server/crm.js` posts each booking moment to the Realtor CRM's `POST /api/integrations/site/bookings` (repo realtor-crm, rules in its `server/bookings.js`): booked (site or admin), moved, shot, ready, paid, cancelled, unhappy.
+- In the CRM: booked moves the agent to Booked with a follow-up on the shoot day, moved moves the follow-up, shot clears it, paid tags them client and sets a follow-up 30 days out to ask about the next listing, cancelled puts them in Follow Up for tomorrow (unless they have another shoot still booked), unhappy tags them not happy. An agent who was never in the CRM is created.
+- Sends only with `CRM_URL` and `CRM_SITE_KEY` (the CRM's `SITE_API_KEY`) set. Never throws, never holds up a booking, 4 second cap, one retry 30 seconds later, events for one booking go in order. Each event has an id (`booking:<id>:<event>`) so a retry is not logged twice.
+- Unlike the tracker, the agent's name, phone, email, brokerage and address go, because the CRM is the owner's own list of them.
+- Verified: `npm test`; `npm run check:bookings` pointed at a local CRM, which received every event and kept one lead per client; and again with the CRM unreachable, every booking check still passed.
+
 ### 2026-10-03 (later) - Clean URLs, no .html anywhere
 
 - Every link in the pages, the shared header and footer, the emails, the

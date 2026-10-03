@@ -70,6 +70,7 @@ const stripe = require("./server/stripe");
 const { Db } = require("./server/db");
 const email = require("./server/email");
 const tracker = require("./server/tracker");
+const crm = require("./server/crm");
 
 const ROOT = __dirname;
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -522,6 +523,7 @@ async function book(req, res) {
   }
   console.log(`[ez-shots] ${c.id} booked from the site for ${date} ${time}, nothing paid`);
   notify(c);
+  crm.report("booked", publicBooking(c));
   return done(c);
 }
 
@@ -583,6 +585,7 @@ async function paidAfter(b, payment, source) {
   if (!c) return db.find(b.id);
   console.log(`[ez-shots] ${c.id} paid ${c.amount} by the ${source}, delivered`);
   tracker.reportPaid(db, c);
+  crm.report("paid", publicBooking(c));
   after(email.toCustomer("delivered", publicBooking(c), SITE_URL), c.id, "delivered");
   after(email.toOwner("paid", publicBooking(c), SITE_URL), c.id, "paid alert");
   return c;
@@ -669,6 +672,7 @@ async function manage(req, res, url) {
     if (!out.canCancel) return json(res, 400, { error: "This booking can no longer be cancelled here. Reply to your confirmation email and I will sort it." });
     const c = await db.cancel(b.id, "customer", now);
     console.log(`[ez-shots] ${b.id} cancelled by the customer`);
+    crm.reportCancelled(db, publicBooking(c), "customer");
     after(email.toOwner("cancelled", publicBooking(c), SITE_URL), c.id, "cancel alert");
     return json(res, 200, { booking: Object.assign(view(c), { state: "cancelled", canCancel: false }) });
   }
@@ -678,6 +682,7 @@ async function manage(req, res, url) {
     const reason = str(p.reason, 2000);
     const c = await db.update(b.id, { flaggedAt: now, flagReason: reason }, now);
     console.log(`[ez-shots] ${b.id} flagged unhappy by the customer`);
+    crm.report("unhappy", publicBooking(c), { reason });
     after(email.toOwner("unhappy", publicBooking(c), SITE_URL, { reason }), c.id, "unhappy alert");
     return json(res, 200, { booking: view(c) });
   }
@@ -912,6 +917,8 @@ async function adminCreate(req, res) {
     return json(res, 409, { error: "Another booking already has that time. Pick a different one." });
   }
   console.log(`[ez-shots] ${b.id} added by the owner for ${date} ${time}${paid ? ", paid" : ", unpaid"}`);
+  crm.report("booked", publicBooking(b));
+  if (paid) crm.report("paid", publicBooking(b));
   let emailed = false;
   if (p.notify === true && mail) { emailed = email.configured(); notify(b); }
   return json(res, 200, { booking: adminView(b, now), emailed });
@@ -940,12 +947,15 @@ async function adminBooking(req, res, id) {
         } else {
           out = await db.update(b.id, { paid: true, paidAt: now, checkoutMode: b.checkoutMode || "manual" }, now);
           tracker.reportPaid(db, out);
+          crm.report("paid", publicBooking(out));
         }
       } else {
         const other = await db.clash(b.date, b.time, b.id, now);
         if (other) return json(res, 409, { error: `That slot has since gone to ${other}. Cancel that one first, or reschedule this booking.` });
         out = await db.confirm(b.id, { checkoutMode: b.checkoutMode || "manual" }, now);
         tracker.reportPaid(db, out);
+        crm.report("booked", publicBooking(out));
+        crm.report("paid", publicBooking(out));
       }
     } else if (p.action === "move") {
       // The owner can put a shoot at any real time, including one the public
@@ -961,6 +971,7 @@ async function adminBooking(req, res, id) {
       if (!moved) return json(res, 409, { error: "Another booking already has that time. Pick a different one." });
       out = moved;
       console.log(`[ez-shots] ${b.id} moved from ${b.date} ${b.time} to ${date} ${time}`);
+      crm.report("moved", publicBooking(out));
       extra.emailed = false;
       if (p.notify === true && out.email) {
         extra.emailed = email.configured();
@@ -984,11 +995,13 @@ async function adminBooking(req, res, id) {
       extra.duplicate = done.duplicate;
       extra.refundedCents = done.duplicate ? 0 : cents;
       if (!done.duplicate) after(email.notifyRefunded(publicBooking(out), SITE_URL, { cents, cancelled: done.cancelled }), out.id, "refund");
+      if (done.cancelled) crm.reportCancelled(db, publicBooking(out), "owner");
     } else if (p.action === "shot") {
       // Shoot done. The customer hears that editing has started and when to
       // expect the photos, so nobody is left wondering after the car drives off.
       if (b.status !== "confirmed") return json(res, 400, { error: "Only a booked shoot can be marked done." });
       out = await db.update(b.id, { stage: b.stage === "booked" ? "shot" : b.stage, shotAt: b.shotAt || now }, now);
+      if (b.stage === "booked") crm.report("shot", publicBooking(out));
       extra.emailed = false;
       if (p.notify !== false && out.email && !out.flaggedAt) {
         extra.emailed = email.configured();
@@ -1006,6 +1019,7 @@ async function adminBooking(req, res, id) {
       if (!b.paid) Object.assign(patch, { stage: "ready", readyAt: b.readyAt || now });
       else Object.assign(patch, { stage: "delivered", deliveredAt: b.deliveredAt || now });
       out = await db.update(b.id, patch, now);
+      if (!b.paid && b.stage !== "ready") crm.report("ready", publicBooking(out));
       extra.emailed = false;
       if (p.notify !== false && out.email && !out.flaggedAt) {
         extra.emailed = email.configured();
@@ -1017,6 +1031,7 @@ async function adminBooking(req, res, id) {
       out = await db.update(b.id, { flaggedAt: null }, now);
     } else if (p.action === "cancel") {
       out = await db.cancel(b.id, "owner", now);
+      if (b.status !== "cancelled") crm.reportCancelled(db, publicBooking(out), "owner");
     } else if (p.action === "note") {
       out = await db.update(b.id, { internalNotes: str(p.note, 4000) }, now);
     } else {

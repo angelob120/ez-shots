@@ -148,6 +148,12 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   (defaults to America/Detroit in `server.js` and the `Dockerfile`). `DATA_DIR`
   only matters with no database. Locally, `npm run dev` reads them from a
   gitignored `.env`.
+- `CRM_URL` and `CRM_SITE_KEY` switch on `server/crm.js`, which tells the
+  owner's Realtor CRM about every booking moment (booked, moved, shot, ready,
+  paid, cancelled, unhappy) so its pipeline moves by itself. Like
+  `server/tracker.js` it must never throw or hold up a booking. Any new place
+  that books, moves, cancels or marks a booking paid needs a `crm.report` (or
+  `crm.reportCancelled`) call next to its `tracker` call.
 
 ## Rules that will bite you
 - **URLs have no `.html`.** Since 2026-10-03 every link is root relative and clean:
