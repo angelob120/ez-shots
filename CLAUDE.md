@@ -8,11 +8,13 @@ Since 2026-09-11 there is also a small server, `server.js`, and it is what `npm 
 ## The offer the site sells
 Everything on the site points at one offer. Do not water it down or contradict it in copy:
 - First shoot 50% off. Listing Essentials $150 becomes $75, Listing Pro $250 becomes $125.
-- If the client is not happy with a delivered gallery they do not pay for it: full refund
-  plus $20 cash on top. Every gallery, the first one and every one after, with no deadline
+- If the client is not happy with a delivered gallery they do not pay for it (or get a full
+  refund if they already paid) plus $20 cash on top. Every gallery, the first one and every one after, with no deadline
   on the request. Never reintroduce a claim window, it was removed deliberately on 2026-09-10.
 - Average delivery about 24 hours, hard ceiling 72 hours or the shoot is free.
 - Drone aerials are included in both packages, never sold as an add on.
+- $0 to book. The client pays after the shoot, once they have seen the photos.
+  Since 2026-10-03; every page, email and the outreach texts say so.
 The full wording lives on `guarantee.html` and is restated formally on `refund.html`. If one changes, change both.
 
 ## Absolute rule: no dashes
@@ -35,20 +37,39 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   Never compute availability in the browser again, the browser cannot know what
   is booked. `scripts/check-availability.mjs` pins the rules; run `npm test`
   after touching them.
-- **A slot IS held now.** `POST /api/book` takes it inside a Postgres
-  transaction behind an advisory lock (`server/db.js`), so two agents cannot
-  both get one time. The hold lasts 32 minutes with Stripe Checkout, 24 hours
-  with payment links, and becomes a confirmed booking when Stripe says paid
-  (webhook or success page) or when the owner marks it paid in admin. The copy
-  may say the time is held and locked in on payment.
-- **Paid is booked.** Stripe's webhook, or the success page, confirms the
-  booking and the server emails the owner and the client straight away. The
-  owner's email has an Add to Google Calendar button: a plain
-  calendar.google.com link with the shoot filled in, no Google sign in and no
-  API. An accept or decline step, a Google sign in and a Calendar and Sheets
-  sync were built on 2026-09-12 and taken out the same day because the owner
-  wants it simple. Do not bring them back unasked.
-- **Refunds go through Stripe from admin.** A booking card's Refund takes any
+- **Booking is $0. Payment comes after the photos.** Decided 2026-10-03, and it
+  replaced pay at booking. `POST /api/book` takes the slot inside a Postgres
+  transaction behind an advisory lock (`server/db.js`) and confirms it on the
+  spot with nothing paid, so two agents still cannot both get one time. The
+  owner and the client are emailed straight away. Never put a card, a deposit
+  or a checkout back in front of the booking, and never add a step where the
+  client waits to hear back before they know they are booked.
+- **A job has a stage**, `bookings.stage`: `booked`, `shot` (owner pressed Shoot
+  done, client told editing has started), `ready` (owner pasted the preview and
+  files links, client emailed the previews with Pay and Not happy buttons) and
+  `delivered` (paid). `manage.html` is the client's page for every stage: where
+  the job is, previews, Pay, the files, cancel before the shoot, Not happy.
+- **Pay after.** `POST /api/pay?t=TOKEN` makes a Stripe Checkout Session for
+  the amount stored on the booking, only at stage `ready`. Stripe's webhook, or
+  the return to the manage page, calls `paidAfter()`, and `db.markPaid` only
+  answers the first caller, so a webhook sent twice delivers once. Paid means
+  the files link is emailed and shown. Without `STRIPE_SECRET_KEY` the Pay
+  button falls back to the package's payment link and the owner marks it paid.
+- **The clean files are the thing the payment buys.** `final_url` never leaves
+  the server before `paid` is true (`publicBooking`). The preview link is
+  whatever the owner chose to send unpaid. That is the whole protection; do not
+  build DRM.
+- **Not happy flags the job.** The client's Not happy button, or the owner's,
+  sets `flagged_at`, emails the owner, and stops every automatic email to that
+  client until the owner clears it. Never send a payment nudge or a review
+  request to a flagged job.
+- **The clock** in `server.js` (`tick()`, every ten minutes) sends the day
+  before reminder and, a day after a paid delivery, the review request
+  (`REVIEW_URL`, or a reply request without it). Each is claimed in the
+  database before it goes, so it goes once. The review only goes to a job that
+  is paid, delivered, unflagged and not refunded.
+- **Refunds go through Stripe from admin**, for a job that was paid and then
+  turned out wrong. A booking card's Refund takes any
   amount up to what is left, with an optional cancel, behind a panel and a
   confirm dialog, and the server refuses one without `confirm: true`. Money
   moves first: if Stripe refuses, nothing changes and no email goes out. Each
@@ -80,8 +101,8 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   `/api/book` reads the package price out of its own config and the browser
   never sends a number. But "is this your first shoot" is a radio button, and
   nothing checks it against past bookings yet, so a returning agent who asks
-  for half price gets it. That is equally true of the two public payment links
-  on the pricing page, so it is not a regression. The bookings table now holds
+  for half price gets it. Since nothing is paid until after the shoot, the
+  owner sees the flag in admin before any money moves. The bookings table now holds
   every email, so a check is a small query away; until it exists do not
   describe the discount as verified anywhere in the copy.
 - **Two admin pages, one sign in, one look.** `admin-bookings.html` is the day
@@ -97,14 +118,14 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   opens the bookings page and is linked only from the footer. Never put admin
   in the nav.
 - **What the owner can do to a booking.** `PATCH /api/admin/bookings/:id` takes
-  `confirm` (mark paid, also for a hand booking that was booked unpaid),
+  `shot`, `ready` (preview and files links, both https and different),
+  `flag`, `unflag`, `confirm` (mark paid; at stage ready that delivers),
   `move` (any real date and time, refused only when another live booking owns
   the slot, taken behind the same advisory lock as a hold, optional `notify`
   sends the client the new time), `refund`, `cancel` and `note`.
   `POST /api/admin/bookings` adds a booking by hand for a client who phoned:
   status confirmed, `source` admin, paid or not as the owner says, any price,
-  and the You are booked email only when it is paid and he ticks it, because that
-  email says paid. The public schedule does not bind the owner, only clashes do.
+  and the You are booked email when he ticks it. The public schedule does not bind the owner, only clashes do.
 - **The list flags a returning client at the first shoot price.**
   `clientBookings` on each booking is that email's confirmed count. It is the
   only check on the half price radio button, and it is a flag for the owner, not
@@ -122,7 +143,8 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
 - Env vars the server reads: `DATABASE_URL` (the Railway Postgres; without it
   prices come from `DATA_DIR` or the seed and online booking is off),
   `ADMIN_PASSWORD` (admin is off without it, and there is no default),
-  `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ADMIN_SECRET`, `SITE_URL`, `TZ`
+  `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ADMIN_SECRET`, `SITE_URL`,
+  `REVIEW_URL` (the Google review link for the thank you email), `TZ`
   (defaults to America/Detroit in `server.js` and the `Dockerfile`). `DATA_DIR`
   only matters with no database. Locally, `npm run dev` reads them from a
   gitignored `.env`.

@@ -185,7 +185,8 @@ class Db {
     return fromRow(r.rows[0]);
   }
 
-  // Paid. Idempotent: the webhook and the success page can both call it, and
+  // Paid at booking, the old model, kept for a hold that was taken before the
+  // switch and is paid for after it. Idempotent: the webhook and the success page can both call it, and
   // the unique index refuses a second confirmed booking on the slot, which
   // surfaces here as an error rather than a silent double booking.
   async confirm(id, payment = {}, now = new Date()) {
@@ -193,6 +194,56 @@ class Db {
     if (!b) return null;
     if (b.status === "confirmed") return b;
     return this.update(id, Object.assign({ status: "confirmed", paid: true, paidAt: now, expiresAt: null }, payment), now);
+  }
+
+  // Paid after the shoot. Conditional on not being paid yet, so the webhook
+  // and the success page, or Stripe sending the same event twice, can only
+  // turn it into paid once. Returns the row only to the caller that did it;
+  // everyone else gets null and sends no delivery email.
+  async markPaid(id, payment = {}, now = new Date()) {
+    const keys = Object.keys(payment);
+    const sets = keys.map((k, i) => `${snake(k)} = $${i + 3}`);
+    const r = await this.query(
+      "UPDATE bookings SET paid = true, paid_at = $2, stage = 'delivered', delivered_at = $2, updated_at = $2" +
+      (sets.length ? ", " + sets.join(", ") : "") +
+      " WHERE id = $1 AND paid = false AND status = 'confirmed' RETURNING *",
+      [id, now, ...keys.map(k => payment[k])]);
+    return fromRow(r.rows[0]);
+  }
+
+  // Stamp a one off email as sent, once. Same trick as claimNotify: whoever
+  // wins the update sends.
+  async claim(id, column, now = new Date()) {
+    if (!["reminded_at", "review_sent_at"].includes(column)) throw new Error("bad claim column");
+    const r = await this.query(`UPDATE bookings SET ${column} = $2 WHERE id = $1 AND ${column} IS NULL RETURNING id`, [id, now]);
+    return r.rowCount === 1;
+  }
+
+  async unclaim(id, column) {
+    if (!["reminded_at", "review_sent_at"].includes(column)) throw new Error("bad claim column");
+    await this.query(`UPDATE bookings SET ${column} = NULL WHERE id = $1`, [id]);
+  }
+
+  // Shoots starting within the next day that have not had their reminder.
+  // Booked from the site only up to a day ahead is not possible (the notice
+  // window), so one reminder is enough; an owner booking for tomorrow still
+  // gets one.
+  async dueReminders(now = new Date(), aheadMs = 24 * 3600 * 1000) {
+    const r = await this.query(
+      "SELECT * FROM bookings WHERE status = 'confirmed' AND stage = 'booked' AND flagged_at IS NULL " +
+      "AND reminded_at IS NULL AND email <> '' AND starts_at > $1 AND starts_at <= $2 ORDER BY starts_at",
+      [now, new Date(now.getTime() + aheadMs)]);
+    return r.rows.map(fromRow);
+  }
+
+  // Paid, delivered a day ago, not flagged, nothing refunded, no review asked.
+  async dueReviews(now = new Date(), afterMs = 24 * 3600 * 1000) {
+    const r = await this.query(
+      "SELECT * FROM bookings WHERE status = 'confirmed' AND paid = true AND stage = 'delivered' " +
+      "AND flagged_at IS NULL AND refunded_cents = 0 AND review_sent_at IS NULL AND email <> '' " +
+      "AND delivered_at IS NOT NULL AND delivered_at <= $1 ORDER BY delivered_at",
+      [new Date(now.getTime() - afterMs)]);
+    return r.rows.map(fromRow);
   }
 
   // Claim the right to send the confirmation emails for this booking. The

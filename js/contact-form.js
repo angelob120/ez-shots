@@ -19,7 +19,7 @@
 //                   so the inbox says which property an intake is for
 //   data-success    the message shown after a successful send
 //   data-redirect   where to send the browser once the email is away, used by
-//                   the booking flow to hand off to Stripe checkout. It is read
+//                   the booking flow to open the confirmation page. It is read
 //                   at submit time, not at load, because booking.js rewrites it
 //                   every time the package or the first shoot answer changes.
 //   data-sending    what the button says while the send is in flight
@@ -32,7 +32,7 @@
 // only ever goes out for a booking that exists. If that hook has succeeded
 // and the email then fails, the browser still follows data-redirect: the
 // booking is already recorded, and a broken email service must not stand
-// between a customer and the payment page.
+// between a customer and their confirmation.
 (function () {
   // ------------------------------------------------------------------
   // CONFIG (these are publishable client-side keys, safe to ship)
@@ -222,10 +222,10 @@
         function leave() {
           var redirect = form.getAttribute("data-redirect");
           if (!redirect) return false;
-          // Do not reset. The browser is leaving for checkout, and a reset
+          // Do not reset. The browser is leaving for the confirmation, and a reset
           // form is what they would come back to on the back button.
           setStatus("success", successText);
-          if (btn) btn.textContent = "Opening checkout...";
+          if (btn) btn.textContent = "Opening your confirmation...";
           window.setTimeout(function () { window.location.href = redirect; }, 600);
           return true;
         }

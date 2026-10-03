@@ -36,12 +36,18 @@
 
   var header =
     '<a class="skip-link" href="#main">Skip to content</a>' +
+    // The offer in one line, biggest first: nothing down, pay only if happy.
+    // On a phone it shrinks to the two things that matter most and the link.
     '<div class="announce">' +
-      '<b>First shoot 50% off</b> for Metro Detroit realtors' +
+      '<b>Book online, $0 down.</b> Pay only after you see the photos' +
       '<span class="dot hide-sm">|</span>' +
-      '<span class="hide-sm">Not happy? You do not pay, and I send you $20</span>' +
+      '<span class="hide-sm">Not happy? You do not pay, plus $20</span>' +
+      '<span class="dot hide-md">|</span>' +
+      '<span class="hide-md">First shoot 50% off</span>' +
+      '<span class="dot hide-md">|</span>' +
+      '<span class="hide-md">Photos in about 24 hours</span>' +
       '<span class="dot">|</span>' +
-      '<a href="guarantee.html">See how it works</a>' +
+      '<a href="book.html">Book now</a>' +
     '</div>' +
     '<header class="site-header"><div class="container nav">' +
       '<a href="index.html" class="brand">' + MARK + 'EZ <span>Shots</span></a>' +
@@ -58,10 +64,10 @@
       '<div class="footer-top">' +
         '<div class="footer-brand">' +
           '<div class="brand">' + MARK + 'EZ <span>Shots</span></div>' +
-          '<p>Real estate photography, video and FAA licensed drone work for realtors across Metro Detroit. MLS ready galleries delivered the next day on average.</p>' +
+          '<p>Real estate photography, video and FAA licensed drone work for realtors across Metro Detroit. Book online for $0, photos back in about 24 hours, pay only if you are happy.</p>' +
           '<div class="footer-contact">' +
             '<a href="mailto:bigmoneygelo2@gmail.com">bigmoneygelo2@gmail.com</a>' +
-            '<a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">Book a 10 minute call</a>' +
+            '<a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">Questions? Optional 10 minute call</a>' +
           '</div>' +
         '</div>' +
         '<div class="footer-col">' +
@@ -79,7 +85,6 @@
           '<a href="faq.html">FAQ</a>' +
           '<a href="intake.html">After you book</a>' +
           '<a href="contact.html">Contact</a>' +
-          '<a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">Book a call</a>' +
         '</div>' +
         '<div class="footer-col">' +
           '<h4>Good to know</h4>' +
@@ -89,7 +94,7 @@
           '</div>' +
           '<div class="footer-badge">' +
             '<b>Not happy, you do not pay</b>' +
-            '<span>Every dollar back plus $20 cash, on any shoot.</span>' +
+            '<span>$0 to book. Pay after you see the photos, or not at all and $20 on top. Every shoot.</span>' +
           '</div>' +
         '</div>' +
       '</div>' +

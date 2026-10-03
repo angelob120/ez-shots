@@ -4,6 +4,24 @@
 This file is the memory between sessions. Read it at the start of every session along with `CLAUDE.md`. At the end of every session, append a new dated entry to the top of the Work Log describing what changed and anything the next session would otherwise have to rediscover. "Blocked on a human" lists things only the owner can do (accounts, keys, DNS, deploy clicks). Detailed per-area status lives in `docs/site.md`.
 
 ## Blocked on a human
+- **No phone number on the site.** The no call plan wants "Prefer to talk first?
+  Call or text" visible. There is still no real number (the 555 placeholder was
+  removed on 2026-09-01). Send one and it goes in the footer, contact page and
+  the emails.
+- **Set `REVIEW_URL` in Railway** to the Google Business review link. Until then
+  the thank you email asks for a reply instead of a review.
+- **Check the saved outreach texts in ez-texter.** The placeholders were fixed;
+  the template and auto reply instructions saved in the extension itself may
+  still say $175 or ask for a call. They should say $0 to book, pay if happy,
+  and link ezshots.org/book.
+- **The drone section shows ground photos.** Every stock aerial was replaced
+  with the owner's own exteriors so nothing stock passes as his work. Send real
+  aerials and they go into `index.html` and `services.html`.
+- **Delivery links are the owner's to make.** Admin asks for a preview link
+  (watermarked or low resolution, e.g. a Pic-Time or Dropbox folder) and a
+  separate full resolution link. Only the second is held back until payment.
+- **EmailJS volume.** A job now sends about 8 emails, so the free 200 a month
+  covers about 25 jobs.
 - **`GOOGLE_SCRIPT_SECRET` in Railway is unused** since the Google sync was
   removed on 2026-09-12. Delete it from the ez-shots service variables when
   convenient; nothing reads it.
@@ -23,6 +41,7 @@ This file is the memory between sessions. Read it at the start of every session 
   domain is already attached on the Railway side and is waiting on the record.
 - **Set `ADMIN_PASSWORD` on the new service.** It is unset, so `/admin` is off
   and nobody can mark a booking paid by hand. The old value was `123`.
+- **(Since 2026-10-03 Stripe is only used after the shoot.)**
 - **Paste `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` into the new service.**
   Both were set on the old project and neither survived it. Without the secret
   key checkout falls back to payment links and the hold runs 24 hours instead of
@@ -158,6 +177,61 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-10-03 - No call funnel: book for $0, pay after the photos
+
+- **Why.** The owner pasted the no call funnel plan and asked for it done: a
+  realtor from a cold text should understand the offer, book, and get every
+  update without talking to anyone, and pay only after seeing the photos. Pay
+  at booking was the old model and is gone.
+- **Server.** `/api/book` confirms on the spot with nothing paid (same slot
+  lock, a resume key so a double tap returns the same booking). Migration 004
+  adds `stage` (booked, shot, ready, delivered) plus preview and files links,
+  `flagged_at`, `reminded_at`, `review_sent_at`. New `/api/pay` makes the
+  Checkout Session for the stored amount at stage ready only; the webhook and
+  the return to the manage page both go through `paidAfter()`, and
+  `db.markPaid` lets only one caller deliver. `/api/manage/unhappy` flags the
+  job and emails the owner. A customer cancel now emails the owner. `tick()`
+  every ten minutes sends the day before reminder and, a day after a paid
+  delivery, the review request (`REVIEW_URL`). Admin gets `shot`, `ready`,
+  `flag`, `unflag`; `confirm` at stage ready delivers.
+- **Emails.** Booked (owner and client, $0 today and the four steps), reminder,
+  shoot done, photos ready (Pay and Not happy), delivered with files and Book
+  another, review, and owner alerts for not happy, cancelled and paid. A
+  flagged job gets no automatic client email. See `docs/emails.md`.
+- **Pages.** The banner now leads with "Book online, $0 down. Pay only after you
+  see the photos", then not happy you do not pay plus $20, first shoot 50% off,
+  photos in about 24 hours, Book now (phone shows the first and the link).
+  Home hero, offer strips, package buttons, how it works, pricing ("Two ways to
+  start" with its firm quote path replaced by the four step sequence), FAQ (do
+  I pay when I book, do I need to call, what happens after I book), guarantee,
+  refund, terms, privacy, contact, about, intake, services, portfolio and
+  project all say $0 to book and pay when happy. Call buttons are now optional
+  text links, never beside the main CTA. Every Unsplash image is gone: the hero
+  and every stock interior and aerial now use the owner's own frames.
+  `booked.html` reads the booking by token and shows due today $0.
+  `manage.html` shows the stage, previews, Pay, the files once paid, cancel
+  and Not happy.
+- **Outreach.** ez-texter's placeholder texts said $175 and told the auto reply
+  to push for a call. Both fixed and pushed. The texts the owner actually saved
+  in the extension live in its storage and were not visible from here.
+- **Decided, not changed.** Prices stay $150 and $250 with $75 and $125 first,
+  because that is the live config; the plan's $90/$190 and "video +$100" are
+  not live anywhere. Turnaround stays "about 24 hours, 72 or it is free", the
+  offer CLAUDE.md protects, rather than the plan's "24 to 48". The $20 stays on
+  every gallery. No lockbox code field was added, per CLAUDE.md. SMS was not
+  built: there is no SMS service, and the owner texts by hand as before.
+- **Verified.** `npm test`, and `npm run check:bookings` rewritten for the new
+  journey (64 checks: book at $0, double tap, clash, emails, stage moves, links
+  must differ, files hidden until paid, pay amount set by the server, webhook
+  sent twice delivers once, review once and only for a happy paid job, unhappy
+  flag stops emails, customer cancel frees the slot and tells the owner, the
+  reminder once, refunds). In the browser on the local server: home at phone,
+  800 and 1400 widths, the booking flow at phone width through the server hook
+  (not the Book button, which sends a live EmailJS email), the confirmation
+  page, the manage page at each stage, the admin drawer, Mark paid unlocking
+  the files. Pay against the placeholder local Stripe key fails with the
+  readable message, as it should.
 
 ### 2026-09-29 (tracker) - Paid shoots and refunds report to Ez-Tracker
 

@@ -19,19 +19,20 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
         </div>
         <h1>You are booked.</h1>
+        <p class="lead" id="booked-lead">Nothing is due today. You pay after you have seen the photos, and only if you are happy with them.</p>
         <div class="book-summary" id="booked-summary" hidden></div>
-        <p class="lead">Your time is locked in. Stripe has emailed your receipt, and I text you the day before and again when I am on the way.</p>
+        <p class="form-note" id="booked-email" hidden></p>
         <!-- Shown once the booking is read back from the server: the .ics for
              the phone's calendar and the private link to view or cancel. -->
         <div class="btn-row center" id="booked-actions" hidden>
           <a href="#" class="btn" id="booked-ics">Add to calendar</a>
-          <a href="#" class="btn btn-ghost" id="booked-manage">Manage booking</a>
+          <a href="#" class="btn btn-ghost" id="booked-manage">View or cancel your booking</a>
         </div>
         <div class="btn-row center">
-          <a href="intake.html" class="btn btn-ghost">Tell me about the property</a>
+          <a href="intake.html" class="btn btn-ghost">Tell me more about the property</a>
           <a href="index.html" class="btn btn-ghost">Back to the site</a>
         </div>
-        <p class="form-note" style="margin-top:22px">Two minutes on the property details form saves a phone call and gets the gallery back faster. Anything to change? Email <a href="mailto:bigmoneygelo2@gmail.com" style="color:var(--accent);font-weight:700">bigmoneygelo2@gmail.com</a>.</p>
+        <p class="form-note" style="margin-top:22px">The property details form is optional. Anything to change or ask? Reply to your confirmation email or write to <a href="mailto:bigmoneygelo2@gmail.com" style="color:var(--accent);font-weight:700">bigmoneygelo2@gmail.com</a>.</p>
       </div>
     </div>
   </section>
@@ -39,10 +40,32 @@
   <section class="section section-soft">
     <div class="container narrow">
       <div class="sec-head center">
-        <p class="eyebrow">The promise, again</p>
-        <h2>If the gallery is not what you wanted</h2>
+        <p class="eyebrow">From here</p>
+        <h2>What happens next</h2>
       </div>
-      <p class="lead center">You do not pay. The money goes back on the same card and I send you $20 on top. Every gallery, this one and every one after, with no deadline on asking. <a href="guarantee.html" style="color:var(--accent);font-weight:700">How it works</a>.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="n">1</div>
+          <h3>Confirmation email</h3>
+          <p>On its way now, with the details and a link to your booking. A reminder comes the day before.</p>
+        </div>
+        <div class="step">
+          <div class="n">2</div>
+          <h3>Shoot day</h3>
+          <p>I photograph the home and fly the drone. If there is a lockbox code, I text you for it that morning.</p>
+        </div>
+        <div class="step">
+          <div class="n">3</div>
+          <h3>See your photos</h3>
+          <p>Previews in your inbox in about 24 hours, never more than 72.</p>
+        </div>
+        <div class="step">
+          <div class="n">4</div>
+          <h3>Pay when happy</h3>
+          <p>Pay online and the full resolution files unlock. Not happy, you do not pay, and I send you $20.</p>
+        </div>
+      </div>
+      <p class="pkg-note"><a href="guarantee.html">How the guarantee works</a></p>
     </div>
   </section>
 

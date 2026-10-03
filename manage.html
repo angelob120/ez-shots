@@ -25,12 +25,42 @@
       <!-- Filled by js/manage.js from /api/manage?t=TOKEN. The token is the
            only key, so the link is the booking: do not forward it. -->
       <div class="form-block" id="manage-block" hidden>
-        <div class="book-summary" id="manage-summary" style="margin-top:0"></div>
+        <!-- Where the job is, so the client never has to ask. -->
+        <ol class="job-steps" id="manage-steps"></ol>
+        <p class="lead" id="manage-next" style="margin:0"></p>
+
+        <div id="pay" class="job-panel" hidden>
+          <div class="btn-row" style="margin-top:0">
+            <a href="#" class="btn" id="manage-preview" target="_blank" rel="noopener" hidden>See your photos</a>
+            <button type="button" class="btn" id="manage-pay">Pay and get the files</button>
+          </div>
+          <p class="form-help">Secure checkout through Stripe. Your card details never touch this site, and the full resolution files unlock the moment it goes through.</p>
+        </div>
+
+        <div id="files" class="job-panel" hidden>
+          <div class="btn-row" style="margin-top:0">
+            <a href="#" class="btn" id="manage-files" target="_blank" rel="noopener">Download your files</a>
+            <a href="book.html" class="btn btn-ghost">Book another shoot</a>
+          </div>
+        </div>
+
+        <div class="book-summary" id="manage-summary"></div>
         <div class="btn-row" id="manage-actions">
-          <a href="#" class="btn" id="manage-ics">Add to calendar</a>
+          <a href="#" class="btn btn-ghost" id="manage-ics">Add to calendar</a>
           <button type="button" class="btn btn-ghost" id="manage-cancel" hidden>Cancel this booking</button>
         </div>
-        <p class="form-help">Need a different day or time? Email <a href="mailto:bigmoneygelo2@gmail.com">bigmoneygelo2@gmail.com</a> with your booking number and I will move it. Cancelled bookings that were paid are refunded to the same card, in full, within a couple of days.</p>
+
+        <div id="unhappy" class="job-panel" hidden>
+          <p class="opt-q" style="margin-top:0">Not happy with the photos?</p>
+          <p class="form-help" id="unhappy-help">Then you do not pay, and I send you $20 for the trouble. Tell me what missed and I will be in touch personally. Nothing else gets sent to you in the meantime.</p>
+          <div class="field">
+            <label for="unhappy-reason">What was wrong?</label>
+            <textarea id="unhappy-reason" rows="3" placeholder="Optional, but it helps me make it right."></textarea>
+          </div>
+          <button type="button" class="btn btn-ghost" id="manage-unhappy">I am not happy with the photos</button>
+        </div>
+
+        <p class="form-help">Need a different day or time? Reply to your confirmation email, or write to <a href="mailto:bigmoneygelo2@gmail.com">bigmoneygelo2@gmail.com</a> with your booking number, and I will move it.</p>
         <p class="form-status" id="manage-status" role="status" aria-live="polite"></p>
       </div>
       <div class="form-block" id="manage-missing" hidden>

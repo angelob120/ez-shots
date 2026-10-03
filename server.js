@@ -5,8 +5,9 @@
 //   1. Hold the live prices, checkout links and availability, so the owner can
 //      change a price on the site instead of editing code and redeploying.
 //   2. Hold the Stripe secret key, so the CUSTOMER'S BROWSER NEVER DECIDES WHAT
-//      A SHOOT COSTS. The browser sends a package id, the server looks the
-//      price up in its own config and creates the Checkout Session.
+//      A SHOOT COSTS. Booking costs nothing. The price is fixed on the booking
+//      from the server's own config, and after the shoot, when the customer
+//      has seen the previews, POST /api/pay makes the Checkout Session for it.
 //   3. Own the calendar. GET /api/availability is the only thing that says
 //      what can be booked, and POST /api/book is the only thing that takes a
 //      slot, inside a database transaction, so two agents cannot both get the
@@ -26,11 +27,12 @@
 //   ADMIN_SECRET           optional, signs the session cookie. Derived from the
 //                          password when unset, which logs everyone out whenever
 //                          the password changes. That is the right behaviour.
-//   STRIPE_SECRET_KEY      optional. When set, checkout is a Session created
-//                          here with a server side price and the booking is
-//                          confirmed by Stripe. When unset, the booking page
-//                          falls back to the payment links in the config and
-//                          the owner marks bookings paid by hand in admin.
+//   STRIPE_SECRET_KEY      optional. When set, the after the shoot payment is a
+//                          Checkout Session created here for the amount on the
+//                          booking, and Stripe saying paid unlocks the files.
+//                          When unset, the Pay button falls back to the
+//                          payment links in the config and the owner marks
+//                          the booking paid by hand in admin.
 //   STRIPE_WEBHOOK_SECRET  optional, from the Stripe dashboard once an endpoint
 //                          for /api/stripe/webhook exists. Without it the
 //                          booking is confirmed when the customer lands on the
@@ -42,6 +44,9 @@
 //   EMAILJS_*              the confirmation emails. See server/email.js for the
 //                          full list and for why they are sent from here and
 //                          not from the browser like the contact form is.
+//   REVIEW_URL             optional, the Google review link the thank you email
+//                          points at a day after a paid delivery. Without it
+//                          that email asks for a reply instead.
 //   SITE_URL               optional, the public origin used to build Stripe's
 //                          return URLs. Worked out from the request when unset.
 //   TZ                     the business timezone. Defaulted below to Detroit so
@@ -77,15 +82,6 @@ const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || "";
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 const SITE_URL = String(process.env.SITE_URL || "").trim().replace(/\/$/, "");
 const SESSION_HOURS = 12;
-
-// How long a slot stays held while the customer pays. A Checkout Session is
-// told to expire at 30 minutes, the shortest Stripe allows, and the hold
-// outlives it by a little so the expiry webhook finds it still there. With
-// payment links nothing can confirm a payment on its own, so the hold lasts a
-// day and the owner marks it paid in admin, or it lapses.
-const HOLD_SESSION_MS = 32 * 60 * 1000;
-const HOLD_LINK_MS = 24 * 3600 * 1000;
-const STRIPE_EXPIRES_SEC = 30 * 60 + 60;
 
 // Files that live in the repo but must not be served. docs/site.md noted that
 // the working notes were publicly readable on the old static deploy. They are
@@ -310,7 +306,13 @@ function publicBooking(b) {
     startsAt: b.startsAt, refunded: Number(b.refundedCents || 0) / 100,
     name: b.name, email: b.email, phone: b.phone, brokerage: b.brokerage,
     address: b.address, size: b.size, occupancy: b.occupancy, access: b.access,
-    accessNotes: b.accessNotes, notes: b.notes, token: b.token
+    accessNotes: b.accessNotes, notes: b.notes, token: b.token,
+    stage: b.stage || "booked", flagged: !!b.flaggedAt,
+    // The previews are what the owner chose to send unpaid. The clean files
+    // link is the thing the payment buys, so it never leaves the server
+    // before the booking is paid.
+    previewUrl: b.stage === "ready" || b.stage === "delivered" ? b.previewUrl || "" : "",
+    finalUrl: b.paid ? b.finalUrl || "" : ""
   };
 }
 
@@ -414,7 +416,14 @@ async function confirmFromSession(session, source) {
   let b = await db.bySession(session.id);
   if (!b && id) b = await db.find(id);
   if (!b) return null;
-  if (b.status === "confirmed") return b;
+  if (b.status === "confirmed") {
+    if (b.paid) return b;
+    return paidAfter(b, {
+      stripeSessionId: session.id,
+      stripePaymentIntent: typeof session.payment_intent === "string" ? session.payment_intent : null,
+      stripeCustomerId: typeof session.customer === "string" ? session.customer : null
+    }, source);
+  }
   try {
     const c = await db.confirm(b.id, {
       stripeSessionId: session.id,
@@ -435,6 +444,9 @@ async function confirmFromSession(session, source) {
   }
 }
 
+// A booking from the site. Nothing is paid here: the slot is taken and the
+// booking is confirmed in one go, the owner and the customer are emailed, and
+// the customer pays after seeing the photos (see pay() below).
 async function book(req, res) {
   if (!db) return json(res, 503, { error: "Online booking is not switched on yet. Email me and I will book you in." });
   const cfg = await readConfig();
@@ -445,8 +457,6 @@ async function book(req, res) {
   const pkg = cfg.packages.find(p => p.id === b.packageId && p.active !== false);
   if (!pkg) return json(res, 400, { error: "Pick a package first." });
   const first = b.firstShoot !== false;
-  const link = first ? pkg.checkoutFirst : pkg.checkoutFull;
-  if (!STRIPE_KEY && !link) return json(res, 503, { error: "No checkout is set up for that package yet." });
 
   const date = str(b.date, 10);
   const time = avail.normalize(b.time);
@@ -458,19 +468,18 @@ async function book(req, res) {
   if (address.length < 6) return json(res, 400, { error: "Please enter the property address." });
 
   const now = new Date();
+  const done = x => json(res, 200, { id: x.id, token: x.token, url: "/booked.html?t=" + x.token, mode: "booked" });
 
-  // A retry after a failed email, a back button from Stripe, a double tap:
-  // the same person asking for the same slot gets the hold they already have,
-  // not "that time was just booked" because of their own hold.
+  // A double tap, or a retry after the network dropped the first answer: the
+  // same person asking for the same booking gets the one they already have,
+  // not "that time was just booked" because of their own booking.
   const r = b.resume && typeof b.resume === "object" ? b.resume : null;
   if (r && r.id && r.token) {
     const old = await db.find(str(r.id, 20));
-    if (old && old.token === str(r.token, 64) && old.status === "held") {
-      const same = old.date === date && old.time === time && old.packageId === pkg.id && old.firstShoot === first;
-      if (same && stateOf(old, now.getTime()) === "held" && old.checkoutUrl) {
-        return json(res, 200, { id: old.id, token: old.token, url: old.checkoutUrl, mode: old.checkoutMode, expiresAt: old.expiresAt, resumed: true });
-      }
-      await db.release(old.id, now);
+    if (old && old.token === str(r.token, 64) && old.status !== "cancelled") {
+      const same = old.date === date && old.time === time && old.packageId === pkg.id && old.address === address;
+      if (same && old.status === "confirmed") return done(old);
+      if (old.status === "held") await db.release(old.id, now);
     }
   }
 
@@ -479,63 +488,91 @@ async function book(req, res) {
   if (verdict === "closed") return json(res, 409, { error: "That time is not open for booking. Pick another time.", taken: true });
   if (verdict !== "ok") return json(res, 409, { error: "That time was just booked. Pick another available time.", taken: true });
 
-  const fields = {
+  const held = await db.hold({
     date, time, startsAt: avail.slotAt(date, time),
     packageId: pkg.id, packageName: pkg.name, firstShoot: first,
     amount: first ? pkg.firstPrice : pkg.price, listPrice: pkg.price,
     name, email, phone, brokerage: str(b.brokerage, 120), address,
     size: str(b.size, 60), occupancy: str(b.occupancy, 60), access: str(b.access, 60),
     accessNotes: str(b.accessNotes, 500), notes: str(b.notes, 2000),
-    checkoutMode: STRIPE_KEY ? "session" : "link", checkoutUrl: STRIPE_KEY ? "" : link
-  };
-  const held = await db.hold(fields, STRIPE_KEY ? HOLD_SESSION_MS : HOLD_LINK_MS, now);
+    checkoutMode: "after", checkoutUrl: ""
+  }, 60 * 1000, now);
   if (!held) return json(res, 409, { error: "That time was just booked. Pick another available time.", taken: true });
 
-  const reply = { id: held.id, token: held.token, expiresAt: held.expiresAt };
-  if (!STRIPE_KEY) return json(res, 200, Object.assign(reply, { url: link, mode: "link" }));
+  let c;
+  try {
+    c = await db.update(held.id, { status: "confirmed", stage: "booked", expiresAt: null }, now);
+  } catch (e) {
+    // The unique index: someone confirmed this slot in the instant between.
+    await db.release(held.id, now).catch(() => {});
+    return json(res, 409, { error: "That time was just booked. Pick another available time.", taken: true });
+  }
+  console.log(`[ez-shots] ${c.id} booked from the site for ${date} ${time}, nothing paid`);
+  notify(c);
+  return done(c);
+}
+
+// The customer pressing Pay on their booking page, after seeing the photos.
+// The server reads the amount off the booking, never from the browser.
+async function pay(req, res, url) {
+  if (!db) return json(res, 503, { error: "Payments are not switched on yet. Reply to your email and I will send an invoice." });
+  const tok = url.searchParams.get("t") || "";
+  const b = /^[a-f0-9]{32}$/.test(tok) ? await db.byToken(tok) : null;
+  if (!b) return json(res, 404, { error: "That link does not match a booking." });
+  if (b.paid) return json(res, 400, { error: "This one is already paid. Thank you." });
+  if (b.status !== "confirmed") return json(res, 400, { error: "This booking is cancelled, so there is nothing to pay." });
+  if (b.stage !== "ready") return json(res, 400, { error: "Nothing is due yet. You pay once your photos are ready." });
+
+  if (!STRIPE_KEY) {
+    // No secret key on the server: the package's payment link, and the owner
+    // marks it paid by hand when Stripe tells him.
+    const cfg = await readConfig();
+    const pkg = cfg.packages.find(p => p.id === b.packageId) || {};
+    const link = b.firstShoot ? pkg.checkoutFirst : pkg.checkoutFull;
+    if (!link) return json(res, 503, { error: "Online payment is not set up yet. Reply to your email and I will send an invoice." });
+    return json(res, 200, { url: link, mode: "link" });
+  }
 
   const site = origin(req);
+  const manageUrl = site + "/manage.html?t=" + b.token;
   const payload = {
     mode: "payment",
-    success_url: site + "/booked.html?session_id={CHECKOUT_SESSION_ID}",
-    cancel_url: site + "/book.html",
-    client_reference_id: held.id,
-    customer_email: email,
+    success_url: manageUrl + "&paid={CHECKOUT_SESSION_ID}",
+    cancel_url: manageUrl,
+    client_reference_id: b.id,
+    customer_email: b.email || undefined,
     customer_creation: "always",
-    expires_at: Math.floor(now.getTime() / 1000) + STRIPE_EXPIRES_SEC,
     "line_items[0][quantity]": 1,
     "line_items[0][price_data][currency]": "usd",
-    "line_items[0][price_data][unit_amount]": Math.round(held.amount * 100),
-    "line_items[0][price_data][product_data][name]": pkg.name + (first ? " (first shoot, half price)" : ""),
-    "line_items[0][price_data][product_data][description]":
-      [address, longDate(date), time].join(", ").slice(0, 500),
-    metadata: {
-      booking_id: held.id,
-      package: pkg.name,
-      package_id: pkg.id,
-      first_shoot: first ? "yes" : "no",
-      address: address.slice(0, 400),
-      shoot_date: longDate(date),
-      shoot_time: time
-    }
+    "line_items[0][price_data][unit_amount]": Math.round(Number(b.amount) * 100),
+    "line_items[0][price_data][product_data][name]": b.packageName + (b.firstShoot ? " (first shoot, half price)" : ""),
+    "line_items[0][price_data][product_data][description]": [b.address, longDate(b.date)].join(", ").slice(0, 500),
+    "payment_intent_data[receipt_email]": b.email || undefined,
+    metadata: { booking_id: b.id, purpose: "pay", package: b.packageName, address: b.address.slice(0, 400), shoot_date: longDate(b.date) }
   };
-
   try {
-    const s = await stripe.createSession(STRIPE_KEY, payload, held.id);
-    await db.update(held.id, { checkoutMode: "session", checkoutUrl: s.url, stripeSessionId: s.id }, now);
-    return json(res, 200, Object.assign(reply, { url: s.url, mode: "session" }));
+    // Keyed on the booking and the minute, so a double tap is one session.
+    const s = await stripe.createSession(STRIPE_KEY, payload, b.id + "-pay-" + Math.floor(Date.now() / 60000));
+    await db.update(b.id, { stripeSessionId: s.id });
+    return json(res, 200, { url: s.url, mode: "session" });
   } catch (e) {
-    console.error("[ez-shots] Stripe session failed:", e.message);
-    // A Stripe outage must not cost a booking. The payment link still works,
-    // and the hold is stretched to the link timing since nothing can now
-    // confirm it automatically.
-    if (link) {
-      const u = await db.update(held.id, { checkoutMode: "link", checkoutUrl: link, expiresAt: new Date(now.getTime() + HOLD_LINK_MS) }, now);
-      return json(res, 200, Object.assign(reply, { url: link, mode: "link-fallback", expiresAt: u.expiresAt }));
-    }
-    await db.release(held.id, now);
-    return json(res, 502, { error: "Checkout could not be created. Try again in a minute." });
+    console.error(`[ez-shots] ${b.id} pay session failed:`, e.message);
+    return json(res, 502, { error: "The payment page could not be opened. Try again in a minute, or reply to your email." });
   }
+}
+
+// Paid after the shoot: mark it, unlock the files, tell both sides. markPaid
+// only answers the first caller, so a webhook sent twice, or the webhook and
+// the success page together, deliver once.
+async function paidAfter(b, payment, source) {
+  const now = new Date();
+  const c = await db.markPaid(b.id, payment, now);
+  if (!c) return db.find(b.id);
+  console.log(`[ez-shots] ${c.id} paid ${c.amount} by the ${source}, delivered`);
+  tracker.reportPaid(db, c);
+  after(email.toCustomer("delivered", publicBooking(c), SITE_URL), c.id, "delivered");
+  after(email.toOwner("paid", publicBooking(c), SITE_URL), c.id, "paid alert");
+  return c;
 }
 
 // The success page. Stripe is asked directly whether the session was paid, so
@@ -596,22 +633,40 @@ async function webhook(req, res) {
 }
 
 // The customer's own view of a booking, by the token in their manage link.
+// Everything the customer can do without phoning anyone happens here: see
+// where the job is, see the previews, pay, get the files, cancel before the
+// shoot, or say they are not happy.
 async function manage(req, res, url) {
   if (!db) return json(res, 404, { error: "No booking." });
   const tok = url.searchParams.get("t") || "";
   const b = /^[a-f0-9]{32}$/.test(tok) ? await db.byToken(tok) : null;
   if (!b) return json(res, 404, { error: "That link does not match a booking." });
   const now = new Date();
-  const state = stateOf(b, now.getTime());
-  const out = publicBooking(b);
-  out.state = state;
-  out.canCancel = (state === "confirmed" || state === "held") && Date.parse(b.startsAt) > now.getTime();
+  const view = x => {
+    const out = publicBooking(x);
+    out.state = stateOf(x, now.getTime());
+    out.canCancel = (out.state === "confirmed" || out.state === "held") && (x.stage || "booked") === "booked" && Date.parse(x.startsAt) > now.getTime();
+    out.canPay = out.state === "confirmed" && x.stage === "ready" && !x.paid;
+    out.canFlag = out.state === "confirmed" && (x.stage === "ready" || x.stage === "delivered" || x.stage === "shot") && !x.flaggedAt;
+    return out;
+  };
+  const out = view(b);
   if (req.method === "GET") return json(res, 200, { booking: out });
   if (req.method === "POST" && url.pathname === "/api/manage/cancel") {
-    if (!out.canCancel) return json(res, 400, { error: "This booking can no longer be cancelled here. Email me and I will sort it." });
+    if (!out.canCancel) return json(res, 400, { error: "This booking can no longer be cancelled here. Reply to your confirmation email and I will sort it." });
     const c = await db.cancel(b.id, "customer", now);
     console.log(`[ez-shots] ${b.id} cancelled by the customer`);
-    return json(res, 200, { booking: Object.assign(publicBooking(c), { state: "cancelled", canCancel: false }) });
+    after(email.toOwner("cancelled", publicBooking(c), SITE_URL), c.id, "cancel alert");
+    return json(res, 200, { booking: Object.assign(view(c), { state: "cancelled", canCancel: false }) });
+  }
+  if (req.method === "POST" && url.pathname === "/api/manage/unhappy") {
+    if (!out.canFlag) return json(res, 400, { error: b.flaggedAt ? "I already have this, and I will be in touch." : "Reply to your email and tell me what is wrong." });
+    const p = await body(req).catch(() => ({}));
+    const reason = str(p.reason, 2000);
+    const c = await db.update(b.id, { flaggedAt: now, flagReason: reason }, now);
+    console.log(`[ez-shots] ${b.id} flagged unhappy by the customer`);
+    after(email.toOwner("unhappy", publicBooking(c), SITE_URL, { reason }), c.id, "unhappy alert");
+    return json(res, 200, { booking: view(c) });
   }
   return json(res, 405, { error: "No." });
 }
@@ -778,7 +833,9 @@ async function adminBookings(req, res) {
     ticket: month.length ? Math.round(month.reduce((s, b) => s + b.amount, 0) / month.length) : 0,
     upcoming: upcoming.length,
     upcomingValue: upcoming.reduce((s, b) => s + b.amount, 0),
-    unpaid: list.filter(b => b.date >= today && (b.state === "held" || b.state === "expired" || (b.state === "confirmed" && !b.paid))).length,
+    // Photos sent and not paid yet: the money the owner is waiting on.
+    unpaid: list.filter(b => b.state === "confirmed" && b.stage === "ready" && !b.paid).length,
+    flagged: list.filter(b => b.state === "confirmed" && b.flaggedAt).length,
     repeat: [...counts.values()].filter(n => n > 1).length
   };
   return json(res, 200, {
@@ -799,10 +856,10 @@ function adminView(b, now = new Date()) {
 
 // A booking the owner adds by hand, for a client who phoned or texted. It takes
 // the slot the same way the site does, behind the same lock, and is booked
-// straight away: paid if he says it is, otherwise booked and waiting on
-// payment. Any real time works, the public schedule does not apply to him.
-// The client gets the You are booked email only when it is paid and he asks,
-// because that email says paid.
+// straight away: paid if he says it is, otherwise booked with payment due
+// after the shoot like every site booking. Any real time works, the public
+// schedule does not apply to him. The client gets the You are booked email
+// when he ticks the box.
 async function adminCreate(req, res) {
   if (!db) return json(res, 503, { error: "No database." });
   const cfg = await readConfig();
@@ -843,7 +900,7 @@ async function adminCreate(req, res) {
   }
   console.log(`[ez-shots] ${b.id} added by the owner for ${date} ${time}${paid ? ", paid" : ", unpaid"}`);
   let emailed = false;
-  if (paid && p.notify === true && mail) { emailed = email.configured(); notify(b); }
+  if (p.notify === true && mail) { emailed = email.configured(); notify(b); }
   return json(res, 200, { booking: adminView(b, now), emailed });
 }
 
@@ -860,9 +917,17 @@ async function adminBooking(req, res, id) {
       if (b.status === "confirmed" && b.paid) return json(res, 200, { booking: adminView(b, now) });
       if (b.status === "cancelled") return json(res, 400, { error: "This booking is cancelled. Add a new booking instead." });
       if (b.status === "confirmed") {
-        // Booked by hand and paid since, in cash or by Zelle.
-        out = await db.update(b.id, { paid: true, paidAt: now }, now);
-        tracker.reportPaid(db, out);
+        // Paid outside the site checkout: cash, Zelle, a payment link. Once
+        // the photos are out that is the same as a payment landing: delivered,
+        // and the files link goes out. Paid ahead of the photos, it is only
+        // recorded, and the files go when he sends them.
+        if (b.stage === "ready") {
+          out = await paidAfter(b, { checkoutMode: b.checkoutMode || "manual" }, "owner");
+          extra.emailed = !!(out.email && email.configured());
+        } else {
+          out = await db.update(b.id, { paid: true, paidAt: now, checkoutMode: b.checkoutMode || "manual" }, now);
+          tracker.reportPaid(db, out);
+        }
       } else {
         const other = await db.clash(b.date, b.time, b.id, now);
         if (other) return json(res, 409, { error: `That slot has since gone to ${other}. Cancel that one first, or reschedule this booking.` });
@@ -906,6 +971,37 @@ async function adminBooking(req, res, id) {
       extra.duplicate = done.duplicate;
       extra.refundedCents = done.duplicate ? 0 : cents;
       if (!done.duplicate) after(email.notifyRefunded(publicBooking(out), SITE_URL, { cents, cancelled: done.cancelled }), out.id, "refund");
+    } else if (p.action === "shot") {
+      // Shoot done. The customer hears that editing has started and when to
+      // expect the photos, so nobody is left wondering after the car drives off.
+      if (b.status !== "confirmed") return json(res, 400, { error: "Only a booked shoot can be marked done." });
+      out = await db.update(b.id, { stage: b.stage === "booked" ? "shot" : b.stage, shotAt: b.shotAt || now }, now);
+      extra.emailed = false;
+      if (p.notify !== false && out.email && !out.flaggedAt) {
+        extra.emailed = email.configured();
+        after(email.toCustomer("shot", publicBooking(out), SITE_URL), out.id, "shoot done");
+      }
+    } else if (p.action === "ready") {
+      // Previews out, payment due. Both links are kept; only the preview one
+      // is ever shown before the booking is paid.
+      if (b.status !== "confirmed") return json(res, 400, { error: "This booking is cancelled." });
+      const preview = str(p.previewUrl, 1000), fin = str(p.finalUrl, 1000);
+      if (!/^https:\/\/\S+$/i.test(preview)) return json(res, 400, { error: "Paste the preview gallery link, starting https://" });
+      if (!/^https:\/\/\S+$/i.test(fin)) return json(res, 400, { error: "Paste the full resolution files link, starting https://" });
+      if (preview === fin) return json(res, 400, { error: "The preview link and the files link are the same. The files link is what the payment unlocks, so it has to be a different one." });
+      const patch = { previewUrl: preview, finalUrl: fin, shotAt: b.shotAt || now };
+      if (!b.paid) Object.assign(patch, { stage: "ready", readyAt: b.readyAt || now });
+      else Object.assign(patch, { stage: "delivered", deliveredAt: b.deliveredAt || now });
+      out = await db.update(b.id, patch, now);
+      extra.emailed = false;
+      if (p.notify !== false && out.email && !out.flaggedAt) {
+        extra.emailed = email.configured();
+        after(email.toCustomer(out.paid ? "delivered" : "ready", publicBooking(out), SITE_URL), out.id, out.paid ? "delivered" : "photos ready");
+      }
+    } else if (p.action === "flag") {
+      out = await db.update(b.id, { flaggedAt: b.flaggedAt || now, flagReason: str(p.reason, 2000) || b.flagReason || "Flagged by the owner" }, now);
+    } else if (p.action === "unflag") {
+      out = await db.update(b.id, { flaggedAt: null }, now);
     } else if (p.action === "cancel") {
       out = await db.cancel(b.id, "owner", now);
     } else if (p.action === "note") {
@@ -951,7 +1047,8 @@ async function api(req, res, url) {
   if (pathname === "/api/book" && req.method === "POST") return book(req, res);
   if (pathname === "/api/session" && req.method === "GET") return session(req, res, url);
   if (pathname === "/api/stripe/webhook" && req.method === "POST") return webhook(req, res);
-  if (pathname === "/api/manage" || pathname === "/api/manage/cancel") return manage(req, res, url);
+  if (pathname === "/api/manage" || pathname === "/api/manage/cancel" || pathname === "/api/manage/unhappy") return manage(req, res, url);
+  if (pathname === "/api/pay" && req.method === "POST") return pay(req, res, url);
   if (pathname === "/api/ics" && req.method === "GET") return ics(req, res, url);
 
   if (pathname === "/api/admin/session" && req.method === "GET") {
@@ -1054,6 +1151,34 @@ function keepConnecting(url) {
     setTimeout(() => keepConnecting(url), 15000);
   });
 }
+
+// ---------------------------------------------------------------------------
+// The clock: the day before reminder, and the review request a day after
+// delivery. Every ten minutes, each email claimed in the database before it
+// goes so a restart or a second instance cannot send it twice. A flagged job
+// gets neither. The review only goes to a job that is paid, delivered and
+// not refunded.
+// ---------------------------------------------------------------------------
+const REVIEW_URL = String(process.env.REVIEW_URL || "").trim();
+
+async function tick() {
+  if (!db || !email.configured()) return;
+  const now = new Date();
+  for (const b of await db.dueReminders(now)) {
+    if (!(await db.claim(b.id, "reminded_at", now))) continue;
+    const r = await email.toCustomer("reminder", publicBooking(b), SITE_URL);
+    if (r.customer) console.log(`[ez-shots] ${b.id} reminder sent`);
+    else { for (const e of r.errors) console.error(`[ez-shots] ${b.id} reminder failed, ${e}`); await db.unclaim(b.id, "reminded_at").catch(() => {}); }
+  }
+  for (const b of await db.dueReviews(now)) {
+    if (!(await db.claim(b.id, "review_sent_at", now))) continue;
+    const r = await email.toCustomer("review", publicBooking(b), SITE_URL, REVIEW_URL);
+    if (r.customer) console.log(`[ez-shots] ${b.id} review request sent`);
+    else { for (const e of r.errors) console.error(`[ez-shots] ${b.id} review request failed, ${e}`); await db.unclaim(b.id, "review_sent_at").catch(() => {}); }
+  }
+}
+const TICK_MS = Math.max(5000, Number(process.env.TICK_MS) || 10 * 60 * 1000);
+setInterval(() => tick().catch(e => console.error("[ez-shots] scheduled emails failed:", e.message)), TICK_MS).unref();
 
 server.listen(PORT, () => {
   console.log(`[ez-shots] listening on ${PORT}, timezone ${process.env.TZ}`);

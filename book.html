@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Book a Shoot | EZ Shots Real Estate Photography, Metro Detroit</title>
-  <meta name="description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Pick a package, tell me the property, pick a day and time, pay, done. First shoot 50% off." />
+  <meta name="description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Pick a package, the property and a time. $0 to book, pay after you see the photos. First shoot 50% off." />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/styles.css" />
   <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
@@ -15,8 +15,8 @@
   <section class="page-head book-head" id="main">
     <div class="container">
       <p class="eyebrow">Book a shoot</p>
-      <h1>Pick. Schedule. Pay. Done.</h1>
-      <p class="lead">Three screens, about a minute. No call, no account, no waiting to hear back on price.</p>
+      <h1>Pick. Schedule. Done. $0 today.</h1>
+      <p class="lead">Three screens, about a minute. No call, no account, no card. You pay after you have seen the photos, and only if you are happy with them.</p>
     </div>
   </section>
 
@@ -24,7 +24,7 @@
     <ol class="book-crumbs">
       <li class="book-crumb on"><b>1</b> Package</li>
       <li class="book-crumb"><b>2</b> Property and time</li>
-      <li class="book-crumb"><b>3</b> Contact and pay</li>
+      <li class="book-crumb"><b>3</b> Your details</li>
     </ol>
   </div>
 
@@ -46,7 +46,7 @@
             data-subject="New booking"
             data-subject-field="address"
             data-sending="Booking your shoot..."
-            data-success="Your time is held. Sending you to the payment page now.">
+            data-success="You are booked. Opening your confirmation now.">
 
         <!-- Honeypot. Hidden from people, irresistible to bots. -->
         <input type="text" name="_hp" tabindex="-1" autocomplete="off" aria-hidden="true"
@@ -75,7 +75,7 @@
           <div class="pkg-pick-grid" id="package-options">
             <p class="form-help">Loading packages...</p>
           </div>
-          <p class="form-help book-foot">Drone aerials are in both. One flat rate whatever the square footage. If the gallery is not what you wanted you do not pay, and I send you $20 on top.</p>
+          <p class="form-help book-foot">$0 to book. Drone aerials are in both. One flat rate whatever the square footage. You pay after you see the photos, and if they are not what you wanted you do not pay and I send you $20.</p>
         </div>
 
         <!-- ============ STEP 2 ============ -->
@@ -145,7 +145,7 @@
           <div id="time-block" hidden>
             <h2 class="book-q">Pick a time</h2>
             <div class="time-grid" id="time-options"></div>
-            <p class="form-help">About an hour on site for Essentials, an hour and a half with video. Your time is held the moment you book and it is yours once the payment goes through.</p>
+            <p class="form-help">About an hour on site for Essentials, an hour and a half with video. The time is yours the moment you book. Nothing to pay until the photos are in.</p>
           </div>
         </div>
 
@@ -166,7 +166,7 @@
             <div class="field">
               <label for="email">Email <span class="req">*</span></label>
               <input id="email" name="email" type="email" autocomplete="email" inputmode="email" placeholder="jane@brokerage.com" />
-              <p class="form-help">Confirmation and the gallery link go here.</p>
+              <p class="form-help">Your confirmation and the photos go here.</p>
             </div>
             <div class="field">
               <label for="phone">Mobile <span class="req">*</span></label>
@@ -183,7 +183,7 @@
 
           <div class="book-summary" id="book-summary"></div>
 
-          <p class="form-note">Paying takes you to Stripe. Your card details never touch this site. If the gallery is not what you wanted, you do not pay: the money goes back on the same card and I send you $20 on top.</p>
+          <p class="form-note"><b>Nothing is charged today and no card is needed.</b> After the shoot you get your photos to look at. Happy with them? Pay online through Stripe and the full resolution files unlock. Not happy? You do not pay, and I send you $20 for the trouble.</p>
         </div>
 
         <!-- ============ STICKY BAR ============ -->
@@ -208,32 +208,32 @@
   <section class="section section-soft">
     <div class="container narrow">
       <div class="sec-head center">
-        <p class="eyebrow">After you pay</p>
+        <p class="eyebrow">After you book</p>
         <h2>What happens next</h2>
       </div>
       <div class="steps">
         <div class="step">
           <div class="n">1</div>
-          <h3>Your time is yours</h3>
-          <p>The slot is held while you pay and booked the moment the payment goes through. Stripe emails the receipt straight away.</p>
+          <h3>Instant confirmation</h3>
+          <p>The time is yours the moment you press Book. The confirmation email lands straight away, and a reminder the day before.</p>
         </div>
         <div class="step">
           <div class="n">2</div>
-          <h3>I text before I come</h3>
-          <p>The day before and again on the way. That is when I ask for the code.</p>
+          <h3>Shoot day</h3>
+          <p>About an hour on site, drone included. If there is a lockbox code, I text you for it that morning.</p>
         </div>
         <div class="step">
           <div class="n">3</div>
-          <h3>I shoot and edit</h3>
-          <p>About an hour on site. Editing that night, not next week.</p>
+          <h3>See your photos</h3>
+          <p>Previews in your inbox in about 24 hours, never more than 72.</p>
         </div>
         <div class="step">
           <div class="n">4</div>
-          <h3>Gallery in your inbox</h3>
-          <p>About 24 hours later. Not happy and you do not pay, plus $20.</p>
+          <h3>Pay when happy</h3>
+          <p>Pay online and the full resolution files unlock. Not happy, you do not pay, plus $20.</p>
         </div>
       </div>
-      <p class="pkg-note">Want to talk it through first? <a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">Grab a free 10 minute call</a> or <a href="contact.html">send a message</a>.</p>
+      <p class="pkg-note">Questions first? <a href="contact.html">Send a message</a> and I reply the same day, or <a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">grab a 10 minute call</a>. Neither is needed to book.</p>
     </div>
   </section>
 

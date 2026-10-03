@@ -37,15 +37,26 @@
   // ----------------------------------------------------------------
   // What a booking is, in one word the owner would use
   // ----------------------------------------------------------------
+  // A site booking costs nothing, so "not paid" is normal right up to the
+  // photos. What matters is the stage: booked, editing, payment due, paid.
   function kind(b) {
-    if (b.state === "confirmed") return b.paid ? "paid" : "unpaid";
+    if (b.state === "confirmed") {
+      if (b.flaggedAt) return "flagged";
+      if (b.paid) return "paid";
+      if (b.stage === "ready") return "due";
+      if (b.stage === "shot") return "editing";
+      return "booked";
+    }
     return b.state;
   }
   function badge(b) {
     var k = kind(b), r = b.refundedCents > 0;
     var map = {
-      paid: r ? (b.refundable > 0 ? ["b-info", "Part refunded"] : ["b-info", "Refunded"]) : ["b-ok", "Paid"],
-      unpaid: ["b-warn", "Unpaid"],
+      paid: r ? (b.refundable > 0 ? ["b-info", "Part refunded"] : ["b-info", "Refunded"]) : ["b-ok", b.stage === "delivered" ? "Paid, delivered" : "Paid"],
+      booked: ["b-info", "Booked"],
+      editing: ["b-info", "Editing"],
+      due: ["b-warn", "Payment due"],
+      flagged: ["b-bad", "Not happy"],
       held: ["b-warn", "Awaiting payment"],
       expired: ["b-bad", "Payment lapsed"],
       cancelled: r ? ["b-mute", "Cancelled, refunded"] : ["b-mute", "Cancelled"]
@@ -53,10 +64,17 @@
     var m = map[k] || ["b-mute", k];
     return '<span class="adm-badge ' + m[0] + '">' + esc(m[1]) + "</span>";
   }
+  // Something only the owner can move on: a client who is not happy, a shoot
+  // that has happened and is not marked done, photos still to send, or a
+  // payment that is due. A booked shoot in the future needs nothing.
   function needsAttention(b) {
     var k = kind(b);
-    return (k === "unpaid") || ((k === "held" || k === "expired") && b.date >= data.today);
+    if (k === "flagged" || k === "due" || k === "editing") return true;
+    if (k === "booked") return Date.parse(b.startsAt) + 90 * 60000 < Date.now();
+    if (k === "paid") return !b.finalUrl && b.stage !== "delivered" && Date.parse(b.startsAt) < Date.now();
+    return (k === "held" || k === "expired") && b.date >= data.today;
   }
+  function attentionCount() { return data.bookings.filter(needsAttention).length; }
   // A client who has booked before and still got the first shoot price.
   // Nothing on the booking page checks this, so the owner should see it.
   function repeatDiscount(b) { return b.firstShoot && b.clientBookings > 1 && b.state !== "cancelled"; }
@@ -102,7 +120,8 @@
     if (s.repeat) bits.push(s.repeat + (s.repeat === 1 ? " repeat client" : " repeat clients"));
     el("greet-sub").textContent = bits.join(". ") + ".";
     var n = el("adm-tab-count");
-    if (n) { n.hidden = !s.unpaid; n.textContent = s.unpaid; n.title = s.unpaid + " need attention"; }
+    var need = attentionCount();
+    if (n) { n.hidden = !need; n.textContent = need; n.title = need + " need attention"; }
   }
 
   function paintNext() {
@@ -153,7 +172,7 @@
         later.length ? "next at " + esc(later[0].time) : todays.length ? "all done" : "nothing booked") +
       tile("This week", s.week + (s.week === 1 ? " shoot" : " shoots"), esc(s.upcoming + " upcoming, " + money(s.upcomingValue) + " booked"), "upcoming") +
       tile("Revenue in " + month, money(s.revenue), delta) +
-      tile("Needs attention", String(s.unpaid), s.unpaid ? "unpaid or waiting on payment" : "everything is paid up", "attention");
+      tile("Needs attention", String(attentionCount()), attentionCount() ? (s.flagged ? s.flagged + " not happy, " : "") + s.unpaid + " payment due" : "nothing waiting on you", "attention");
   }
 
   function paintFilters() {
@@ -194,8 +213,8 @@
     var wrap = el("list");
     if (!list.length) {
       var msg = q ? ["Nothing matches “" + q + "”", "Search looks at every booking, past and future."]
-        : { upcoming: ["Nothing booked ahead", "New bookings land here the moment they are paid."],
-            attention: ["All clear", "Nothing is unpaid or waiting on a payment."],
+        : { upcoming: ["Nothing booked ahead", "New bookings land here the moment they are made."],
+            attention: ["All clear", "No shoot waiting to be marked done, no photos to send, no payment due."],
             past: ["No past shoots yet", "Shoots from the last two months show here."],
             cancelled: ["Nothing cancelled", "Good."], all: ["No bookings yet", ""] }[ui.filter];
       wrap.innerHTML = '<div class="adm-empty"><b>' + esc(msg[0]) + "</b>" + esc(msg[1]) + "</div>";
@@ -344,9 +363,8 @@
           ? "The time is held until " + esc(A.stamp(b.expiresAt)) + ". " + (data.stripe ? "Stripe confirms it on its own when they pay." : "Check Stripe for the payment, then mark it paid.")
           : "The hold lapsed and the time is open again. If they paid another way, mark it paid to put it back on the calendar.") + "</p>" +
         '<div class="adm-panel-actions"><button type="button" class="adm-btn adm-btn-primary" data-act="confirm">Mark paid</button></div></div>';
-    } else if (k === "unpaid") {
-      alert = '<div class="adm-panel"><b>Booked, not paid yet</b><p class="adm-help">You added this by hand. Mark it paid once the money is in.</p>' +
-        '<div class="adm-panel-actions"><button type="button" class="adm-btn adm-btn-primary" data-act="confirm">Mark paid</button></div></div>';
+    } else if (b.state === "confirmed") {
+      alert = jobPanel(b, k);
     }
     if (repeatDiscount(b)) {
       alert += '<div class="adm-panel"><b>Returning client at first shoot price</b><p class="adm-help">' + esc(first(b.name)) +
@@ -359,7 +377,13 @@
 
     var history = [
       ["Booked" + (b.source === "admin" ? " by you" : " on the site"), b.createdAt],
+      [b.remindedAt ? "Reminder emailed" : "", b.remindedAt],
+      [b.shotAt ? "Shoot done" : "", b.shotAt],
+      [b.readyAt ? "Photos sent, payment asked for" : "", b.readyAt],
       [b.paid ? "Paid" + (b.checkoutMode === "manual" ? ", marked by you" : "") : "", b.paidAt],
+      [b.deliveredAt ? "Files delivered" : "", b.deliveredAt],
+      [b.flaggedAt ? "Marked not happy" : "", b.flaggedAt],
+      [b.reviewSentAt ? "Review request emailed" : "", b.reviewSentAt],
       [b.refundedCents ? "Refunded " + money(b.refundedCents / 100) + " in total" : "", b.refundedAt],
       [b.state === "cancelled" ? "Cancelled by the " + (b.cancelledBy || "owner") : "", b.cancelledAt]
     ].filter(function (h) { return h[0] && h[1]; }).sort(function (x, y) { return Date.parse(x[1]) - Date.parse(y[1]); });
@@ -394,7 +418,7 @@
           ["Their notes", b.notes, 0, 1]
         ]) + "</div>" +
         '<div class="adm-sec"><h3>Payment</h3>' + dl([
-          ["Charged", money(b.amount)],
+          [b.paid ? "Paid" : "Due after the shoot", money(b.amount)],
           ["Refunded", b.refundedCents ? money(b.refundedCents / 100) : ""],
           ["Left to refund", b.refundedCents && b.refundable ? money(b.refundable) : ""],
           ["Stripe", b.stripePaymentIntent ? '<a href="https://dashboard.stripe.com/payments/' + esc(b.stripePaymentIntent) + '" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">Open the payment</a>' : "", "html"]
@@ -414,6 +438,45 @@
         (live ? '<button type="button" class="adm-btn adm-btn-quiet" data-act="cancel" style="margin-left:auto;color:var(--adm-bad-fg)">Cancel booking</button>' : "") +
       "</div>";
     if (panel === "move") paintMoveSlots(b);
+  }
+
+  // ---- the job, after the booking ----
+  // One panel that says what to do next for this stage, so the owner never
+  // has to remember the order: shoot done, send the photos, get paid.
+  function jobPanel(b, k) {
+    var links = '<label class="adm-field"><span>Preview link (what they see before paying: watermarked or low resolution)</span>' +
+        '<input class="adm-input" data-f="preview" type="url" placeholder="https://" value="' + esc(b.previewUrl || "") + '" /></label>' +
+      '<label class="adm-field"><span>Full resolution files link (unlocked only by the payment)</span>' +
+        '<input class="adm-input" data-f="final" type="url" placeholder="https://" value="' + esc(b.finalUrl || "") + '" /></label>';
+    var head = function (t, help) { return '<div class="adm-panel"><b>' + esc(t) + '</b><p class="adm-help">' + help + "</p>"; };
+    var btns = function (list) { return '<div class="adm-panel-actions">' + list.join("") + "</div></div>"; };
+    var btn = function (act, label, primary) { return '<button type="button" class="adm-btn' + (primary ? " adm-btn-primary" : "") + '" data-act="' + act + '">' + esc(label) + "</button>"; };
+    if (k === "flagged") {
+      return head("Not happy", esc(first(b.name)) + " pressed Not happy" + (b.flagReason ? ": “" + esc(b.flagReason) + "”" : ".") +
+        " Nothing automatic goes to them while this is flagged. Talk to them, then either cancel" + (b.paid ? " and refund" : "") +
+        " (the guarantee says no charge and $20), or clear the flag if it got sorted.") +
+        btns([btn("unflag", "Clear the flag", true)]);
+    }
+    if (k === "booked") {
+      return head("Booked, nothing paid yet", "That is normal: they pay after seeing the photos. After the shoot, press Shoot done so they know editing has started, or send the photos straight away below.") +
+        btns([btn("shot", "Shoot done", true)]) +
+        head("Send the photos", "Emails " + esc(first(b.name)) + " the preview link and a Pay button. The files link stays hidden until they pay.") + links +
+        btns([btn("ready", "Send photos and ask for payment", false)]);
+    }
+    if (k === "editing") {
+      return head("Editing, photos to send", "Paste both links and send. " + esc(first(b.name)) + " gets the previews, the amount and a Pay button.") + links +
+        btns([btn("ready", "Send photos and ask for payment", true)]);
+    }
+    if (k === "due") {
+      return head("Photos sent, " + money(b.amount) + " due", "Sent " + esc(A.stamp(b.readyAt)) + ". When Stripe says paid, the files link goes to them on its own. Paid another way? Mark it paid and the files go out the same.") +
+        btns([btn("confirm", "Mark paid", true), btn("flag", "Mark not happy", false)]) +
+        head("Links", "Change a link and press Save to send the corrected email.") + links + btns([btn("ready", "Save and resend", false)]);
+    }
+    if (k === "paid") {
+      return head(b.finalUrl ? "Paid and delivered" : "Paid, files to send", b.finalUrl ? "The files link went to them with the payment." : "Paid before the photos were sent. Paste the links to deliver.") + links +
+        btns([btn("ready", b.finalUrl ? "Save and resend files" : "Deliver the files", !b.finalUrl), btn("flag", "Mark not happy", false)]);
+    }
+    return "";
   }
 
   // ---- reschedule ----
@@ -503,7 +566,7 @@
         "</div>" +
         '<div class="adm-sec adm-stack"><h3>Payment</h3>' +
           '<label class="adm-switch"><input type="checkbox" name="paid" /><i></i> Already paid (cash, Zelle, card in person)</label>' +
-          '<label class="adm-check"><input type="checkbox" name="notify" disabled /> <span id="notify-text">Send the You are booked email (needs paid and an email address)</span></label>' +
+          '<label class="adm-check"><input type="checkbox" name="notify" disabled /> <span id="notify-text">Send the You are booked email (needs an email address)</span></label>' +
         "</div>" +
         '<button type="submit" hidden></button>' +
       "</form>" +
@@ -521,11 +584,11 @@
     if (!f) return;
     var p = (data.packages || []).filter(function (x) { return x.id === f.elements.packageId.value; })[0];
     var n = f.elements.notify;
-    var can = f.elements.paid.checked && /@/.test(f.elements.email.value) && data.email;
+    var can = /@/.test(f.elements.email.value) && data.email;
     n.disabled = !can;
     if (!can) n.checked = false;
     el("notify-text").textContent = can ? "Send " + first(f.elements.name.value) + " the You are booked email" :
-      data.email ? "Send the You are booked email (needs paid and an email address)" : "Send the You are booked email (emails are not switched on)";
+      data.email ? "Send the You are booked email (needs an email address)" : "Send the You are booked email (emails are not switched on)";
     return p;
   }
 
@@ -553,7 +616,17 @@
     };
     if (btn) btn.disabled = true;
 
-    if (name === "confirm") return patch(b, { action: "confirm" }).then(done("Marked paid."), fail);
+    if (name === "confirm") return patch(b, { action: "confirm" }).then(done(function (d) { return "Marked paid." + (d.emailed ? " " + first(b.name) + " has been sent the files." : ""); }), fail);
+    if (name === "shot") return patch(b, { action: "shot" }).then(done(function (d) { return "Marked done." + (d.emailed ? " " + first(b.name) + " has been told the photos are on the way." : ""); }), fail);
+    if (name === "unflag") return patch(b, { action: "unflag" }).then(done("Flag cleared. Emails to the client are back on."), fail);
+    if (name === "flag") return patch(b, { action: "flag" }).then(done("Flagged. No payment, reminder or review emails go to the client."), fail);
+    if (name === "ready") {
+      var pv = drawer.querySelector('[data-f="preview"]').value.trim();
+      var fl = drawer.querySelector('[data-f="final"]').value.trim();
+      return patch(b, { action: "ready", previewUrl: pv, finalUrl: fl }, "Sending...").then(done(function (d) {
+        return (b.paid ? "Files link saved." : "Photos sent, payment asked for.") + (d.emailed ? " " + first(b.name) + " has been emailed." : "");
+      }), fail);
+    }
     if (name === "note") {
       return patch(b, { action: "note", note: drawer.querySelector('[data-f="note"]').value }).then(function () {
         A.toast("Note saved.");

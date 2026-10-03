@@ -3,20 +3,43 @@
 Every email a booking sends goes from the server through EmailJS, built in
 `server/email.js`, one template (`EMAILJS_TEMPLATE_BOOKING`) for all of them:
 
+Since 2026-10-03 a booking costs nothing and the client pays after seeing the
+photos, so every step between has its own email and the client never has to
+ask what happens next:
+
 | When | To | Subject starts |
 |---|---|---|
-| Paid | owner (`OWNER_EMAIL`) | `Booked:`, with an Add to Google Calendar button |
-| Paid | client | `You are booked for`, with the prep list and calendar file |
+| Booked on the site | owner (`OWNER_EMAIL`) | `Booked:`, nothing paid yet, Add to Google Calendar button |
+| Booked on the site | client | `You are booked for`, $0 today, the four steps, prep list, calendar file |
+| A day before the shoot (the clock) | client | `Tomorrow: your shoot at` |
+| Owner presses Shoot done | client | `Shoot done at` |
+| Owner sends the photos | client | `Your photos are ready:`, previews, Pay and Not happy buttons |
+| Paid (Stripe or owner) | client | `Paid, here are your files:`, files link, Book another shoot |
+| Paid | owner | `Paid $X:` |
+| A day after a paid delivery (the clock) | client | `How did the photos do`, review link from `REVIEW_URL` |
+| Client presses Not happy | owner | `Not happy:`, with what they wrote |
+| Client cancels | owner | `Cancelled:` |
+| Owner moves the shoot, notify ticked | client | `Your shoot is now` |
 | Owner refunds in admin | client | `Refund of $X` |
+
+A flagged (not happy) job gets none of the automatic client emails until the
+owner clears the flag. The reminder and the review are claimed in the database
+before they send, so each goes once.
 
 The Google Calendar button is a plain `calendar.google.com/calendar/render`
 link with the title, time, address and client details filled in. No sign in,
-no API. A booking costs 2 of the 200 free monthly requests, 3 if refunded.
+no API. A normal job costs about 8 of the 200 free monthly requests: booked
+(2), reminder, shoot done, ready, delivered (2), review. That is 25 jobs a
+month on the free plan; past that EmailJS needs the paid plan.
 
 The contact form is separate: client side, `js/contact-form.js`, template
 `template_qlotxua`.
 
 ## The thing that decides the whole design
+
+(Written when payment happened at booking. Now the booking emails go from
+`book()` and the delivery emails from `paidAfter()`, which the webhook and the
+return to the manage page both reach. The reasoning below is unchanged.)
 
 EmailJS is a browser library, and 2 and 3 cannot be sent from a browser.
 

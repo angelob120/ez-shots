@@ -5,8 +5,9 @@ One plan file is enough for a site this small. Mark items done in place as they 
 ## Positioning
 Real estate photography for realtors in Metro Detroit (Wayne, Oakland, Macomb). The
 offer the whole site is built around:
+- $0 to book. Pay after the shoot, once the photos are seen (since 2026-10-03).
 - First shoot 50% off. $150 becomes $75, $250 becomes $125.
-- Not happy with a delivered gallery means you do not pay: full refund plus $20 cash, on
+- Not happy with a delivered gallery means you do not pay (full refund if already paid) plus $20 cash, on
   every gallery, first shoot and every one after, with no deadline on the request.
 - Average delivery about 24 hours, hard ceiling 72 hours or the shoot is free.
 - Drone aerials included in both packages, not sold as an add on.

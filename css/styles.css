@@ -149,6 +149,7 @@ p  { margin: 0 0 16px; }
 .announce b { color: #fff; font-weight: 800; }
 .announce .dot { color: rgba(255,255,255,.35); margin: 0 10px; }
 .announce a { color: #93c5fd; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 1100px) { .announce .hide-md { display: none; } }
 @media (max-width: 640px) { .announce .hide-sm { display: none; } }
 
 /* ---------- Header ----------
@@ -234,7 +235,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   position: relative; color: #fff; overflow: hidden;
   background:
     linear-gradient(100deg, rgba(6,13,25,.94) 0%, rgba(10,23,41,.86) 42%, rgba(10,23,41,.42) 100%),
-    url("https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=80") center/cover no-repeat;
+    url("../img/northville-estate.jpg") center/cover no-repeat;
   padding: 108px 0 96px;
 }
 .hero-inner { max-width: 720px; }
@@ -668,6 +669,23 @@ form.booking { background: none; border: none; box-shadow: none; padding: 0; gap
 .book-crumb.done b { background: var(--brand-dk); border-color: var(--brand-dk); color: #fff; }
 [data-theme="dark"] .book-crumb.done b { color: var(--navy); }
 
+/* The job's stage on the manage page: same pills as the booking crumbs. */
+.job-steps { display: flex; gap: 8px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap; }
+.job-steps li {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700;
+  color: var(--muted); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 6px 13px 6px 6px;
+}
+.job-steps li b {
+  width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--bg); border: 1px solid var(--line); font-size: 12px; color: var(--muted);
+}
+.job-steps li.on { color: var(--ink); border-color: var(--line-2); background: var(--tint); }
+.job-steps li.on b { background: var(--brand); border-color: var(--brand); color: #fff; }
+.job-steps li.done b { background: var(--brand-dk); border-color: var(--brand-dk); color: #fff; }
+[data-theme="dark"] .job-steps li.done b { color: var(--navy); }
+.job-panel { border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; }
+
 /* Question plus a row of answers. The input is hidden and the label is the
    target, so the whole pill is tappable and the checked state is just CSS. */
 .opt-q { font-size: 15px; font-weight: 700; margin: 6px 0 -4px; }
@@ -786,7 +804,7 @@ button.cal-day.on small { color: rgba(255,255,255,.85); }
   font-size: 13.5px; font-weight: 600; color: var(--muted);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.book-bar-price { font-size: 20px; font-weight: 900; letter-spacing: -.02em; }
+.book-bar-price { font-size: 20px; font-weight: 900; letter-spacing: -.02em; white-space: nowrap; }
 .book-bar-price:empty { display: none; }
 .book-bar-actions { display: flex; gap: 10px; align-items: center; }
 .book-bar-actions .btn { white-space: nowrap; }

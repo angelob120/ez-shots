@@ -16,10 +16,11 @@
 // THE SLOT IS TAKEN AT SUBMIT, NOT AT PICK. Tapping a time only selects it.
 // When "Book my shoot" is pressed, contact-form.js runs the beforeSend hook
 // below, which POSTs the whole booking to /api/book. The server checks the
-// slot again inside a database transaction and either holds it, in which case
-// the email goes out and the browser follows the checkout link it was given,
-// or says "That time was just booked", in which case the calendar is refreshed
-// and the customer is back on the day and time screen.
+// slot again inside a database transaction and either books it, in which case
+// the email goes out and the browser goes to the confirmation page it was
+// given, or says "That time was just booked", in which case the calendar is
+// refreshed and the customer is back on the day and time screen. Nothing is
+// paid here. The customer pays after the shoot, from their booking page.
 (function () {
   var form = document.querySelector("form.booking");
   if (!form) return;
@@ -243,22 +244,22 @@
   // ------------------------------------------------------------------
   function paintBar() {
     var bits = [];
-    if (state.pkg) bits.push(state.pkg.name);
+    if (state.pkg) bits.push(state.pkg.name + ", " + money(price()) + " after the shoot");
     if (state.day) bits.push(longDate(state.day) + (state.slot ? " at " + nb(state.slot) : ""));
     var addr = (form.elements.namedItem("address").value || "").trim();
     if (addr) bits.push(addr);
     barLine.textContent = bits.join("  |  ") || "Pick a package to start";
-    barPrice.textContent = state.pkg ? money(price()) : "";
+    barPrice.textContent = state.pkg ? "$0 today" : "";
     bar.classList.toggle("ready", !!state.pkg);
 
-    fPrice.value = state.pkg ? money(price()) + (state.first ? " (first shoot, half price)" : "") : "";
+    fPrice.value = state.pkg ? money(price()) + (state.first ? " (first shoot, half price)" : "") + ", due after the shoot, nothing paid at booking" : "";
 
     // Where the browser goes after the email is decided by the server at
     // submit time, once the slot is held. Until then there is nowhere to go.
     form.removeAttribute("data-redirect");
 
     if (submit && state.pkg) {
-      submit.textContent = "Book my shoot, " + money(price());
+      submit.textContent = "Book my shoot, $0 today";
       submit.setAttribute("data-label", submit.textContent);
     }
     paintSummary();
@@ -281,7 +282,8 @@
       lines.push('<div class="sum-row"><span>' + esc(state.pkg.name) + "</span><b>" + money(state.pkg.price) + "</b></div>");
       lines.push('<div class="sum-row"><span>First shoot, 50% off</span><b>-' + money(state.pkg.price - state.pkg.firstPrice) + "</b></div>");
     }
-    lines.push('<div class="sum-row sum-total"><span>Total today</span><b>' + money(price()) + "</b></div>");
+    lines.push('<div class="sum-row"><span>Due after you see the photos</span><b>' + money(price()) + "</b></div>");
+    lines.push('<div class="sum-row sum-total"><span>Due today</span><b>$0</b></div>');
     summary.innerHTML = lines.join("");
   }
 
@@ -335,8 +337,8 @@
   // ------------------------------------------------------------------
   // Taking the slot. Runs from contact-form.js after its own validation and
   // before the email. The hold the server gives back is remembered for the
-  // tab, so a retry after a failed email, or a back button from Stripe, asks
-  // for the same hold rather than tripping over it.
+  // tab, so a retry after a failed email or a double tap asks for the same
+  // booking rather than tripping over it.
   // ------------------------------------------------------------------
   function savedHold() {
     try { return JSON.parse(sessionStorage.getItem(HOLD_KEY) || "null"); } catch (e) { return null; }
