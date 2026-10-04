@@ -104,6 +104,9 @@
       var subjectPrefix = form.getAttribute("data-subject") || ("New lead from " + CONFIG.SITE_NAME);
       var subjectField = form.getAttribute("data-subject-field") || "";
       var successText = form.getAttribute("data-success") || "Thanks, I will be in touch shortly.";
+      // Every reply comes from a Gmail address, and a first email from a new
+      // sender can land in spam. Said once here so every form says it.
+      successText += " Not in your inbox? Check your spam folder.";
       var sendingText = form.getAttribute("data-sending") || "Sending...";
 
       // The label to put back after a failed send. booking.js rewrites the

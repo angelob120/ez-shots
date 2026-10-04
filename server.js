@@ -525,6 +525,7 @@ async function contact(req, res) {
   const hits = (contactHits.get(ip) || []).filter(t => t > hour);
   if (hits.length >= 10) return json(res, 429, { error: "Too many messages. Please email angelobrown1000@gmail.com." });
   contactHits.set(ip, hits.concat(Date.now()));
+  if (!str(b.from_name, 200) || !str(b.email_id, 200)) return json(res, 400, { error: "Missing fields." });
   try {
     await email.sendLead({
       subject: str(b.subject, 200) || "New lead from EZ Shots",
