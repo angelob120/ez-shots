@@ -15,7 +15,7 @@
       return '<a class="card" href="/project?id=' + encodeURIComponent(p.id) + '">' +
         '<div class="thumb">' +
           '<img src="' + esc(p.cover) + '" alt="' + esc(p.title) + ', ' + esc(p.location) + '" loading="lazy">' +
-          (p.pkg ? '<span class="pill">' + esc(p.pkg) + '</span>' : "") +
+          '<span class="pill">' + (p.gallery || []).length + ' photos</span>' +
         '</div>' +
         '<div class="body">' +
           '<span class="tag">' + esc(p.type) + '</span>' +

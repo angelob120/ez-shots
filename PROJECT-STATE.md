@@ -17,9 +17,6 @@ This file is the memory between sessions. Read it at the start of every session 
   the template and auto reply instructions saved in the extension itself may
   still say $175 or ask for a call. They should say $0 to book, pay if happy,
   and link ezshots.org/book.
-- **The drone section shows ground photos.** Every stock aerial was replaced
-  with the owner's own exteriors so nothing stock passes as his work. Send real
-  aerials and they go into `index.html` and `services.html`.
 - **Delivery links are the owner's to make.** Admin asks for a preview link
   (watermarked or low resolution, e.g. a Pic-Time or Dropbox folder) and a
   separate full resolution link. Only the second is held back until payment.
@@ -180,6 +177,34 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-10-04 (portfolio) - Real portfolio replaces the filler shoots
+
+- The five invented shoots (Birmingham, Royal Oak, Rochester Hills, Northville,
+  Troy, with made up sizes, packages and delivery times) are gone, and so are
+  their 21 images. `js/projects.js` now holds six real homes from the owner's
+  reference library: brick colonial, craftsman colonial, modern infill, fairway
+  ranch, restored foursquare, modern farmhouse. 95 photos in `img/work`, plus
+  800px card covers in `img/work/thumbs`.
+- **Location is only ever "Southeast Michigan".** The owner asked for no real
+  locations. The library's street names (in its BEST OF file names) were
+  dropped from every file name, the files carry no EXIF or GPS, and house
+  numbers were removed from nine exterior frames (copied wall over the number,
+  or a tight blur). The drone frames with a recognisable downtown skyline, and
+  the modern infill's rooftop deck, were left out for the same reason, as was
+  the foursquare porch close up with its number.
+- The raw library folder is gitignored. It is 61MB and its names identify the
+  streets. Never commit it; copy picks into `img/work` instead.
+- The project page spec row is now Property, Photos shown, Aerials, Twilight,
+  worked out from the data. Size, package and turnaround are gone because none
+  of them were known for these homes. Do not reintroduce invented ones.
+- Real aerials now fill the home page drone grid and the services drone stack,
+  so that blocker is closed. The home hero is the brick colonial at twilight.
+- MiniMax image editing was not used. Every frame was already finished, and
+  regenerating a real photo with an AI model would make the portfolio no
+  longer the owner's work.
+- Verified in the preview: portfolio grid, a project page and the home hero
+  load with no broken images; `npm test` passes.
 
 ### 2026-10-04 (email) - Public contact address is angelobrown1000@gmail.com
 

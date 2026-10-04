@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Shoot | EZ Shots</title>
-  <meta name="description" content="A recent real estate photography shoot by EZ Shots in Metro Detroit." />
+  <meta name="description" content="A real estate photography shoot by EZ Shots in Southeast Michigan." />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/styles.css" />
   <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
@@ -61,9 +61,10 @@
           '<a class="btn" href="/portfolio">View the portfolio</a>';
       } else {
         document.title = p.title + " | EZ Shots";
+        var has = function (s) { return (p.services || []).indexOf(s) >= 0; };
         var chips = (p.services || []).map(function (s) { return '<span class="chip">' + esc(s) + '</span>'; }).join("");
         var imgs = (p.gallery || []).map(function (src) {
-          return '<img src="' + esc(src) + '" alt="' + esc(p.title) + '" loading="lazy">';
+          return '<img src="' + esc(src) + '" alt="' + esc(p.title) + ', ' + esc(p.location) + '" loading="lazy">';
         }).join("");
         el.innerHTML =
           '<a class="back" href="/portfolio">&larr; Back to portfolio</a>' +
@@ -72,10 +73,10 @@
           '<p class="detail-meta">' + esc(p.location) + '</p>' +
           '<div class="chips">' + chips + '</div>' +
           '<div class="spec-row">' +
-            '<div><b>' + esc(p.sqft || "n/a") + '</b><span>Size</span></div>' +
-            '<div><b>' + esc(p.pkg || "n/a") + '</b><span>Package</span></div>' +
-            '<div><b>' + esc(p.photos || "n/a") + '</b><span>Delivered</span></div>' +
-            '<div><b>' + esc(p.delivered || "n/a") + '</b><span>Turnaround</span></div>' +
+            '<div><b>' + esc(p.type) + '</b><span>Property</span></div>' +
+            '<div><b>' + (p.gallery || []).length + '</b><span>Photos shown</span></div>' +
+            '<div><b>' + (has("Drone aerials") ? "Yes" : "No") + '</b><span>Aerials</span></div>' +
+            '<div><b>' + (has("Twilight") ? "Yes" : "No") + '</b><span>Twilight</span></div>' +
           '</div>' +
           '<p class="lead" style="margin-top:24px">' + esc(p.description) + '</p>' +
           '<div class="gallery">' + imgs + '</div>';

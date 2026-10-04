@@ -235,7 +235,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   position: relative; color: #fff; overflow: hidden;
   background:
     linear-gradient(100deg, rgba(6,13,25,.94) 0%, rgba(10,23,41,.86) 42%, rgba(10,23,41,.42) 100%),
-    url("../img/northville-estate.jpg") center/cover no-repeat;
+    url("../img/work/brick-colonial-twilight-front-exterior.webp") center/cover no-repeat;
   padding: 108px 0 96px;
 }
 .hero-inner { max-width: 720px; }
