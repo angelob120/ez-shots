@@ -513,6 +513,34 @@ function ticketAge(t, now = Date.now()) {
 // The address the request came from. Railway's proxy sets X-Real-IP; the
 // first X-Forwarded-For entry is whatever the client chose to send, so it is
 // the last one, the hop the proxy added, that is trusted.
+// The site's lead forms, sent to the owner through Gmail. Answers 503 when
+// Gmail is not set up, and js/contact-form.js then uses EmailJS instead.
+const contactHits = new Map();
+async function contact(req, res) {
+  const b = await body(req).catch(() => null);
+  if (!b) return json(res, 400, { error: "Bad request." });
+  if (str(b._hp, 200)) return json(res, 200, { ok: true });
+  const ip = clientIp(req);
+  const hour = Date.now() - 3600 * 1000;
+  const hits = (contactHits.get(ip) || []).filter(t => t > hour);
+  if (hits.length >= 10) return json(res, 429, { error: "Too many messages. Please email angelobrown1000@gmail.com." });
+  contactHits.set(ip, hits.concat(Date.now()));
+  try {
+    await email.sendLead({
+      subject: str(b.subject, 200) || "New lead from EZ Shots",
+      name: str(b.from_name, 200),
+      email: str(b.email_id, 200),
+      phone: str(b.phone, 60),
+      message: str(b.message, 20000)
+    });
+    return json(res, 200, { ok: true });
+  } catch (e) {
+    if (e.off) return json(res, 503, { error: "off" });
+    console.error("[ez-shots] contact email failed:", e.message);
+    return json(res, 502, { error: "send failed" });
+  }
+}
+
 function clientIp(req) {
   const real = String(req.headers["x-real-ip"] || "").trim();
   if (real) return real.slice(0, 64);
@@ -1252,6 +1280,7 @@ async function api(req, res, url) {
   }
 
   if (pathname === "/api/book" && req.method === "POST") return book(req, res);
+  if (pathname === "/api/contact" && req.method === "POST") return contact(req, res);
   if (pathname === "/api/session" && req.method === "GET") return session(req, res, url);
   if (pathname === "/api/stripe/webhook" && req.method === "POST") return webhook(req, res);
   if (pathname === "/api/manage" || pathname.startsWith("/api/manage/")) return manage(req, res, url);

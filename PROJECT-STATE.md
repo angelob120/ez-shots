@@ -178,6 +178,18 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-04 - Send every email through Gmail SMTP
+
+- `server/email.js` sends through Gmail (nodemailer) when `GMAIL_USER` and
+  `GMAIL_APP_PASSWORD` are set, and through EmailJS as before when they are not.
+- New `POST /api/contact` sends the lead forms to `OWNER_EMAIL` through Gmail,
+  honeypot checked, 10 an hour per IP. `js/contact-form.js` posts there first
+  and uses browser EmailJS only when the server answers 503 (Gmail off) or
+  there is no server.
+- To switch on: set `GMAIL_USER` and `GMAIL_APP_PASSWORD` on the Railway
+  service. A personal Gmail sends to about 500 people a day.
+- Verified with `npm test` and `npm run check:bookings` (EmailJS path).
+
 ### 2026-10-04 - Blog, site SEO, home copy, Blog in the nav
 - **20 blog posts written by MiniMax**, modelled on the EZ Orders blog: same
   prompt rules, same flat illustration style, hero plus up to two inline

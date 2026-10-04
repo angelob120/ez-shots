@@ -1,4 +1,5 @@
-// EZ Shots forms -> EmailJS (client side, no backend).
+// EZ Shots forms -> POST /api/contact, which emails the owner through Gmail.
+// EmailJS in the browser is the fallback when the server has no Gmail set up.
 // Every form on the site with class "lead-form" wires itself up here. There is
 // one handler on purpose: a second copy is how one form starts validating
 // differently from another, and how a field silently stops reaching the inbox.
@@ -211,11 +212,6 @@
           subject: subject
         };
 
-        if (typeof emailjs === "undefined") {
-          setStatus("error", "Sorry, the form could not load. Please email angelobrown1000@gmail.com directly.");
-          return;
-        }
-
         if (btn) { btn.disabled = true; btn.textContent = sendingText; }
         setStatus("pending", sendingText);
 
@@ -232,9 +228,28 @@
           return true;
         }
 
+        // The server sends it through Gmail. EmailJS is used only when the
+        // server says Gmail is not set up (503) or there is no server at all,
+        // as under `npm run start:static`.
+        function deliver() {
+          return fetch("/api/contact", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(params)
+          }).then(function (r) {
+            if (r.ok) return;
+            if (r.status !== 503 && r.status !== 404 && r.status !== 405) throw new Error("server replied " + r.status);
+            return viaEmailJs();
+          }, viaEmailJs);
+        }
+        function viaEmailJs() {
+          if (typeof emailjs === "undefined") return Promise.reject(new Error("EmailJS not loaded"));
+          return emailjs.send(CONFIG.SERVICE_ID, CONFIG.TEMPLATE_ID, params);
+        }
+
         function sendEmail() {
           params.message = buildMessage();
-          emailjs.send(CONFIG.SERVICE_ID, CONFIG.TEMPLATE_ID, params).then(
+          deliver().then(
             function () {
               if (leave()) return;
               form.reset();
@@ -243,7 +258,7 @@
               restoreButton();
             },
             function (err) {
-              console.error("[EZ Shots] EmailJS send failed:", err);
+              console.error("[EZ Shots] lead email failed:", err);
               // A booking that the server already holds goes on to payment
               // regardless. Everything else has no record but this email, so
               // it has to be said.

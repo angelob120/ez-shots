@@ -34,6 +34,11 @@
 // No Google sign in, no API, nothing stored.
 //
 // ENV
+//   GMAIL_USER                the Gmail address every email is sent from.
+//   GMAIL_APP_PASSWORD        a Google app password for it. With both set,
+//                             every email goes through Gmail SMTP and the
+//                             EmailJS settings below are not used. A personal
+//                             Gmail account sends to about 500 people a day.
 //   EMAILJS_SERVICE_ID        the Gmail service, service_dburs96
 //   EMAILJS_PUBLIC_KEY        sent as user_id
 //   EMAILJS_PRIVATE_KEY       sent as accessToken. Without it nothing sends,
@@ -65,6 +70,20 @@ const SERVICE = env("EMAILJS_SERVICE_ID");
 const PUBLIC = env("EMAILJS_PUBLIC_KEY");
 const PRIVATE = env("EMAILJS_PRIVATE_KEY");
 const TEMPLATE = env("EMAILJS_TEMPLATE_BOOKING");
+const GMAIL_USER = env("GMAIL_USER");
+// Google shows an app password in groups of four. The spaces are not part of it.
+const GMAIL_PASS = env("GMAIL_APP_PASSWORD").replace(/\s+/g, "");
+const gmail = () => !!(GMAIL_USER && GMAIL_PASS);
+let transport = null;
+function smtp() {
+  if (!transport) {
+    transport = require("nodemailer").createTransport({
+      service: "gmail",
+      auth: { user: GMAIL_USER, pass: GMAIL_PASS }
+    });
+  }
+  return transport;
+}
 // "a@b.com, c@d.com" -> ["a@b.com", "c@d.com"]. The first one is the reply-to
 // the customer sees, so order matters.
 const OWNERS = env("OWNER_EMAIL").split(",").map(s => s.trim()).filter(Boolean);
@@ -75,11 +94,12 @@ const SHOOT_MS = 90 * 60 * 1000;
 // throws on every booking is worse than one that says, once, at boot, that it
 // is switched off.
 function configured() {
-  return !!(SERVICE && PUBLIC && PRIVATE && TEMPLATE);
+  return gmail() || !!(SERVICE && PUBLIC && PRIVATE && TEMPLATE);
 }
 
 function why() {
   const missing = [];
+  if (gmail()) return OWNERS.length ? missing : ["OWNER_EMAIL"];
   if (!SERVICE) missing.push("EMAILJS_SERVICE_ID");
   if (!PUBLIC) missing.push("EMAILJS_PUBLIC_KEY");
   if (!PRIVATE) missing.push("EMAILJS_PRIVATE_KEY");
@@ -99,7 +119,21 @@ async function pace() {
   if (at > now) await new Promise(r => setTimeout(r, at - now));
 }
 
+// Any email, through Gmail. `to` may be a comma separated list.
+async function sendGmail(to, mail, replyTo) {
+  const info = await smtp().sendMail({
+    from: { name: "EZ Shots", address: GMAIL_USER },
+    to,
+    replyTo: replyTo || OWNER || undefined,
+    subject: mail.subject,
+    text: mail.text,
+    html: mail.html
+  });
+  return info.messageId || "OK";
+}
+
 async function send(toEmail, mail, replyTo) {
+  if (gmail()) return sendGmail(toEmail, mail, replyTo);
   await pace();
   const r = await fetch(ENDPOINT, {
     method: "POST",
@@ -802,4 +836,17 @@ async function sendTest(siteUrl) {
   return out;
 }
 
-module.exports = { notifyBooked, notifyRefunded, notifyMoved, toCustomer, toOwner, configured, why, render, sendTest, googleCalendarUrl };
+// A lead from one of the site's forms, to the owner. Gmail only: when this
+// says it is off, the browser sends the lead through EmailJS itself.
+async function sendLead({ subject, name, email, phone, message }) {
+  if (!gmail() || !OWNERS.length) throw Object.assign(new Error("gmail not configured"), { off: true });
+  const rows = filled([["Name", name], ["Email", email], ["Phone", phone]]);
+  const text = lines(rows) + (message ? "\n\n" + message : "");
+  const html = `<div style="font:15px/1.55 ${FONT};color:${C.ink};">` +
+    rows.map(r => `<div><b>${esc(r[0])}:</b> ${esc(r[1])}</div>`).join("") +
+    (message ? `<div style="margin-top:16px;white-space:pre-wrap;">${esc(message)}</div>` : "") +
+    `</div>`;
+  return sendGmail(OWNERS.join(","), { subject, text, html }, email);
+}
+
+module.exports = { sendLead, notifyBooked, notifyRefunded, notifyMoved, toCustomer, toOwner, configured, why, render, sendTest, googleCalendarUrl };
