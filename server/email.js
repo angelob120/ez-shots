@@ -840,12 +840,39 @@ async function sendTest(siteUrl) {
 // says it is off, the browser sends the lead through EmailJS itself.
 async function sendLead({ subject, name, email, phone, message }) {
   if (!gmail() || !OWNERS.length) throw Object.assign(new Error("gmail not configured"), { off: true });
-  const rows = filled([["Name", name], ["Email", email], ["Phone", phone]]);
-  const text = lines(rows) + (message ? "\n\n" + message : "");
-  const html = `<div style="font:15px/1.55 ${FONT};color:${C.ink};">` +
-    rows.map(r => `<div><b>${esc(r[0])}:</b> ${esc(r[1])}</div>`).join("") +
-    (message ? `<div style="margin-top:16px;white-space:pre-wrap;">${esc(message)}</div>` : "") +
-    `</div>`;
+  // js/contact-form.js folds every extra field into the message as
+  // "Label: value" lines, then "Notes:" and whatever the visitor typed.
+  // Split it back apart so the extras sit in the details table.
+  const raw = String(message || "");
+  const cut = raw.search(/(^|\n)Notes:\n/);
+  const head = cut < 0 ? raw : raw.slice(0, cut);
+  const notes = cut < 0 ? "" : raw.slice(cut).replace(/^\n?Notes:\n/, "").trim();
+  const extras = [];
+  const loose = [];
+  for (const l of head.split("\n").map(s => s.trim()).filter(Boolean)) {
+    const m = /^([^:]{1,40}):\s*(.+)$/.exec(l);
+    if (m) extras.push([m[1], m[2]]); else loose.push(l);
+  }
+  const said = [loose.join("\n"), notes].filter(Boolean).join("\n\n");
+  const rows = filled([["Name", name], ["Email", email], ["Phone", phone]]).concat(extras);
+  // "New lead from EZ Shots - Jane" -> eyebrow "New lead", heading "Jane"
+  const kind = String(subject || "").split(" - ")[0].replace(/ from EZ Shots$/, "") || "New lead";
+  const first = (name || "").split(/\s+/)[0] || "them";
+
+  const contact = [];
+  if (phone) contact.push(button("tel:" + String(phone).replace(/[^\d+]/g, ""), "Call " + first, true));
+  if (email) contact.push(button("mailto:" + email, "Email " + first, !phone));
+
+  const text = lines(rows) + (said ? "\n\n" + said : "");
+  const html = layout({
+    preheader: `${name || "Someone"} sent a message from the website.`,
+    eyebrow: kind,
+    heading: name ? `${name} sent a message` : "New message from the website",
+    intro: "",
+    body: detailsBox(rows) + (said ? label("Their message") + note(said).replace("<p style=\"", "<p style=\"white-space:pre-wrap;") : ""),
+    buttons: contact,
+    footer: "Sent by ezshots.org from a form on the website. Reply to this email to reach them."
+  });
   return sendGmail(OWNERS.join(","), { subject, text, html }, email);
 }
 
