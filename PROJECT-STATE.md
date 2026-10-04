@@ -191,6 +191,8 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 - The numbers are `LIMITS` in server.js and each can be moved with an env var
   of the same name (`BOOK_MIN_SECONDS`, `BOOK_PER_IP`, `BOOK_PER_CLIENT`,
   `BOOK_PER_DAY`). Migration 006 stores `client_ip` on each booking.
+  All four are set in Railway on the ez-shots service at the defaults
+  (5, 3, 4, 10) so the owner can change them there without a deploy of code.
 - The IP comes from `X-Real-IP`, else the last `X-Forwarded-For` hop, never
   the first (the client can write that one). Not yet confirmed which of the
   two Railway sends; check the `booking refused` log lines show real
