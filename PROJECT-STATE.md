@@ -178,6 +178,37 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-04 - LeadMap and GHL outreach setup verified
+
+- LeadMap now routes EZ Bookings to its own GHL subaccount and EZ Shots to its
+  own GHL subaccount. The saved private integration tokens were verified against
+  the expected location identities without printing them.
+- Added active LeadMap scripts so EZ Bookings contacts receive the `send` tag
+  and EZ Shots contacts receive the `partner` tag. Those tags match the existing
+  GHL workflow triggers.
+- Replaced two restaurant ordering messages in the EZ Bookings `Send` workflow
+  with the two approved booking app openers. They are 261 and 247 characters,
+  both use a CTA containing `send`, and they remain separate split test paths.
+- Replaced the old restaurant partner message in the EZ Shots `Send` workflow
+  with the approved local agent opener. It is 201 characters and uses the
+  approved working together CTA.
+- Enabled Stop on response on both `Send` workflows. Both workflows remain
+  Draft by the owner's instruction. Nothing was published and no SMS was sent.
+- Verified each private integration can read its location and workflows, create
+  and delete a test contact, apply tags, enroll the test contact in a draft test
+  workflow, and remove it again. Test contacts were deleted afterward.
+- Production checks passed: `npm test`, LeadMap `npm test`, LeadMap doctor,
+  EZ Shots Stripe webhook signature rejection, and the EZ Bookings payment
+  health endpoint. EZ Bookings' full test suite also exited successfully.
+- Railway review found no disposable EZ Shots service. The EZ Bookings sweep
+  services are active scheduled jobs. LeadMap's `function-bun` service is an
+  isolated Hello World sample with no app secrets and no meaningful traffic;
+  it was listed as an unused candidate and was not deleted.
+- Still unverified: a real SMS to an owner-controlled phone and the current
+  PhoneValidator account balance. Rotate the GHL tokens that were pasted into
+  chat, replace them in LeadMap before revoking the old values, and do not
+  remove the old values first or production routing will stop.
+
 ### 2026-10-04 - Send every email through Gmail SMTP
 
 - `server/email.js` sends through Gmail (nodemailer) when `GMAIL_USER` and
