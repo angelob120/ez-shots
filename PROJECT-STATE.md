@@ -178,6 +178,15 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-04 (hero wording) - Original hero wording back, as five bullets
+
+- The owner liked the original wording and only wanted it broken up. All five
+  points from the first paragraph are back, each as its own bullet, with the
+  key phrase in bold white so the hero can be skimmed: what and who, shot
+  today, from the starting price, first shoot half price, book with nothing
+  down and pay after.
+- Verified in the preview at desktop and 375px phone width.
+
 ### 2026-10-04 (hero bullets) - Home hero is three checkmark bullets
 
 - The owner asked for bullets. `.hero-sub` on the home page became
