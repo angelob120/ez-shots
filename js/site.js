@@ -1,5 +1,6 @@
 // Shared announcement bar, header and footer, injected into every page.
 // Set the active page with: <body data-page="portfolio">
+// Blog is in the nav since 2026-10-04 at the owner's request.
 // Adding a page means adding it to `links` (nav) or the footer block below.
 // book.html is deliberately NOT a nav row: it is the header CTA button, so the
 // booking link is the one thing on the page that never reads as a menu item.
@@ -12,6 +13,7 @@
     ["/packages", "Pricing", "packages"],
     ["/guarantee", "Guarantee", "guarantee"],
     ["/about", "About", "about"],
+    ["/blog", "Blog", "blog"],
     ["/contact", "Contact", "contact"]
   ];
 

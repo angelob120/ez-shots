@@ -173,6 +173,30 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   that books, moves, cancels or marks a booking paid needs a `crm.report` (or
   `crm.reportCancelled`) call next to its `tracker` call.
 
+## The blog and SEO
+- **The blog is static HTML built from JSON.** `scripts/write-blog.mjs` asks
+  MiniMax (`MINIMAX_API_KEY` in the gitignored `.env`, never committed) for one
+  article per topic in its `TOPICS` list, as JSON blocks, never HTML, and
+  refuses dashes, links, emails, phone numbers, invented prices or
+  percentages, AI tell words and years. It draws a flat illustration for the
+  hero and before every second section, the same style and structure as the
+  EZ Orders blog. Output: `scripts/blog-posts.json` and `img/blog/*.webp`.
+  `--reimage` redraws pictures MiniMax returned blank (it often does).
+- **`npm run seo` builds everything a crawler reads**: `blog.html`,
+  `blog/<slug>.html`, the canonical, Open Graph, Twitter and JSON-LD block in
+  every public page's head (between `<!-- seo` markers, replaced on each run),
+  `sitemap.xml` and `robots.txt`. Edit a post in the JSON, never the built
+  HTML. Rerun it after changing any page title or description. It is
+  idempotent.
+- **No publish dates anywhere on the blog**, by the owner's choice, and the
+  blog is never on the home page. It is in the nav and the article footers.
+- Package prices in articles are wrapped in `data-price` spans at build time,
+  so they follow the config like the rest of the copy. Review every new post
+  for invented facts before it ships; the validator cannot catch a made up
+  claim written in words.
+- `/blog/<slug>` is served by `server.js` (and a `serve.json` rewrite) from
+  `blog/<slug>.html`; `/blog/<slug>.html` 301s to the clean address.
+
 ## Rules that will bite you
 - **URLs have no `.html`.** Since 2026-10-03 every link is root relative and clean:
   `/book`, `/project?id=x`, `/` for home, `/admin` for bookings and
@@ -183,7 +207,7 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
 - There are two lead forms, one in the `#contact` section of `index.html` and one on `contact.html`. Both share `js/contact-form.js` via the `form.lead-form` class. Change form behaviour in the JS once, not per page. If you add a third form, give it class `lead-form` and it wires itself up.
 - `form.name` in JavaScript returns the form's name attribute, not the input named "name". The handler reads fields with `form.elements.namedItem(...)` for this reason. Do not switch to `form.name.value`.
 - EmailJS keys are publishable client-side keys and live in the `CONFIG` object at the top of `js/contact-form.js`, not in env files (this is a static site with no build step). The `PUBLIC_KEY` is a placeholder until the owner pastes the real one.
-- Nav links are hardcoded in `js/site.js`. Adding a page means adding it to the `links` array there (or the footer block below it), not just creating the file. Nav is Services, Portfolio, Pricing (`packages.html`), Guarantee, About, Contact. Gallery, FAQ and Areas live in the footer only. `book.html` is deliberately not a nav row: it is the header CTA button, so booking never reads as a menu item.
+- Nav links are hardcoded in `js/site.js`. Adding a page means adding it to the `links` array there (or the footer block below it), not just creating the file. Nav is Services, Portfolio, Pricing (`packages.html`), Guarantee, About, Blog, Contact (Blog added 2026-10-04; the menu button takes over at 980px because seven links do not fit below that). FAQ and Areas live in the footer only. `book.html` is deliberately not a nav row: it is the header CTA button, so booking never reads as a menu item.
 - `serve.json` is no longer what runs in production, `server.js` is, but the rules
   in it are still load bearing because `server.js` reimplements them and
   `npm run start:static` still uses the file. The rules and why:  Without `cleanUrls: false`, `serve` 301s `/project.html?id=x` to `/project` and drops the query string, which breaks every portfolio detail page in production. The rewrites in that file also serve `/index.html` at `/` and let `/services` resolve to `/services.html`. Do not delete it.

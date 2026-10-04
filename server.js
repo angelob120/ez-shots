@@ -344,7 +344,8 @@ async function serveStatic(req, res, pathname, search = "") {
   // project page with no project and broke every portfolio detail page in
   // production once already.
   let rel = decodeURIComponent(pathname);
-  if (/^\/[a-z0-9-]+\.html$/i.test(rel) && !isPrivate(rel)) {
+  // Blog articles live one folder down, /blog/<slug>, built by scripts/build-seo.mjs.
+  if (/^\/(blog\/)?[a-z0-9-]+\.html$/i.test(rel) && !isPrivate(rel)) {
     const clean = CLEAN_OF[rel] || rel.slice(0, -5);
     if (fs.existsSync(path.join(ROOT, rel))) {
       res.writeHead(301, { location: clean + (search || ""), "cache-control": "public, max-age=3600" });
@@ -352,7 +353,7 @@ async function serveStatic(req, res, pathname, search = "") {
     }
   }
   if (CLEAN[rel]) rel = CLEAN[rel];
-  else if (/^\/[a-z0-9-]+$/i.test(rel)) rel = rel + ".html";
+  else if (/^\/(blog\/)?[a-z0-9-]+$/i.test(rel)) rel = rel + ".html";
 
   if (isPrivate(rel)) return send(res, 404, "Not found", { "content-type": "text/plain" });
 

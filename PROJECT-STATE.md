@@ -178,6 +178,39 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-04 - Blog, site SEO, home copy, Blog in the nav
+- **20 blog posts written by MiniMax**, modelled on the EZ Orders blog: same
+  prompt rules, same flat illustration style, hero plus up to two inline
+  pictures, plain list index with a thumbnail, no publish dates. `/blog` plus
+  `/blog/<slug>`, built statically by `npm run seo` from
+  `scripts/blog-posts.json`. See "The blog and SEO" in CLAUDE.md.
+- Posts were reviewed by hand after generation. Five lines were fixed: an
+  invented "ninety percent", an invented "industry standard", "most agents
+  book", "$20 cash back" (it is cash on top), and a pricing opener that
+  quoted two competitor numbers.
+- MiniMax returned blank or near blank canvases for about two thirds of the
+  first images. The prompt now asks for a concrete scene and `--reimage`
+  redraws anything under 14KB; after three passes none were left.
+- The pricing post failed four times in a row because MiniMax M2 spent all
+  12000 output tokens reasoning. Later attempts now get 30000.
+- **Site SEO**: canonical, Open Graph, Twitter cards on every public page,
+  ProfessionalService and WebSite JSON-LD on home, FAQPage on the FAQ,
+  Service on services and pricing, breadcrumbs everywhere, BlogPosting on
+  every article. New `sitemap.xml` (pages, posts, portfolio projects) and
+  `robots.txt` (keeps admin, manage, booked, intake and the API out).
+- **Home hero bullet** now reads From $150, first shoot $75, with aerials
+  already included (both prices bound to the config).
+- **Home "I do not have reviews" section** became "Why agents pick EZ
+  Shots", with no mention of reviews; section id is now `why`.
+- **Blog is in the main nav.** The menu button now takes over at 980px and
+  links tighten between 981 and 1100px so seven links fit.
+- Verified on the local preview: routes, 301 from `.html`, 404 for a missing
+  post, prices bound on a post, no console errors, no horizontal scroll on a
+  phone, nav at 960, 982, 1000 and 1280 wide. `npm test` passes. The SEO build
+  run twice gives no diff.
+- **Not done:** submit `https://ezshots.org/sitemap.xml` in Google Search
+  Console once the domain points at the new Railway service.
+
 ### 2026-10-04 (hero wording) - Original hero wording back, as five bullets
 
 - The owner liked the original wording and only wanted it broken up. All five

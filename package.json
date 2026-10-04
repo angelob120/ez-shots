@@ -9,7 +9,9 @@
     "check:forms": "node scripts/check-forms.mjs",
     "test": "node scripts/check-forms.mjs && node scripts/check-availability.mjs",
     "check:emails": "node scripts/preview-emails.mjs",
-    "check:bookings": "node scripts/check-bookings.mjs"
+    "check:bookings": "node scripts/check-bookings.mjs",
+    "blog:write": "node --env-file-if-exists=.env scripts/write-blog.mjs",
+    "seo": "node scripts/build-seo.mjs"
   },
   "dependencies": {
     "pg": "^8.23.0",

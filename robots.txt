@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin-settings
+Disallow: /api/
+Disallow: /manage
+Disallow: /booked
+Disallow: /intake
+
+Sitemap: https://ezshots.org/sitemap.xml

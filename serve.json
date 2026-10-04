@@ -3,6 +3,7 @@
   "directoryListing": false,
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
+    { "source": "/blog/:slug([a-z0-9-]+)", "destination": "/blog/:slug.html" },
     { "source": "/:page([a-z0-9-]+)", "destination": "/:page.html" }
   ]
 }
