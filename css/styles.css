@@ -576,8 +576,9 @@ form.lead-form.stacked { padding: 0; background: none; border: none; box-shadow:
 .footer-col h4 { color: #fff; font-size: 12.5px; text-transform: uppercase; letter-spacing: .12em; margin: 0 0 16px; font-weight: 800; }
 .footer-col a { display: block; color: rgba(255,255,255,.6); font-size: 14.5px; padding: 5px 0; transition: color .16s ease; }
 .footer-col a:hover { color: #fff; }
+.footer-badges { display: grid; gap: 10px; }
 .footer-badge {
-  border: 1px solid rgba(255,255,255,.16); border-radius: var(--radius-sm); padding: 16px 18px; margin-top: 4px;
+  border: 1px solid rgba(255,255,255,.16); border-radius: var(--radius-sm); padding: 16px 18px;
 }
 .footer-badge b { color: #fff; display: block; font-size: 14.5px; margin-bottom: 4px; }
 .footer-badge span { font-size: 13px; color: rgba(255,255,255,.6); line-height: 1.5; display: block; }
@@ -589,6 +590,7 @@ form.lead-form.stacked { padding: 0; background: none; border: none; box-shadow:
 .footer-bottom a { color: #60a5fa; }
 
 /* ---------- Responsive ---------- */
+
 @media (max-width: 1040px) {
   .nav-links { gap: 18px; }
   .nav-links > a { font-size: 14px; }
@@ -605,6 +607,10 @@ form.lead-form.stacked { padding: 0; background: none; border: none; box-shadow:
   .footer-top { grid-template-columns: 1fr 1fr; }
   .footer-brand { grid-column: 1 / -1; }
   .footer-brand p { max-width: none; }
+  /* Alone in a two column row it left half the footer empty. It takes the
+     whole row and its two badges sit side by side instead. */
+  .footer-trust { grid-column: 1 / -1; }
+  .footer-badges { grid-template-columns: 1fr 1fr; }
 
   /* The drawer hangs off the header itself (top: 100%) rather than a magic
      76px, so it cannot drift when the header height changes. */
@@ -620,6 +626,7 @@ form.lead-form.stacked { padding: 0; background: none; border: none; box-shadow:
   .nav-links a.active::after { left: 0; top: 10px; bottom: 10px; right: auto; width: 3px; height: auto; }
 }
 @media (max-width: 560px) {
+  .footer-badges { grid-template-columns: 1fr; }
   .nav { gap: 10px; }
   .brand { font-size: 18px; }
   .nav-cta { padding: 10px 14px; font-size: 13.5px; }
@@ -702,7 +709,10 @@ form.booking { background: none; border: none; box-shadow: none; padding: 0; gap
 .book-extra summary::-webkit-details-marker { display: none; }
 .book-extra summary::after { content: "+"; margin-left: auto; color: var(--accent); font-size: 22px; font-weight: 400; line-height: 1; }
 .book-extra[open] summary::after { content: "\2212"; }
-.book-extra summary span { color: var(--muted); font-weight: 400; font-size: 13px; }
+.book-extra-tag { display: inline-block; font-size: 12px; font-weight: 700; color: var(--accent); background: var(--tint);
+  border-radius: 999px; padding: 2px 9px; margin-left: 6px; vertical-align: 1px; }
+.book-extra summary { flex-wrap: wrap; }
+.book-extra summary .book-extra-tag { margin-left: 0; }
 .book-extra-body { padding: 0 16px 16px; display: grid; gap: 12px; }
 .btn-file { position: relative; overflow: hidden; }
 .btn-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }

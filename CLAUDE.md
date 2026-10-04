@@ -133,6 +133,12 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   `clientBookings` on each booking is that email's confirmed count. It is the
   only check on the half price radio button, and it is a flag for the owner, not
   a block, so the copy still must not call the discount verified.
+- **Booking limits.** `/api/book` refuses bots and calendar flooding in
+  `bookingRefusal()`: a signed form ticket from `/api/availability` at least
+  a few seconds old, the `_hp` honeypot, and caps per IP, per client email or
+  phone, and per day (`LIMITS`, each overridable by env var). Every refusal
+  tells the agent to email. Never apply them to admin bookings, and never
+  trust the first `X-Forwarded-For` entry.
 - **Watermark and reference photos.** The client adds their brokerage logo
   (and whether it goes on the photos, and where) and up to 12 example photos
   from the manage page, until the photos are sent. Bytes live in

@@ -86,8 +86,9 @@
           '<a href="/intake">After you book</a>' +
           '<a href="/contact">Contact</a>' +
         '</div>' +
-        '<div class="footer-col">' +
+        '<div class="footer-col footer-trust">' +
           '<h4>Good to know</h4>' +
+          '<div class="footer-badges">' +
           '<div class="footer-badge">' +
             '<b>FAA Part 107 certified</b>' +
             '<span>Licensed and insured for commercial drone flight.</span>' +
@@ -95,6 +96,7 @@
           '<div class="footer-badge">' +
             '<b>Not happy, you do not pay</b>' +
             '<span>$0 to book. Pay after you see the photos, or not at all and $20 on top. Every shoot.</span>' +
+          '</div>' +
           '</div>' +
         '</div>' +
       '</div>' +

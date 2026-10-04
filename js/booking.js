@@ -129,11 +129,19 @@
   // nothing open is a number with no button behind it, whether that is because
   // it is closed, full, blocked, or too soon.
   // ------------------------------------------------------------------
+  var ticket = "";
   function loadAvailability() {
     if (!window.fetch) return Promise.resolve(null);
     return fetch("/api/availability", { headers: { accept: "application/json" } })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { AV = d && d.days ? d : null; return AV; })
+      .then(function (d) {
+        AV = d && d.days ? d : null;
+        // The server's proof this page was opened before the booking, see
+        // LIMITS in server.js. The first one is kept: a reload after "that time
+        // was just taken" must not restart the clock on a person mid booking.
+        if (d && d.ticket && !ticket) ticket = d.ticket;
+        return AV;
+      })
       .catch(function () { AV = null; return null; });
   }
 
@@ -358,7 +366,8 @@
       time: state.slot,
       name: val("name"), email: val("email"), phone: val("phone"), brokerage: val("brokerage"),
       address: val("address"), size: checked("size"), occupancy: checked("occupancy"),
-      access: checked("access"), accessNotes: val("accessnotes"), notes: val("message")
+      access: checked("access"), accessNotes: val("accessnotes"), notes: val("message"),
+      ticket: ticket, hp: val("_hp")
     };
     var prior = savedHold();
     if (prior && prior.id && prior.token) body.resume = { id: prior.id, token: prior.token };

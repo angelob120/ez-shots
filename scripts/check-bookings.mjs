@@ -98,7 +98,7 @@ try {
       STRIPE_API_BASE: "http://127.0.0.1:" + portOf(stripeSrv),
       EMAILJS_SERVICE_ID: "service_check", EMAILJS_PUBLIC_KEY: "pub", EMAILJS_PRIVATE_KEY: "priv",
       EMAILJS_TEMPLATE_BOOKING: "template_check", EMAILJS_ENDPOINT: "http://127.0.0.1:" + portOf(mailSrv) + "/send",
-      OWNER_EMAIL: "owner@example.com", SITE_URL: SITE, DATA_DIR: "", TICK_MS: "5000", REVIEW_URL: "https://g.page/r/test-review"
+      OWNER_EMAIL: "owner@example.com", BOOK_MIN_SECONDS: "1", BOOK_PER_IP: "3", BOOK_PER_CLIENT: "2", BOOK_PER_DAY: "100", SITE_URL: SITE, DATA_DIR: "", TICK_MS: "5000", REVIEW_URL: "https://g.page/r/test-review"
     }),
     stdio: ["ignore", "pipe", "pipe"]
   });
@@ -126,6 +126,7 @@ try {
   const pkg = cfg.packages.find(p => p.active !== false);
   const av = (await call("GET", "/api/availability")).json;
   const days = Object.keys(av.days).filter(d => av.days[d].length);
+  await sleep(1100); // the ticket has to be older than BOOK_MIN_SECONDS
 
   function signed(payload) {
     const t = Math.floor(Date.now() / 1000);
@@ -136,15 +137,18 @@ try {
   cookie = (login.headers.get("set-cookie") || "").split(";")[0];
   check("admin signs in", login.status === 200 && cookie.startsWith("ez_admin="));
   const asAdmin = (method, path, body) => call(method, path, body);
-  const asClient = async (method, path, body) => { const c = cookie; cookie = ""; try { return await call(method, path, body); } finally { cookie = c; } };
+  const asClient = async (method, path, body, headers) => { const c = cookie; cookie = ""; try { return await call(method, path, body, headers); } finally { cookie = c; } };
 
-  function bookIt(i, extra = {}) {
+  // Each booking from its own address and phone, so the booking limits only
+  // bite in the checks written for them. av.ticket is the calendar's ticket,
+  // older than BOOK_MIN_SECONDS by the time anything books.
+  function bookIt(i, extra = {}, ip = "10.0.0." + (i + 1)) {
     const date = days[i], time = av.days[date][0];
     return asClient("POST", "/api/book", Object.assign({
-      packageId: pkg.id, firstShoot: true, date, time,
-      name: "Dana <b>Ruiz</b>", email: `dana${i}@example.com`, phone: "(313) 555-0142",
+      packageId: pkg.id, firstShoot: true, date, time, ticket: av.ticket,
+      name: "Dana <b>Ruiz</b>", email: `dana${i}@example.com`, phone: "(313) 555-01" + String(40 + i),
       address: `18${i}1 Maplehurst Drive, Birmingham MI 48009`, notes: "Back deck & pond from the air"
-    }, extra)).then(r => Object.assign(r, { date, time }));
+    }, extra), { "x-real-ip": ip }).then(r => Object.assign(r, { date, time }));
   }
   function webhookPaid(id, sid, pi) {
     const payload = JSON.stringify({ type: "checkout.session.completed", data: { object: {
@@ -389,6 +393,32 @@ try {
   check("the admin list counts each client's bookings and reports net revenue",
     list.bookings.every(b => typeof b.clientBookings === "number") && typeof list.stats.revenue === "number" &&
     typeof list.stats.unpaid === "number" && Array.isArray(list.packages), list.stats);
+
+  // ---- 10. a bot or a competitor cannot fill the calendar
+  const far = k => days.length - 1 - k;
+  check("a booking with no ticket is refused", (await bookIt(far(0), { ticket: undefined, email: "t1@example.com" })).status === 400);
+  check("a forged ticket is refused", (await bookIt(far(0), { ticket: Date.now() - 60000 + ".deadbeef", email: "t2@example.com" })).status === 400);
+  const fresh = (await call("GET", "/api/availability")).json.ticket;
+  const fast = await bookIt(far(0), { ticket: fresh, email: "t3@example.com" });
+  check("a booking faster than a person can fill the form is refused", fast.status === 400 && /quicker/.test(fast.json.error), fast.json);
+  check("the hidden honeypot field filled in is refused", (await bookIt(far(0), { hp: "http://spam.example", email: "t4@example.com" })).status === 400);
+  const fromOne = [];
+  for (let k = 0; k < 4; k++) fromOne.push(await bookIt(far(k), { email: `flood${k}@example.com`, phone: "(248) 555-02" + (10 + k) }, "10.9.9.9"));
+  check("one address gets 3 bookings a day, the 4th is refused with a way to email",
+    fromOne.slice(0, 3).every(r => r.status === 200) && fromOne[3].status === 429 && /bigmoneygelo2@gmail.com/.test(fromOne[3].json.error), fromOne.map(r => r.status));
+  check("a refused flood leaves the time open", ((await call("GET", "/api/availability")).json.days[fromOne[3].date] || []).includes(fromOne[3].time));
+  const sameClient = [];
+  for (let k = 4; k < 7; k++) sameClient.push(await bookIt(far(k), { email: "Repeat@Example.com", phone: "(586) 555-03" + (10 + k) }, "10.8.0." + k));
+  check("one email gets 2 upcoming shoots from the site, the 3rd is refused", sameClient[0].status === 200 && sameClient[1].status === 200 &&
+    sameClient[2].status === 429 && /coming up/.test(sameClient[2].json.error), sameClient.map(r => r.status));
+  const samePhone = await bookIt(far(7), { email: "other@example.com", phone: "586.555.0314" }, "10.8.1.1");
+  const samePhone2 = await bookIt(far(8), { email: "other2@example.com", phone: "+1 (586) 555-0314" }, "10.8.1.2");
+  const samePhone3 = await bookIt(far(10), { email: "other3@example.com", phone: "5865550314" }, "10.8.1.3");
+  check("the same phone written differently counts as the same client", samePhone.status === 200 && samePhone2.status === 200 &&
+    samePhone3.status === 429, [samePhone.json, samePhone2.json, samePhone3.json]);
+  const add = await asAdmin("POST", "/api/admin/bookings", { date: days[far(9)], time: av.days[days[far(9)]][0], packageId: pkg.id,
+    name: "Repeat", email: "repeat@example.com", phone: "5865550399", address: "1 Owner Way, Troy MI", price: 150 });
+  check("the owner can still add more for that client by hand", add.status === 200, add.json);
 
   // ---- 5. pages
   const adminPage = await fetch(SITE + "/admin").then(r => r.text().then(t => ({ status: r.status, t })));

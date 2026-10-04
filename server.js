@@ -462,6 +462,81 @@ async function confirmFromSession(session, source) {
 // A booking from the site. Nothing is paid here: the slot is taken and the
 // booking is confirmed in one go, the owner and the customer are emailed, and
 // the customer pays after seeing the photos (see pay() below).
+// ---------------------------------------------------------------------------
+// Keeping bots and competitors off the calendar
+//
+// Booking is $0 and confirmed on the spot, so nothing but these stops one
+// person filling every open time. Each is cheap and none of them gets in a
+// real agent's way:
+//
+//   ticket     the booking page is handed a signed timestamp with the
+//              calendar. A booking needs one at least BOOK_MIN_SECONDS old,
+//              so a script has to load the calendar and wait, and a human
+//              takes longer than that to fill three screens anyway.
+//   honeypot   the hidden _hp field. A person never sees it; a form filling
+//              bot fills it.
+//   address    at most BOOK_PER_IP site bookings from one address in a day.
+//   client     at most BOOK_PER_CLIENT upcoming shoots on one email or phone
+//              number. Past that the agent emails and the owner adds them.
+//   total      at most BOOK_PER_DAY site bookings in a day from everyone. A
+//              one person business cannot shoot more than that anyway, and a
+//              flood from many addresses stops there.
+//
+// Every refusal says to email, so a real agent who trips one is not lost.
+// The owner's own bookings from admin are never limited. Each limit can be
+// moved with the env var of the same name.
+// ---------------------------------------------------------------------------
+const LIMITS = {
+  BOOK_MIN_SECONDS: 5, BOOK_PER_IP: 3, BOOK_PER_CLIENT: 4, BOOK_PER_DAY: 10
+};
+for (const k of Object.keys(LIMITS)) {
+  if (process.env[k] !== undefined && process.env[k] !== "" && !isNaN(Number(process.env[k]))) LIMITS[k] = Number(process.env[k]);
+}
+const TICKET_KEY = ADMIN_SECRET || crypto.randomBytes(32).toString("hex");
+const TICKET_HOURS = 24;
+
+function ticket(now = Date.now()) {
+  return now + "." + crypto.createHmac("sha256", "ticket:" + TICKET_KEY).update(String(now)).digest("hex").slice(0, 32);
+}
+// "ok", "fast" (under the minimum), or "bad" (missing, forged or stale).
+function ticketAge(t, now = Date.now()) {
+  const [ts, mac] = String(t || "").split(".");
+  if (!ts || !mac || !/^\d+$/.test(ts)) return "bad";
+  const want = crypto.createHmac("sha256", "ticket:" + TICKET_KEY).update(ts).digest("hex").slice(0, 32);
+  if (mac.length !== want.length || !crypto.timingSafeEqual(Buffer.from(mac), Buffer.from(want))) return "bad";
+  const age = now - Number(ts);
+  if (age > TICKET_HOURS * 3600 * 1000 || age < -60 * 1000) return "bad";
+  return age < LIMITS.BOOK_MIN_SECONDS * 1000 ? "fast" : "ok";
+}
+
+// The address the request came from. Railway's proxy sets X-Real-IP; the
+// first X-Forwarded-For entry is whatever the client chose to send, so it is
+// the last one, the hop the proxy added, that is trusted.
+function clientIp(req) {
+  const real = String(req.headers["x-real-ip"] || "").trim();
+  if (real) return real.slice(0, 64);
+  const hops = String(req.headers["x-forwarded-for"] || "").split(",").map(x => x.trim()).filter(Boolean);
+  return (hops.length ? hops[hops.length - 1] : req.socket.remoteAddress || "").slice(0, 64);
+}
+
+// null when the booking may go ahead, or the refusal to send.
+async function bookingRefusal(req, b, email, phone) {
+  const say = (why, error, status = 429) => {
+    console.log(`[ez-shots] booking refused (${why}) from ${clientIp(req)} for ${email}`);
+    return { status, error };
+  };
+  if (str(b.hp, 200)) return say("honeypot", "Sorry, the booking did not go through. Email bigmoneygelo2@gmail.com and I will book you in.", 400);
+  const t = ticketAge(b.ticket);
+  if (t === "bad") return say("no ticket", "This page has been open too long. Refresh it and book again, your choices only take a moment.", 400);
+  if (t === "fast") return say("too fast", "That was quicker than a person can book. Wait a few seconds and press Book again.", 400);
+  const p = await db.bookingPressure(clientIp(req), email, phone);
+  const email_ = "Email bigmoneygelo2@gmail.com and I will book you in myself.";
+  if (p.upcoming >= LIMITS.BOOK_PER_CLIENT) return say("client", `You already have ${p.upcoming} shoots coming up, which is the most the site books at once. ${email_}`);
+  if (p.byIp >= LIMITS.BOOK_PER_IP) return say("address", `That is a lot of bookings from one place today. ${email_}`);
+  if (p.total >= LIMITS.BOOK_PER_DAY) return say("total", `Online booking is full for today. ${email_}`);
+  return null;
+}
+
 async function book(req, res) {
   if (!db) return json(res, 503, { error: "Online booking is not switched on yet. Email me and I will book you in." });
   const cfg = await readConfig();
@@ -498,6 +573,9 @@ async function book(req, res) {
     }
   }
 
+  const refused = await bookingRefusal(req, b, email, phone);
+  if (refused) return json(res, refused.status, { error: refused.error, limited: true });
+
   const taken = await takenNow(av, now);
   const verdict = avail.why(av, taken, date, time, now);
   if (verdict === "closed") return json(res, 409, { error: "That time is not open for booking. Pick another time.", taken: true });
@@ -510,7 +588,7 @@ async function book(req, res) {
     name, email, phone, brokerage: str(b.brokerage, 120), address,
     size: str(b.size, 60), occupancy: str(b.occupancy, 60), access: str(b.access, 60),
     accessNotes: str(b.accessNotes, 500), notes: str(b.notes, 2000),
-    checkoutMode: "after", checkoutUrl: ""
+    checkoutMode: "after", checkoutUrl: "", clientIp: clientIp(req)
   }, 60 * 1000, now);
   if (!held) return json(res, 409, { error: "That time was just booked. Pick another available time.", taken: true });
 
@@ -1168,7 +1246,8 @@ async function api(req, res, url) {
     // ?all=1 drops look busy, for the owner's reschedule and new booking
     // pickers. It needs the admin cookie, so the public calendar cannot ask.
     const honest = url.searchParams.get("all") === "1" && authed(req);
-    return json(res, 200, avail.calendar(cfg.availability, await takenNow(cfg.availability, now), now, honest));
+    // The ticket the booking form hands back with the booking, see LIMITS.
+    return json(res, 200, Object.assign(avail.calendar(cfg.availability, await takenNow(cfg.availability, now), now, honest), { ticket: ticket() }));
   }
 
   if (pathname === "/api/book" && req.method === "POST") return book(req, res);

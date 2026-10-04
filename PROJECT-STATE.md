@@ -178,6 +178,36 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-04 (limits) - Bots and competitors cannot fill the calendar
+
+- Booking is $0 and confirmed on the spot, so `/api/book` now refuses, in
+  `bookingRefusal()` in server.js: a missing or forged form ticket (a signed
+  timestamp `/api/availability` hands the booking page), a booking under 5
+  seconds after the page loaded the calendar, the hidden `_hp` honeypot
+  filled in, a 4th site booking from one IP in 24 hours, a 5th upcoming shoot
+  on one email or phone (phone compared as digits), and more than 10 site
+  bookings in 24 hours in total. Every refusal says to email, so a real
+  agent is never stuck. Admin bookings are never limited.
+- The numbers are `LIMITS` in server.js and each can be moved with an env var
+  of the same name (`BOOK_MIN_SECONDS`, `BOOK_PER_IP`, `BOOK_PER_CLIENT`,
+  `BOOK_PER_DAY`). Migration 006 stores `client_ip` on each booking.
+- The IP comes from `X-Real-IP`, else the last `X-Forwarded-For` hop, never
+  the first (the client can write that one). Not yet confirmed which of the
+  two Railway sends; check the `booking refused` log lines show real
+  addresses, not the proxy's, after the first refusal in production.
+- Without `ADMIN_SECRET` or `ADMIN_PASSWORD` the ticket key is random per
+  boot, so a deploy makes an open booking page ask for a refresh. With admin
+  on, it survives deploys.
+- Footer: "Good to know" sat alone in half the row at tablet and phone
+  widths. It now spans the row with the two badges side by side, stacked
+  under 560px.
+- Booking form and manage page: reference photos are marked "Strongly
+  encouraged", in the collapsed section's title too.
+- Verified: `npm run check:bookings` has new checks for each limit (no ticket,
+  forged, too fast, honeypot, per address, per email, phone written three
+  ways, owner still adds by hand), and a real booking through the form in the
+  browser went through. Footer checked at 768 and 375 wide.
+
 ### 2026-10-04 (form) - Watermark and reference photos in the booking form
 
 - The last screen of `book.html` has a collapsed "Add your watermark or

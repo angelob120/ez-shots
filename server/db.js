@@ -333,6 +333,25 @@ class Db {
   // How many confirmed bookings each client has ever had, by lowercased email.
   // The admin page uses it to spot a returning client who took the first shoot
   // price, which nothing else checks.
+  // ---- how much has been booked from the site lately ---------------------
+  // What the booking limits in server.js are worked out from. Cancelled ones
+  // count for the address and the total, so booking and cancelling over and
+  // over is no way around them.
+  async bookingPressure(ip, email, phone, now = new Date()) {
+    const day = new Date(now.getTime() - 24 * 3600 * 1000);
+    const r = await this.query(
+      "SELECT " +
+      "count(*) FILTER (WHERE client_ip = $1 AND client_ip <> '') AS by_ip, " +
+      "count(*) AS total " +
+      "FROM bookings WHERE source = 'site' AND created_at > $2",
+      [ip, day]);
+    const c = await this.query(
+      "SELECT count(*) AS n FROM bookings WHERE source = 'site' AND status = 'confirmed' AND starts_at > $1 " +
+      "AND (lower(email) = $2 OR ($3 <> '' AND regexp_replace(phone, '\\D', '', 'g') = $3))",
+      [now, String(email).toLowerCase(), String(phone).replace(/\D/g, "")]);
+    return { byIp: Number(r.rows[0].by_ip), total: Number(r.rows[0].total), upcoming: Number(c.rows[0].n) };
+  }
+
   // ---- the client's watermark and reference photos ----------------------
   // Everything but the bytes, for lists. The bytes only leave in file().
   static get FILE_META() { return "f.id, f.booking_id, f.kind, f.name, f.mime, f.size, f.created_at"; }
