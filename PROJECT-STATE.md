@@ -178,6 +178,15 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-04 (hero) - Home hero paragraph cut to two lines
+
+- The owner called the hero paragraph a wall of text. It now says only what,
+  who, how fast and the starting price. Half price, $0 down and pay after
+  were dropped from it because the badge, the trust row and the offer strip
+  directly below already say each of them.
+- The price is still bound with `data-price="{essentials}"`.
+- Verified in the preview: the hero reads as two lines at desktop width.
+
 ### 2026-10-04 (portfolio) - Real portfolio replaces the filler shoots
 
 - The five invented shoots (Birmingham, Royal Oak, Rochester Hills, Northville,
