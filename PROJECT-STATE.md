@@ -178,6 +178,14 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-04 (hero bullets) - Home hero is three checkmark bullets
+
+- The owner asked for bullets. `.hero-sub` on the home page became
+  `ul.hero-points`, three short lines with a light blue check circle drawn in
+  CSS (`.hero-points` in `styles.css`, next to `.hero-sub`, which other pages
+  still use). The hero is always dark, so the colours are fixed, not tokens.
+- Verified in the preview at desktop and 375px phone width.
+
 ### 2026-10-04 (hero) - Home hero paragraph cut to two lines
 
 - The owner called the hero paragraph a wall of text. It now says only what,
