@@ -198,6 +198,34 @@ try {
     m0.canCancel === true && m0.canPay === false && m0.finalUrl === "", m0);
   check("paying before the photos is refused", (await asClient("POST", "/api/pay?t=" + one.token)).status === 400);
 
+  // ---- 1b. the watermark and reference photos, from the manage page
+  const PNG = Buffer.concat([Buffer.from("89504e470d0a1a0a", "hex"), Buffer.alloc(40, 1)]);
+  const JPG = Buffer.concat([Buffer.from("ffd8ffe0", "hex"), Buffer.alloc(40, 2)]);
+  const upload = async (tok, kind, buf, name) => {
+    const r = await fetch(SITE + "/api/manage/upload?t=" + tok + "&kind=" + kind + "&name=" + encodeURIComponent(name), { method: "POST", body: buf });
+    return { status: r.status, json: await r.json().catch(() => null) };
+  };
+  const wm = await upload(one.token, "watermark", PNG, "logo.png");
+  check("a PNG logo uploads and is wanted on the photos by default", wm.status === 200 && wm.json.booking.watermark &&
+    wm.json.booking.watermark.mime === "image/png" && wm.json.booking.wantWatermark === true && wm.json.booking.watermarkSpot === "bottom right", wm.json);
+  check("a file that is not an image is refused", (await upload(one.token, "reference", Buffer.from("<svg onload=alert(1)>"), "x.svg")).status === 400);
+  await upload(one.token, "reference", JPG, "kitchen.jpg");
+  const r2 = await upload(one.token, "reference", JPG, "bath.jpg");
+  check("reference photos add up", r2.status === 200 && r2.json.booking.references.length === 2, r2.json);
+  const wmFile = await fetch(SITE + wm.json.booking.watermark.url);
+  check("the client can open their logo, sandboxed", wmFile.status === 200 && wmFile.headers.get("content-type") === "image/png" &&
+    /sandbox/.test(wmFile.headers.get("content-security-policy") || ""));
+  check("a made up file id is not found", (await fetch(SITE + "/api/manage/file?t=" + one.token + "&id=999999")).status === 404);
+  const saved = await asClient("POST", "/api/manage/brand?t=" + one.token, { wantWatermark: true, watermarkSpot: "top left", referenceNotes: "Bright and airy" });
+  check("watermark spot and notes save", saved.status === 200 && saved.json.booking.watermarkSpot === "top left" && saved.json.booking.referenceNotes === "Bright and airy", saved.json);
+  const rm = await asClient("POST", "/api/manage/remove?t=" + one.token, { id: r2.json.booking.references[0].id });
+  check("a reference photo can be removed", rm.status === 200 && rm.json.booking.references.length === 1, rm.json);
+  const adm = (await asAdmin("GET", "/api/admin/bookings")).json.bookings.find(x => x.id === one.id);
+  check("admin sees the logo, the spot and the references", adm && adm.watermark && adm.watermarkWanted && adm.watermarkSpot === "top left" &&
+    adm.references.length === 1 && adm.referenceNotes === "Bright and airy", adm);
+  check("admin can open the files, the client link cannot open admin's", (await asAdmin("GET", adm.watermark.url)).status === 200 &&
+    (await asClient("GET", adm.watermark.url)).status === 401);
+
   // ---- 2. shoot done, photos sent, paid after: the files unlock once
   const path = "/api/admin/bookings/" + one.id;
   const shot = await asAdmin("PATCH", path, { action: "shot" });
@@ -212,6 +240,8 @@ try {
     readyMail.message_html.includes("https://gallery.test/preview-0") && readyMail.message_html.includes("#pay") &&
     readyMail.message_html.includes("#unhappy") && !readyMail.message_html.includes("files.test"));
   const m1 = await manageOf(one.token);
+  check("the look cannot change once the photos are sent", m1.canBrand === false &&
+    (await upload(one.token, "reference", JPG, "late.jpg")).status === 400 && m1.references.length === 1);
   check("the manage page shows the previews and Pay, still not the files", m1.canPay === true && m1.previewUrl === "https://gallery.test/preview-0" &&
     m1.finalUrl === "" && m1.canCancel === false, m1);
   const pay = await asClient("POST", "/api/pay?t=" + one.token);

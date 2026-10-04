@@ -159,6 +159,7 @@ const PREP = [
 ];
 const PREP_INTRO = "The shoot takes about 90 minutes. The house photographs best if it is ready " +
   "before I get there, because time spent tidying is time the light is moving.";
+const BRAND_LINE = "Want your brokerage watermark on the photos, or have examples of a look you like? Add them on your booking page before the shoot.";
 const TURNAROUND = "Finished photos come back in about 24 hours, and never later than 72 hours from your booked time or the shoot is free, even if I do not show up.";
 const GUARANTEE = "If you are not happy with the photos, you do not pay, and I send you $20 for the trouble.";
 const BANK = "It goes back to the card you paid with. Most banks show it within 5 to 10 business days.";
@@ -386,6 +387,7 @@ function bookedMail(b, site) {
       "BEFORE I ARRIVE", PREP_INTRO, "",
       PREP.map(p => "- " + p).join("\n"), "",
       "I email you the day before, and text you that morning for anything I need to get in.", "",
+      `${BRAND_LINE} ${manage}#brand`, "",
       `Add it to your calendar: ${ics}`,
       `Your booking, any time: ${manage}`, "",
       "See you then,", "Angelo", "EZ Shots"
@@ -399,6 +401,7 @@ function bookedMail(b, site) {
         label("Before I arrive") + para(PREP_INTRO) +
         `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:6px;">${prep}</table>` +
         para("I email you the day before, and text you that morning for anything I need to get in.") +
+        `<p style="margin:12px 0 0;font:15px/1.55 ${FONT};color:${C.ink};">${esc(BRAND_LINE)} <a href="${esc(manage)}#brand" style="color:${C.brand};font-weight:700;">Add them here</a>.</p>` +
         signoff("See you then,"),
       buttons: [button(ics, "Add to calendar", true), button(manage, "View or cancel your booking", false)],
       footer: FOOTER

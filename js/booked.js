@@ -47,6 +47,8 @@
       document.getElementById("booked-ics").href = "/api/ics?t=" + encodeURIComponent(token);
       document.getElementById("booked-manage").href = "/manage?t=" + encodeURIComponent(token);
       document.getElementById("booked-actions").hidden = false;
+      document.getElementById("booked-brand-link").href = "/manage?t=" + encodeURIComponent(token) + "#brand";
+      document.getElementById("booked-brand").hidden = false;
     })
     .catch(function () {});
 })();

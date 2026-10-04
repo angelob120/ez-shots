@@ -133,6 +133,13 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   `clientBookings` on each booking is that email's confirmed count. It is the
   only check on the half price radio button, and it is a flag for the owner, not
   a block, so the copy still must not call the discount verified.
+- **Watermark and reference photos.** The client adds their brokerage logo
+  (and whether it goes on the photos, and where) and up to 12 example photos
+  from the manage page, until the photos are sent. Bytes live in
+  `booking_files` in Postgres, PNG, JPEG and WebP only, sniffed on the server;
+  never accept SVG, the files are served on the admin origin. The owner sees
+  them in the booking drawer. A logo carries over to the same email's later
+  bookings.
 - **Schema changes are migration files** in `server/migrations`, applied on
   boot in name order and recorded in `schema_migrations`. Never edit an applied
   one, add the next number. Never create a table by hand in the Railway

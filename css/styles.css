@@ -685,6 +685,20 @@ form.booking { background: none; border: none; box-shadow: none; padding: 0; gap
 .job-steps li.done b { background: var(--brand-dk); border-color: var(--brand-dk); color: #fff; }
 [data-theme="dark"] .job-steps li.done b { color: var(--navy); }
 .job-panel { border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; }
+/* The watermark and reference photos on the manage page. */
+.brand-part { border-top: 1px solid var(--line); padding-top: 12px; }
+.brand-part > b { font-size: 15px; }
+.brand-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 9px; margin-top: 10px; }
+.brand-thumbs:empty { display: none; }
+.brand-thumb { position: relative; aspect-ratio: 1; border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+  background: repeating-conic-gradient(var(--tint) 0 25%, transparent 0 50%) 0 0 / 14px 14px; }
+.brand-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.brand-thumb button { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 50%; border: 0;
+  background: rgba(0, 0, 0, .65); color: #fff; font-size: 16px; line-height: 26px; cursor: pointer; padding: 0; }
+.brand-thumb small { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 6px; font-size: 11px; background: rgba(0, 0, 0, .6); color: #fff; }
+.btn-file { position: relative; overflow: hidden; }
+.btn-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 0; }
+.btn-file:focus-within { box-shadow: var(--ring); }
 
 /* Question plus a row of answers. The input is hidden and the label is the
    target, so the whole pill is tappable and the checked state is just CSS. */

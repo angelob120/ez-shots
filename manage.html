@@ -50,6 +50,57 @@
           <button type="button" class="btn btn-ghost" id="manage-cancel" hidden>Cancel this booking</button>
         </div>
 
+        <!-- Optional, before the photos are sent: the client's brokerage logo
+             to put on the photos, and examples of the look they like.
+             Filled and wired by js/manage.js. -->
+        <div id="brand" class="job-panel" hidden>
+          <p class="opt-q" style="margin-top:0">Your watermark and the look you want</p>
+          <p class="form-help" style="margin-top:0">Both optional. Add them any time before your photos are sent.</p>
+
+          <div class="brand-part">
+            <b>Brokerage watermark</b>
+            <p class="form-help">Your brokerage or team logo, if you want it on the photos. A PNG with a see through background works best.</p>
+            <div class="brand-thumbs" id="brand-wm"></div>
+            <div class="btn-row" style="margin-top:4px">
+              <label class="btn btn-ghost btn-file" id="brand-wm-pick">Upload your logo<input type="file" id="brand-wm-file" accept="image/png,image/jpeg,image/webp" /></label>
+            </div>
+            <div id="brand-wm-opts" hidden>
+              <div class="field-inline" style="margin-top:6px">
+                <input type="checkbox" id="brand-want" />
+                <label for="brand-want">Put my watermark on the photos<span>Untick to keep it on file without adding it this time.</span></label>
+              </div>
+              <div class="field" style="margin-top:10px">
+                <label for="brand-spot">Where it goes</label>
+                <select id="brand-spot">
+                  <option value="bottom right">Bottom right</option>
+                  <option value="bottom left">Bottom left</option>
+                  <option value="top right">Top right</option>
+                  <option value="top left">Top left</option>
+                  <option value="center">Center, faint</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="brand-part">
+            <b>Reference photos</b>
+            <p class="form-help">Show me shots you like, from your past listings or anyone's, and I will match the look. Up to 12.</p>
+            <div class="brand-thumbs" id="brand-refs"></div>
+            <div class="btn-row" style="margin-top:4px">
+              <label class="btn btn-ghost btn-file" id="brand-refs-pick">Add photos<input type="file" id="brand-refs-file" accept="image/*" multiple /></label>
+            </div>
+            <div class="field" style="margin-top:10px">
+              <label for="brand-notes">Links and what you like about them</label>
+              <textarea id="brand-notes" rows="3" maxlength="4000" placeholder="A Zillow listing, a Pinterest board, or just: bright and airy, lots of wide angles, twilight front exterior."></textarea>
+            </div>
+          </div>
+
+          <div class="btn-row" style="margin-top:0">
+            <button type="button" class="btn" id="brand-save">Save</button>
+          </div>
+          <p class="form-status" id="brand-status" role="status" aria-live="polite"></p>
+        </div>
+
         <div id="unhappy" class="job-panel" hidden>
           <p class="opt-q" style="margin-top:0">Not happy with the photos?</p>
           <p class="form-help" id="unhappy-help">Then you do not pay, and I send you $20 for the trouble. Tell me what missed and I will be in touch personally. Nothing else gets sent to you in the meantime.</p>

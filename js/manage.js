@@ -89,9 +89,142 @@
     $("manage-ics").href = "/api/ics?t=" + encodeURIComponent(token);
     $("manage-ics").hidden = !live || b.stage !== "booked";
     cancelBtn.hidden = !b.canCancel;
+    paintBrand(b);
     block.hidden = false;
     missing.hidden = true;
   }
+
+  // ---- the watermark and reference photos ----
+  // Shown while they can still change (until the photos are sent), and after
+  // that only if something was added, read only.
+  var brandOpen = false;
+  function sayBrand(type, text) {
+    var el = $("brand-status");
+    el.className = "form-status" + (text ? " show " + type : "");
+    el.textContent = text || "";
+  }
+  function thumb(f, removable, caption) {
+    return '<div class="brand-thumb"><a href="' + esc(f.url) + '" target="_blank" rel="noopener"><img src="' + esc(f.url) + '" alt="' + esc(f.name || "Your upload") + '" loading="lazy" /></a>' +
+      (removable ? '<button type="button" data-remove="' + f.id + '" aria-label="Remove ' + esc(f.name || "this photo") + '">&times;</button>' : "") +
+      (caption ? "<small>" + esc(caption) + "</small>" : "") + "</div>";
+  }
+  // Uploads and removals answer with the brand fields only, so they repaint
+  // this panel and leave the rest of the page alone.
+  function paintBrand(b, saved) {
+    if (b.canBrand !== undefined) brandOpen = !!b.canBrand;
+    var refs = b.references || [], wm = b.watermark;
+    $("brand").hidden = !(brandOpen || wm || refs.length || b.referenceNotes);
+    $("brand-wm").innerHTML = wm ? thumb(wm, brandOpen && !wm.fromEarlier, wm.fromEarlier ? "From your last booking" : "") : "";
+    $("brand-refs").innerHTML = refs.map(function (f) { return thumb(f, brandOpen); }).join("");
+    $("brand-wm-pick").firstChild.nodeValue = wm ? "Replace your logo" : "Upload your logo";
+    $("brand-wm-opts").hidden = !wm;
+    $("brand-want").checked = !!b.wantWatermark;
+    $("brand-spot").value = b.watermarkSpot || "bottom right";
+    $("brand-spot").closest(".field").hidden = !b.wantWatermark;
+    // Notes being typed are not wiped by a photo upload finishing.
+    if (b.canBrand !== undefined || saved) $("brand-notes").value = b.referenceNotes || "";
+    ["brand-wm-pick", "brand-refs-pick", "brand-save"].forEach(function (id) { $(id).hidden = !brandOpen; });
+    $("brand-refs-pick").hidden = !brandOpen || refs.length >= 12;
+    ["brand-want", "brand-spot", "brand-notes"].forEach(function (id) { $(id).disabled = !brandOpen; });
+  }
+
+  // A phone photo is 3 to 12 MB. A reference only has to show a look, so it
+  // is shrunk to 2000px on the long side before it goes. A logo keeps its
+  // see through background and is only shrunk if it is over the limit.
+  function shrink(file, max, type) {
+    return new Promise(function (resolve) {
+      if (!window.createImageBitmap || !document.createElement("canvas").toBlob) return resolve(file);
+      createImageBitmap(file).then(function (img) {
+        var k = Math.min(1, max / Math.max(img.width, img.height));
+        if (k === 1 && type === "image/png") return resolve(file);
+        var c = document.createElement("canvas");
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(function (blob) { resolve(blob && blob.size < file.size ? blob : file); }, type, 0.85);
+      }).catch(function () { resolve(file); });
+    });
+  }
+
+  function upload(kind, file) {
+    var ready = kind === "reference" ? shrink(file, 2000, "image/jpeg")
+      : file.size > 5 * 1024 * 1024 ? shrink(file, 1600, "image/png") : Promise.resolve(file);
+    return ready.then(function (blob) {
+      return fetch("/api/manage/upload?t=" + encodeURIComponent(token) + "&kind=" + kind + "&name=" + encodeURIComponent(file.name || ""), {
+        method: "POST", headers: { accept: "application/json" }, body: blob
+      });
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok) throw new Error(d.error || (r.status === 413 ? "That file is too big." : "That upload did not go through. Try again."));
+        return d.booking;
+      });
+    });
+  }
+
+  $("brand-wm-file").addEventListener("change", function (e) {
+    var f = e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    sayBrand("pending", "Uploading your logo...");
+    upload("watermark", f).then(function (b) {
+      paintBrand(b);
+      sayBrand("success", "Got your logo. It goes on the photos unless you untick the box.");
+    }).catch(function (err) { sayBrand("error", err.message); });
+  });
+
+  $("brand-refs-file").addEventListener("change", function (e) {
+    var files = Array.prototype.slice.call(e.target.files);
+    e.target.value = "";
+    if (!files.length) return;
+    var done = 0, last = null;
+    sayBrand("pending", "Uploading 1 of " + files.length + "...");
+    files.reduce(function (p, f) {
+      return p.then(function () {
+        return upload("reference", f).then(function (b) {
+          last = b; done++;
+          paintBrand(b);
+          if (done < files.length) sayBrand("pending", "Uploading " + (done + 1) + " of " + files.length + "...");
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      sayBrand("success", done === 1 ? "Photo added." : done + " photos added.");
+    }).catch(function (err) {
+      if (last) paintBrand(last);
+      sayBrand("error", (done ? done + " added. " : "") + err.message);
+    });
+  });
+
+  $("brand-refs").addEventListener("click", removeFile);
+  $("brand-wm").addEventListener("click", removeFile);
+  function removeFile(e) {
+    var btn = e.target.closest("[data-remove]");
+    if (!btn) return;
+    btn.disabled = true;
+    post("/api/manage/remove", { id: Number(btn.getAttribute("data-remove")) }).then(function (x) {
+      if (!x.ok) throw new Error(x.d.error || "Could not remove that.");
+      paintBrand(x.d.booking);
+      sayBrand("success", "Removed.");
+    }).catch(function (err) { btn.disabled = false; sayBrand("error", err.message); });
+  }
+
+  $("brand-want").addEventListener("change", function () {
+    $("brand-spot").closest(".field").hidden = !this.checked;
+  });
+
+  $("brand-save").addEventListener("click", function () {
+    var btn = this;
+    btn.disabled = true;
+    sayBrand("pending", "Saving...");
+    post("/api/manage/brand", {
+      wantWatermark: $("brand-want").checked,
+      watermarkSpot: $("brand-spot").value,
+      referenceNotes: $("brand-notes").value
+    }).then(function (x) {
+      btn.disabled = false;
+      if (!x.ok) throw new Error(x.d.error || "That did not save. Try again.");
+      paintBrand(x.d.booking, true);
+      sayBrand("success", "Saved. I will have it with me on the shoot.");
+    }).catch(function (err) { btn.disabled = false; sayBrand("error", err.message); });
+  });
 
   function load() {
     return fetch("/api/manage?t=" + encodeURIComponent(token), { headers: { accept: "application/json" } })

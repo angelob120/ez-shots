@@ -178,6 +178,29 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-04 - Clients add a brokerage watermark and reference photos
+
+- The manage page has a new panel, "Your watermark and the look you want".
+  The client uploads their brokerage logo (PNG, JPG or WebP, 5 MB), ticks
+  whether it goes on the photos and picks a corner, adds up to 12 reference
+  photos and a notes box for links and what they like. It stays editable until
+  the photos are sent (stage booked or shot), read only after.
+- Files live in Postgres, `booking_files` (migration 005), bytes and all. The
+  server sniffs the bytes, so an SVG or anything else is refused; files are
+  served with a sandbox CSP. The browser shrinks reference photos to 2000px
+  JPEG before upload, so a set is a few hundred KB.
+- A logo carries over: a returning client's newest watermark from any earlier
+  booking shows on a new booking as "From your last booking".
+- Admin: a "Look and brand" section in the booking drawer (logo, where it
+  goes, reference thumbnails, notes) and Watermark / References tags on the
+  list row. `/api/admin/files/:id` serves the files to the owner.
+- The You are booked email and the booked page point the client at it
+  (`manage#brand`).
+- Verified: `npm test`, `npm run check:bookings` (new checks for upload, bad
+  file refused, file access, save, remove, admin view, locked after ready),
+  and the manage page in the browser with real canvas images. The admin
+  drawer was checked through the API, not visually.
+
 ### 2026-10-03 (no show) - The 72 hour guarantee covers a no show
 
 - The 72 hour clock now starts at the booked shoot time, not the end of the shoot. If the owner does not show up or does not respond, the clock keeps running and past 72 hours the photos and video are free.

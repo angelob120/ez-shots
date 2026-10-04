@@ -309,6 +309,7 @@ function publicBooking(b) {
     address: b.address, size: b.size, occupancy: b.occupancy, access: b.access,
     accessNotes: b.accessNotes, notes: b.notes, token: b.token,
     stage: b.stage || "booked", flagged: !!b.flaggedAt,
+    wantWatermark: !!b.watermarkWanted, watermarkSpot: b.watermarkSpot || "", referenceNotes: b.referenceNotes || "",
     // The previews are what the owner chose to send unpaid. The clean files
     // link is the thing the payment buys, so it never leaves the server
     // before the booking is paid.
@@ -664,10 +665,15 @@ async function manage(req, res, url) {
     out.canCancel = (out.state === "confirmed" || out.state === "held") && (x.stage || "booked") === "booked" && Date.parse(x.startsAt) > now.getTime();
     out.canPay = out.state === "confirmed" && x.stage === "ready" && !x.paid;
     out.canFlag = out.state === "confirmed" && (x.stage === "ready" || x.stage === "delivered" || x.stage === "shot") && !x.flaggedAt;
+    // The watermark and reference photos can change until the photos are sent.
+    out.canBrand = out.state === "confirmed" && ["booked", "shot"].includes(x.stage || "booked");
     return out;
   };
   const out = view(b);
-  if (req.method === "GET") return json(res, 200, { booking: out });
+  if (url.pathname.startsWith("/api/manage/") && !["/api/manage/cancel", "/api/manage/unhappy"].includes(url.pathname)) {
+    return brand(req, res, url, b, out.canBrand);
+  }
+  if (req.method === "GET") return json(res, 200, { booking: Object.assign(out, await uploadsOf(b)) });
   if (req.method === "POST" && url.pathname === "/api/manage/cancel") {
     if (!out.canCancel) return json(res, 400, { error: "This booking can no longer be cancelled here. Reply to your confirmation email and I will sort it." });
     const c = await db.cancel(b.id, "customer", now);
@@ -687,6 +693,91 @@ async function manage(req, res, url) {
     return json(res, 200, { booking: view(c) });
   }
   return json(res, 405, { error: "No." });
+}
+
+// ---------------------------------------------------------------------------
+// The client's brokerage watermark and reference photos
+//
+// Added from the manage page, before the photos are sent: a logo the owner
+// puts on the photos if they ask for it, and example shots of the look they
+// like. The bytes live in booking_files. Uploads are the raw image as the
+// request body, sniffed here, because the browser's own content type is only
+// a claim.
+// ---------------------------------------------------------------------------
+const UPLOAD_LIMIT = { watermark: 5 * 1024 * 1024, reference: 8 * 1024 * 1024 };
+const MAX_REFERENCES = 12;
+const SPOTS = ["bottom right", "bottom left", "top right", "top left", "center"];
+
+function sniff(buf) {
+  if (buf.length > 8 && buf.readUInt32BE(0) === 0x89504e47) return "image/png";
+  if (buf.length > 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "image/jpeg";
+  if (buf.length > 12 && buf.toString("latin1", 0, 4) === "RIFF" && buf.toString("latin1", 8, 12) === "WEBP") return "image/webp";
+  return "";
+}
+
+// What the manage page and admin show: file details without the bytes, each
+// with the address it can be fetched from.
+function fileView(f, href) { return f && Object.assign({}, f, { url: href(f.id) }); }
+
+async function uploadsOf(b) {
+  const of = (await db.filesFor([b]))(b);
+  const href = id => "/api/manage/file?t=" + b.token + "&id=" + id;
+  return { watermark: fileView(of.watermark, href), references: of.references.map(f => fileView(f, href)) };
+}
+
+function sendFile(res, f) {
+  const ext = f.mime.split("/")[1].replace("jpeg", "jpg");
+  return send(res, 200, f.data, {
+    "content-type": f.mime,
+    "content-disposition": `inline; filename="${(f.name || f.kind).replace(/[^\w. -]/g, "").replace(/\.[a-z]+$/i, "") || f.kind}.${ext}"`,
+    "content-security-policy": "default-src 'none'; sandbox",
+    "cache-control": "private, max-age=3600"
+  });
+}
+
+async function brand(req, res, url, b, open) {
+  const p = url.pathname;
+  if (p === "/api/manage/file" && req.method === "GET") {
+    const f = await db.file(Number(url.searchParams.get("id")) || 0);
+    // Their own booking's files, or the watermark they added to an earlier one.
+    const owner = f && f.bookingId !== b.id && f.kind === "watermark" ? await db.find(f.bookingId) : null;
+    const theirs = f && (f.bookingId === b.id || (owner && String(owner.email).toLowerCase() === String(b.email).toLowerCase()));
+    return theirs ? sendFile(res, f) : send(res, 404, "Not found", { "content-type": "text/plain" });
+  }
+  if (req.method !== "POST") return json(res, 405, { error: "No." });
+  if (!open) return json(res, 400, { error: "Your photos are already done, so this cannot change now. Reply to your email if something is wrong." });
+
+  if (p === "/api/manage/upload") {
+    const kind = url.searchParams.get("kind");
+    if (!UPLOAD_LIMIT[kind]) return json(res, 400, { error: "Unknown upload." });
+    const buf = await raw(req, UPLOAD_LIMIT[kind]).catch(() => null);
+    if (!buf) return json(res, 413, { error: `That file is too big. Keep it under ${UPLOAD_LIMIT[kind] / 1024 / 1024} MB.` });
+    const mime = sniff(buf);
+    if (!mime) return json(res, 400, { error: "That is not a PNG, JPG or WebP image. A PNG with a see through background works best for a logo." });
+    if (kind === "reference" && (await uploadsOf(b)).references.length >= MAX_REFERENCES) {
+      return json(res, 400, { error: `That is the most I can take, ${MAX_REFERENCES} photos. Remove one to add another, or paste links in the box below.` });
+    }
+    await db.addFile(b.id, kind, str(url.searchParams.get("name"), 120), mime, buf);
+    console.log(`[ez-shots] ${b.id} ${kind} added by the customer`);
+    // A logo on file is a logo they want on the photos, unless they untick it.
+    const c = kind === "watermark" && !b.watermarkWanted ? await db.update(b.id, { watermarkWanted: true, watermarkSpot: b.watermarkSpot || SPOTS[0] }) : b;
+    return json(res, 200, { booking: Object.assign(publicBooking(c), await uploadsOf(c)) });
+  }
+  if (p === "/api/manage/remove") {
+    const x = await body(req).catch(() => ({}));
+    if (!await db.deleteFile(b.id, Number(x.id) || 0)) return json(res, 404, { error: "That file is already gone." });
+    return json(res, 200, { booking: Object.assign(publicBooking(b), await uploadsOf(b)) });
+  }
+  if (p === "/api/manage/brand") {
+    const x = await body(req).catch(() => ({}));
+    const c = await db.update(b.id, {
+      watermarkWanted: !!x.wantWatermark,
+      watermarkSpot: SPOTS.includes(x.watermarkSpot) ? x.watermarkSpot : SPOTS[0],
+      referenceNotes: str(x.referenceNotes, 4000)
+    });
+    return json(res, 200, { booking: Object.assign(publicBooking(c), await uploadsOf(c)) });
+  }
+  return json(res, 404, { error: "No such endpoint." });
 }
 
 // An .ics the phone's calendar app opens straight from the success page.
@@ -822,9 +913,17 @@ async function adminBookings(req, res) {
   const from = avail.keyOf(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 60));
   const to = avail.keyOf(new Date(now.getFullYear(), now.getMonth(), now.getDate() + Math.max(120, cfg.availability.maxAdvanceDays)));
   const counts = await db.clientCounts();
-  const list = (await db.list(from, to)).map(b => Object.assign(adminView(b, now), {
-    clientBookings: counts.get(String(b.email || "").toLowerCase()) || 0
-  }));
+  const rows = await db.list(from, to);
+  const filesOf = await db.filesFor(rows);
+  const href = id => "/api/admin/files/" + id;
+  const list = rows.map(b => {
+    const f = filesOf(b);
+    return Object.assign(adminView(b, now), {
+      clientBookings: counts.get(String(b.email || "").toLowerCase()) || 0,
+      watermark: fileView(f.watermark, href),
+      references: f.references.map(x => fileView(x, href))
+    });
+  });
 
   // The numbers at the top of the admin home, worked out from what is
   // confirmed. Revenue is by shoot date, so a month reads as what the month's
@@ -1075,7 +1174,7 @@ async function api(req, res, url) {
   if (pathname === "/api/book" && req.method === "POST") return book(req, res);
   if (pathname === "/api/session" && req.method === "GET") return session(req, res, url);
   if (pathname === "/api/stripe/webhook" && req.method === "POST") return webhook(req, res);
-  if (pathname === "/api/manage" || pathname === "/api/manage/cancel" || pathname === "/api/manage/unhappy") return manage(req, res, url);
+  if (pathname === "/api/manage" || pathname.startsWith("/api/manage/")) return manage(req, res, url);
   if (pathname === "/api/pay" && req.method === "POST") return pay(req, res, url);
   if (pathname === "/api/ics" && req.method === "GET") return ics(req, res, url);
 
@@ -1126,6 +1225,11 @@ async function api(req, res, url) {
 
     if (pathname === "/api/admin/bookings" && req.method === "GET") return adminBookings(req, res);
     if (pathname === "/api/admin/bookings" && req.method === "POST") return adminCreate(req, res);
+    const fm = /^\/api\/admin\/files\/(\d+)$/.exec(pathname);
+    if (fm && req.method === "GET") {
+      const f = db && await db.file(Number(fm[1]));
+      return f ? sendFile(res, f) : send(res, 404, "Not found", { "content-type": "text/plain" });
+    }
     const m = /^\/api\/admin\/bookings\/(EZ-\d{6})$/.exec(pathname);
     if (m && req.method === "PATCH") return adminBooking(req, res, m[1]);
   }

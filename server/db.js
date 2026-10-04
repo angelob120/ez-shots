@@ -44,6 +44,13 @@ function fromRow(r) {
   return out;
 }
 
+function fromFile(r) {
+  return {
+    id: r.id, bookingId: r.booking_id, kind: r.kind, name: r.name, mime: r.mime, size: r.size,
+    createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : r.created_at
+  };
+}
+
 class Db {
   constructor(url) {
     // The public proxy URL carries sslmode=require and the image's certificate
@@ -326,6 +333,65 @@ class Db {
   // How many confirmed bookings each client has ever had, by lowercased email.
   // The admin page uses it to spot a returning client who took the first shoot
   // price, which nothing else checks.
+  // ---- the client's watermark and reference photos ----------------------
+  // Everything but the bytes, for lists. The bytes only leave in file().
+  static get FILE_META() { return "f.id, f.booking_id, f.kind, f.name, f.mime, f.size, f.created_at"; }
+
+  async addFile(bookingId, kind, name, mime, data) {
+    const c = await this.pool.connect();
+    try {
+      await c.query("BEGIN");
+      // A booking has one watermark; a new one replaces it.
+      if (kind === "watermark") await c.query("DELETE FROM booking_files WHERE booking_id = $1 AND kind = 'watermark'", [bookingId]);
+      const r = await c.query(
+        `INSERT INTO booking_files AS f (booking_id, kind, name, mime, size, data) VALUES ($1, $2, $3, $4, $5, $6) RETURNING ${Db.FILE_META}`,
+        [bookingId, kind, name, mime, data.length, data]);
+      await c.query("COMMIT");
+      return fromFile(r.rows[0]);
+    } catch (e) {
+      await c.query("ROLLBACK");
+      throw e;
+    } finally {
+      c.release();
+    }
+  }
+
+  async deleteFile(bookingId, id) {
+    const r = await this.query("DELETE FROM booking_files WHERE booking_id = $1 AND id = $2", [bookingId, id]);
+    return r.rowCount > 0;
+  }
+
+  async file(id) {
+    const r = await this.query(`SELECT ${Db.FILE_META}, f.data FROM booking_files f WHERE f.id = $1`, [id]);
+    return r.rowCount ? Object.assign(fromFile(r.rows[0]), { data: r.rows[0].data }) : null;
+  }
+
+  // The files of these bookings, plus the newest watermark each of their
+  // clients has added to any booking. A brokerage logo does not change
+  // between listings, so a returning agent should not have to upload it
+  // again. Returns a function of a booking to { watermark, references }.
+  async filesFor(bookings) {
+    if (!bookings.length) return () => ({ watermark: null, references: [] });
+    const ids = bookings.map(b => b.id);
+    const emails = [...new Set(bookings.map(b => String(b.email || "").toLowerCase()).filter(Boolean))];
+    const r = await this.query(
+      `SELECT ${Db.FILE_META}, lower(b.email) AS email FROM booking_files f JOIN bookings b ON b.id = f.booking_id ` +
+      "WHERE f.booking_id = ANY($1) OR (f.kind = 'watermark' AND lower(b.email) = ANY($2)) ORDER BY f.created_at, f.id",
+      [ids, emails]);
+    const rows = r.rows.map(x => Object.assign(fromFile(x), { email: x.email }));
+    return b => {
+      const own = rows.filter(f => f.bookingId === b.id);
+      const email = String(b.email || "").toLowerCase();
+      const mine = own.filter(f => f.kind === "watermark").pop();
+      const saved = email ? rows.filter(f => f.kind === "watermark" && f.email === email).pop() : null;
+      const strip = f => { if (!f) return null; const o = Object.assign({}, f); delete o.email; return o; };
+      return {
+        watermark: strip(mine || saved) && Object.assign(strip(mine || saved), { fromEarlier: !mine }),
+        references: own.filter(f => f.kind === "reference").map(strip)
+      };
+    };
+  }
+
   async clientCounts() {
     const r = await this.query("SELECT lower(email) AS email, count(*) AS n FROM bookings WHERE status = 'confirmed' GROUP BY lower(email)");
     const out = new Map();

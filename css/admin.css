@@ -265,6 +265,10 @@ kbd.adm-kbd, .adm kbd { font: 600 11px/1 "Inter", system-ui, sans-serif; color: 
 .adm-quick a:hover, .adm-quick button:hover { border-color: var(--line-2); }
 .adm-quick svg { width: 18px; height: 18px; color: var(--accent); }
 .adm-sec h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 0 0 8px; }
+.adm-tag { display: inline-block; font-size: 11px; font-weight: 700; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; margin-left: 6px; vertical-align: 1px; }
+.adm-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+.adm-thumb { display: block; aspect-ratio: 1; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: repeating-conic-gradient(var(--surface) 0 25%, transparent 0 50%) 0 0 / 14px 14px; }
+.adm-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .adm-dl { display: grid; grid-template-columns: 112px minmax(0, 1fr); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
 .adm-dl dt, .adm-dl dd { margin: 0; padding: 9px 12px; font-size: 13.5px; border-bottom: 1px solid var(--line); }
 .adm-dl dt { color: var(--muted); font-weight: 600; background: var(--surface); }

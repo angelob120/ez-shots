@@ -201,7 +201,9 @@
     var dim = b.state === "cancelled" || b.state === "expired";
     return '<button type="button" class="adm-bk' + (dim ? " is-dim" : "") + (openId === b.id ? " is-open" : "") + '" data-open="' + esc(b.id) + '">' +
       '<div class="adm-bk-time"><b>' + esc(b.time) + "</b><span>" + esc(rel) + "</span></div>" +
-      '<div class="adm-bk-main"><b>' + esc(b.address) + (repeatDiscount(b) ? '<span class="adm-flag" title="Has booked before and still got the first shoot price">Repeat at 50% off</span>' : "") + "</b><span>" + esc(sub) + "</span></div>" +
+      '<div class="adm-bk-main"><b>' + esc(b.address) + (repeatDiscount(b) ? '<span class="adm-flag" title="Has booked before and still got the first shoot price">Repeat at 50% off</span>' : "") +
+        (b.watermark && b.watermarkWanted ? '<span class="adm-tag" title="Wants their brokerage watermark on the photos">Watermark</span>' : "") +
+        ((b.references || []).length || b.referenceNotes ? '<span class="adm-tag" title="Added reference photos or notes">References</span>' : "") + "</b><span>" + esc(sub) + "</span></div>" +
       '<div class="adm-bk-amt">' + esc(money(b.amount)) + "<small>" + (b.firstShoot ? "first shoot" : b.source === "admin" ? "added by you" : "&nbsp;") + "</small></div>" +
       '<div class="adm-bk-state">' + badge(b) + "</div>" +
       icon("chev", "adm-bk-chev") +
@@ -349,6 +351,26 @@
     return body ? '<dl class="adm-dl">' + body + "</dl>" : "";
   }
 
+  // What the client added from their booking page: the brokerage logo to put
+  // on the photos, and example shots of the look they want. A logo from an
+  // earlier booking carries over, since a brokerage does not change per house.
+  function brandSec(b) {
+    var w = b.watermark, refs = b.references || [];
+    if (!w && !refs.length && !b.referenceNotes) return "";
+    var thumb = function (f) {
+      return '<a class="adm-thumb" href="' + esc(f.url) + '" target="_blank" rel="noopener" title="' + esc(f.name || "Open") + '"><img src="' + esc(f.url) + '" alt="' + esc(f.name || f.kind) + '" loading="lazy" /></a>';
+    };
+    var wm = w ? '<div class="adm-thumbs">' + thumb(w) + "</div>" +
+      '<p class="adm-help">' + (b.watermarkWanted ? "Put it on the photos, " + esc(b.watermarkSpot || "bottom right") + "." : "On file only, they did not ask for it on these photos.") +
+      (w.fromEarlier ? " Saved from an earlier booking." : "") + ' <a href="' + esc(w.url) + '" download style="color:var(--accent);font-weight:600">Download</a></p>' : "";
+    return '<div class="adm-sec"><h3>Look and brand</h3>' +
+      (wm ? '<p class="adm-help" style="margin:0 0 6px;font-weight:600">Brokerage watermark</p>' + wm : "") +
+      (refs.length ? '<p class="adm-help" style="margin:12px 0 6px;font-weight:600">Reference photos, ' + refs.length + "</p>" +
+        '<div class="adm-thumbs">' + refs.map(thumb).join("") + "</div>" : "") +
+      (b.referenceNotes ? dl([["What they like", b.referenceNotes, 0, 1]]) : "") +
+    "</div>";
+  }
+
   function paintDrawer(b) {
     var k = kind(b);
     var canRefund = b.paid && b.refundable > 0;
@@ -417,6 +439,7 @@
           ["Home", [b.size, b.occupancy].filter(Boolean).join(", ")],
           ["Their notes", b.notes, 0, 1]
         ]) + "</div>" +
+        brandSec(b) +
         '<div class="adm-sec"><h3>Payment</h3>' + dl([
           [b.paid ? "Paid" : "Due after the shoot", money(b.amount)],
           ["Refunded", b.refundedCents ? money(b.refundedCents / 100) : ""],
