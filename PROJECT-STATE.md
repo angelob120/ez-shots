@@ -197,6 +197,12 @@ VIDEO" and "WITH VIDEO". See Blocked above.
   ezcontractors.shop contact acknowledgement (landed in the inbox, not spam).
   A live booking was not made on production; the booking emails share the
   same Gmail send and pass `npm run check:bookings`.
+- Later the same day: EmailJS removed entirely (code, script tags, docs and
+  the Railway variables). The test suite catches mail on `EMAIL_TEST_ENDPOINT`.
+  A real booking was then made on production (EZ-000004) and cancelled: client
+  confirmation reached the inbox, owner Booked and Cancelled emails sent.
+- Seed schedule is now every hour 8 AM to 8 PM. The LIVE schedule in Postgres
+  was not changed from here; the owner sets it in admin settings, Weekly hours.
 
 ### 2026-10-04 - Blog, site SEO, home copy, Blog in the nav
 - **20 blog posts written by MiniMax**, modelled on the EZ Orders blog: same
