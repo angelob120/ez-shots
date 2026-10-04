@@ -405,7 +405,7 @@ try {
   const fromOne = [];
   for (let k = 0; k < 4; k++) fromOne.push(await bookIt(far(k), { email: `flood${k}@example.com`, phone: "(248) 555-02" + (10 + k) }, "10.9.9.9"));
   check("one address gets 3 bookings a day, the 4th is refused with a way to email",
-    fromOne.slice(0, 3).every(r => r.status === 200) && fromOne[3].status === 429 && /bigmoneygelo2@gmail.com/.test(fromOne[3].json.error), fromOne.map(r => r.status));
+    fromOne.slice(0, 3).every(r => r.status === 200) && fromOne[3].status === 429 && /angelobrown1000@gmail.com/.test(fromOne[3].json.error), fromOne.map(r => r.status));
   check("a refused flood leaves the time open", ((await call("GET", "/api/availability")).json.days[fromOne[3].date] || []).includes(fromOne[3].time));
   const sameClient = [];
   for (let k = 4; k < 7; k++) sameClient.push(await bookIt(far(k), { email: "Repeat@Example.com", phone: "(586) 555-03" + (10 + k) }, "10.8.0." + k));

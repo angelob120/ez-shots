@@ -4,6 +4,9 @@
 This file is the memory between sessions. Read it at the start of every session along with `CLAUDE.md`. At the end of every session, append a new dated entry to the top of the Work Log describing what changed and anything the next session would otherwise have to rediscover. "Blocked on a human" lists things only the owner can do (accounts, keys, DNS, deploy clicks). Detailed per-area status lives in `docs/site.md`.
 
 ## Blocked on a human
+- **Point the EmailJS contact template at angelobrown1000@gmail.com.** The
+  site now shows that address, but `template_qlotxua`'s To Email is set in
+  the EmailJS dashboard and may still be bigmoneygelo2@gmail.com.
 - **No phone number on the site.** The no call plan wants "Prefer to talk first?
   Call or text" visible. There is still no real number (the 555 placeholder was
   removed on 2026-09-01). Send one and it goes in the footer, contact page and
@@ -177,6 +180,18 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-10-04 (email) - Public contact address is angelobrown1000@gmail.com
+
+- Every page, the booking errors, the server refusals and the tests now show
+  angelobrown1000@gmail.com instead of bigmoneygelo2@gmail.com (17 files).
+- Not changed, because they are dashboard settings: the EmailJS contact
+  template `template_qlotxua` still has its own To Email (believed to be
+  bigmoneygelo2@gmail.com) and the sending service is connected as
+  bigmoneygelo11@gmail.com. `OWNER_EMAIL` in Railway decides where booking
+  alerts go and was not touched.
+- Verified: `npm test` and `npm run check:bookings` pass; no
+  bigmoneygelo2 left in tracked files except the EmailJS comment.
 
 ### 2026-10-04 (limits) - Bots and competitors cannot fill the calendar
 

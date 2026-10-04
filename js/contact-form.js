@@ -40,9 +40,11 @@
   var CONFIG = {
     SERVICE_ID: "service_dburs96",           // Gmail, connected as bigmoneygelo11@gmail.com
     // The account holds two templates, both called "My Default Template".
-    // One delivers to angelobrown1000@gmail.com and one to a yahoo address
+    // One delivers to bigmoneygelo2@gmail.com and one to a yahoo address
     // belonging to a different project. This must be the ID of the one whose
-    // "To Email" is angelobrown1000@gmail.com. Confirm it in the dashboard
+    // "To Email" is bigmoneygelo2@gmail.com. Since 2026-10-04 the site shows
+    // angelobrown1000@gmail.com, so the owner should set that template's To
+    // Email to it in the EmailJS dashboard. Confirm it in the dashboard
     // before trusting a lead to it: sending to the wrong one loses the lead
     // silently, because EmailJS still reports success.
     TEMPLATE_ID: "template_qlotxua",
@@ -210,7 +212,7 @@
         };
 
         if (typeof emailjs === "undefined") {
-          setStatus("error", "Sorry, the form could not load. Please email bigmoneygelo2@gmail.com directly.");
+          setStatus("error", "Sorry, the form could not load. Please email angelobrown1000@gmail.com directly.");
           return;
         }
 
@@ -246,7 +248,7 @@
               // regardless. Everything else has no record but this email, so
               // it has to be said.
               if (leave()) return;
-              setStatus("error", "Sorry, something went wrong. Please email bigmoneygelo2@gmail.com or try again.");
+              setStatus("error", "Sorry, something went wrong. Please email angelobrown1000@gmail.com or try again.");
               restoreButton();
             }
           );

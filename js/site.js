@@ -66,7 +66,7 @@
           '<div class="brand">' + MARK + 'EZ <span>Shots</span></div>' +
           '<p>Real estate photography, video and FAA licensed drone work for realtors across Metro Detroit. Book online for $0, photos back in about 24 hours, pay only if you are happy.</p>' +
           '<div class="footer-contact">' +
-            '<a href="mailto:bigmoneygelo2@gmail.com">bigmoneygelo2@gmail.com</a>' +
+            '<a href="mailto:angelobrown1000@gmail.com">angelobrown1000@gmail.com</a>' +
             '<a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">Questions? Optional 10 minute call</a>' +
           '</div>' +
         '</div>' +

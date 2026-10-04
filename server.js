@@ -525,12 +525,12 @@ async function bookingRefusal(req, b, email, phone) {
     console.log(`[ez-shots] booking refused (${why}) from ${clientIp(req)} for ${email}`);
     return { status, error };
   };
-  if (str(b.hp, 200)) return say("honeypot", "Sorry, the booking did not go through. Email bigmoneygelo2@gmail.com and I will book you in.", 400);
+  if (str(b.hp, 200)) return say("honeypot", "Sorry, the booking did not go through. Email angelobrown1000@gmail.com and I will book you in.", 400);
   const t = ticketAge(b.ticket);
   if (t === "bad") return say("no ticket", "This page has been open too long. Refresh it and book again, your choices only take a moment.", 400);
   if (t === "fast") return say("too fast", "That was quicker than a person can book. Wait a few seconds and press Book again.", 400);
   const p = await db.bookingPressure(clientIp(req), email, phone);
-  const email_ = "Email bigmoneygelo2@gmail.com and I will book you in myself.";
+  const email_ = "Email angelobrown1000@gmail.com and I will book you in myself.";
   if (p.upcoming >= LIMITS.BOOK_PER_CLIENT) return say("client", `You already have ${p.upcoming} shoots coming up, which is the most the site books at once. ${email_}`);
   if (p.byIp >= LIMITS.BOOK_PER_IP) return say("address", `That is a lot of bookings from one place today. ${email_}`);
   if (p.total >= LIMITS.BOOK_PER_DAY) return say("total", `Online booking is full for today. ${email_}`);

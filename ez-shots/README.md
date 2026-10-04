@@ -21,7 +21,7 @@ searching for them in `index.html` and `project.html`.
 ## Contact form
 The form uses [FormSubmit](https://formsubmit.co) so submissions email you with no backend.
 The first time someone submits, FormSubmit sends a one-time confirmation email to
-`bigmoneygelo2@gmail.com` — click the link to activate it.
+`angelobrown1000@gmail.com` — click the link to activate it.
 
 ## Preview locally
 ```bash
