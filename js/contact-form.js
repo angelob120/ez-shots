@@ -1,16 +1,15 @@
 // EZ Shots forms -> POST /api/contact, which emails the owner through Gmail.
-// EmailJS in the browser is the fallback when the server has no Gmail set up.
 // Every form on the site with class "lead-form" wires itself up here. There is
 // one handler on purpose: a second copy is how one form starts validating
 // differently from another, and how a field silently stops reaching the inbox.
 //
-// HOW THE TEMPLATE CONSTRAINT SHAPES THIS
-// The EmailJS template has a fixed set of variables: site_name, from_name,
-// email_id, reply_to, phone, message, subject. It cannot grow a variable per
-// question. So anything that is not one of those five known fields is folded
-// into `message` as a "Label: value" line, in the order the fields appear in
-// the form. That is what lets a two field contact form and a twenty field
-// intake form share one template and one monthly send quota.
+// HOW THE FIELDS TRAVEL
+// The server takes a fixed set: from_name, email_id, phone, message, subject.
+// Anything that is not one of the known fields is folded into `message` as a
+// "Label: value" line, in the order the fields appear in the form, and
+// server/email.js lays those lines out as the details table. That is what
+// lets a two field contact form and a twenty field intake form share one
+// endpoint.
 //
 // PER FORM SETTINGS, all optional, all read off the <form> element:
 //   data-required   comma separated field names that must be filled
@@ -35,25 +34,11 @@
 // booking is already recorded, and a broken email service must not stand
 // between a customer and their confirmation.
 (function () {
-  // ------------------------------------------------------------------
-  // CONFIG (these are publishable client-side keys, safe to ship)
-  // ------------------------------------------------------------------
   var CONFIG = {
-    SERVICE_ID: "service_dburs96",           // Gmail, connected as bigmoneygelo11@gmail.com
-    // The account holds two templates, both called "My Default Template".
-    // One delivers to bigmoneygelo2@gmail.com and one to a yahoo address
-    // belonging to a different project. This must be the ID of the one whose
-    // "To Email" is bigmoneygelo2@gmail.com. Since 2026-10-04 the site shows
-    // angelobrown1000@gmail.com, so the owner should set that template's To
-    // Email to it in the EmailJS dashboard. Confirm it in the dashboard
-    // before trusting a lead to it: sending to the wrong one loses the lead
-    // silently, because EmailJS still reports success.
-    TEMPLATE_ID: "template_qlotxua",
-    PUBLIC_KEY: "ki7V3klQWzRzeIMte",
     SITE_NAME: "EZ Shots"                     // hardcoded per site, do not change
   };
 
-  // Fields the template has a real variable for. Everything else gets folded
+  // Fields the server has a slot for. Everything else gets folded
   // into the message body.
   var CORE = ["name", "email", "phone", "message", "_hp"];
 
@@ -85,14 +70,6 @@
     var forms = document.querySelectorAll("form.lead-form");
     if (!forms.length) return;
 
-    // Init the SDK if it loaded. If the CDN failed, validation still runs and
-    // the send attempt below shows a clear error instead of a dead form.
-    var sdkReady = typeof emailjs !== "undefined";
-    if (sdkReady) {
-      emailjs.init({ publicKey: CONFIG.PUBLIC_KEY });
-    } else {
-      console.error("[EZ Shots] EmailJS SDK failed to load.");
-    }
 
     forms.forEach(function (form) {
       var btn = form.querySelector('button[type="submit"]');
@@ -231,23 +208,15 @@
           return true;
         }
 
-        // The server sends it through Gmail. EmailJS is used only when the
-        // server says Gmail is not set up (503) or there is no server at all,
-        // as under `npm run start:static`.
+        // The server sends it through Gmail.
         function deliver() {
           return fetch("/api/contact", {
             method: "POST",
             headers: { "content-type": "application/json" },
             body: JSON.stringify(params)
           }).then(function (r) {
-            if (r.ok) return;
-            if (r.status !== 503 && r.status !== 404 && r.status !== 405) throw new Error("server replied " + r.status);
-            return viaEmailJs();
-          }, viaEmailJs);
-        }
-        function viaEmailJs() {
-          if (typeof emailjs === "undefined") return Promise.reject(new Error("EmailJS not loaded"));
-          return emailjs.send(CONFIG.SERVICE_ID, CONFIG.TEMPLATE_ID, params);
+            if (!r.ok) throw new Error("server replied " + r.status);
+          });
         }
 
         function sendEmail() {

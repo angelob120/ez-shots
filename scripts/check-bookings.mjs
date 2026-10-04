@@ -3,7 +3,7 @@
 // after seeing them, the files unlock, the review request follows a day later,
 // an unhappy client is flagged and left alone, and the owner refunds from
 // admin. The real server against a real Postgres, with a fake
-// Stripe and a fake EmailJS standing in, so nothing leaves this machine and no
+// Stripe and a fake mail endpoint standing in, so nothing leaves this machine and no
 // money moves.
 //
 // Needs a local Postgres: DATABASE_URL in .env (or the environment) pointing at
@@ -72,11 +72,11 @@ const stripeSrv = await listen(async (req, res) => {
   res.end("{}");
 });
 
-// ---- fake EmailJS ---------------------------------------------------------
+// ---- fake mail endpoint, standing in for Gmail ----------------------------
 const mails = [];
 const mailSrv = await listen(async (req, res) => {
   const b = JSON.parse(await readBody(req) || "{}");
-  mails.push(b.template_params || {});
+  mails.push({ to_email: b.to, subject: b.subject, message: b.text, message_html: b.html, reply_to: b.replyTo });
   res.end("OK");
 });
 
@@ -96,8 +96,7 @@ try {
       ADMIN_PASSWORD: "check-pass", ADMIN_SECRET: "",
       STRIPE_SECRET_KEY: "sk_test_fake", STRIPE_WEBHOOK_SECRET: "whsec_check",
       STRIPE_API_BASE: "http://127.0.0.1:" + portOf(stripeSrv),
-      EMAILJS_SERVICE_ID: "service_check", EMAILJS_PUBLIC_KEY: "pub", EMAILJS_PRIVATE_KEY: "priv",
-      EMAILJS_TEMPLATE_BOOKING: "template_check", EMAILJS_ENDPOINT: "http://127.0.0.1:" + portOf(mailSrv) + "/send",
+      EMAIL_TEST_ENDPOINT: "http://127.0.0.1:" + portOf(mailSrv) + "/send",
       OWNER_EMAIL: "owner@example.com", BOOK_MIN_SECONDS: "1", BOOK_PER_IP: "3", BOOK_PER_CLIENT: "2", BOOK_PER_DAY: "100", SITE_URL: SITE, DATA_DIR: "", TICK_MS: "5000", REVIEW_URL: "https://g.page/r/test-review"
     }),
     stdio: ["ignore", "pipe", "pipe"]

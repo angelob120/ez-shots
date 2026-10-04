@@ -40,11 +40,10 @@ offer the whole site is built around:
   images.
 
 ## Contact / lead capture
-- Done: EmailJS on both forms (index `#contact` and `contact.html`), shared through
+- Done: every form posts to `/api/contact` and the server emails it through Gmail, shared through
   `js/contact-form.js` (`form.lead-form`). Fields Name, Email, Phone, Package, Property
   details. Package options now read Listing Essentials $150 / Listing Pro $250.
-- Half done: needs the real EmailJS Public Key pasted and the template confirmed and saved
-  in the dashboard. See PROJECT-STATE.md "Blocked on a human".
+- Done 2026-10-04: EmailJS removed, Gmail SMTP sends everything.
 
 ## Booking flow (2026-09-11)
 - Done: `book.html`, three screens, package then property and time then contact and

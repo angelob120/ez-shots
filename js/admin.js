@@ -265,7 +265,7 @@
       card(s.bookings, "Database", "Connected. Online booking is on.", "Not connected. Set DATABASE_URL; online booking is off.") +
       card(s.stripe, "Stripe checkout", "Connected. Prices are charged from this page.", "No STRIPE_SECRET_KEY. Clients pay through the Stripe links.") +
       card(s.webhook, "Stripe webhook", "On. Paid bookings confirm even if the client closes the tab.", "No STRIPE_WEBHOOK_SECRET. A booking confirms only when the client returns to the site.") +
-      card(s.email, "Emails", "On. You and the client get an email when a booking is paid.", "Off. Set the EMAILJS variables and OWNER_EMAIL.");
+      card(s.email, "Emails", "On. You and the client get an email when a booking is paid.", "Off. Set GMAIL_USER, GMAIL_APP_PASSWORD and OWNER_EMAIL.");
     el("test-email").disabled = !s.email;
   }
 

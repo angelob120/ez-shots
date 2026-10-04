@@ -1,4 +1,4 @@
-// The emails a booking sends. All of them go from the server through EmailJS.
+// The emails a booking sends. All of them go from the server through Gmail.
 //
 // A booking costs nothing to make. The customer pays after seeing the photos,
 // so every step between the booking and the payment has its own email, and the
@@ -19,14 +19,10 @@
 //   moved      customer: a new time, when the owner moves the shoot
 //
 // WHY THIS IS ON THE SERVER AND NOT IN THE BROWSER
-// EmailJS is a browser library and the rest of the site uses it that way, in
-// js/contact-form.js. These cannot work that way. The moment a booking becomes
-// real is Stripe's webhook, which arrives here with no browser involved at all.
-// Send from booked.html instead and every customer who pays and closes the tab,
-// or whose phone drops the redirect, gets no email and the owner gets no
-// notification, for a shoot that is paid for and on the calendar. EmailJS has a
-// REST endpoint for exactly this; the private key is what makes it work off a
-// browser.
+// The moment a booking becomes real can be Stripe's webhook, which arrives here
+// with no browser involved at all, and a Gmail password can never ship to a
+// browser. So every email, the website's lead forms included, is sent from
+// here through Gmail SMTP.
 //
 // THE GOOGLE CALENDAR BUTTON
 // A plain calendar.google.com link with the shoot filled in: title, time,
@@ -34,42 +30,21 @@
 // No Google sign in, no API, nothing stored.
 //
 // ENV
-//   GMAIL_USER                the Gmail address every email is sent from.
-//   GMAIL_APP_PASSWORD        a Google app password for it. With both set,
-//                             every email goes through Gmail SMTP and the
-//                             EmailJS settings below are not used. A personal
-//                             Gmail account sends to about 500 people a day.
-//   EMAILJS_SERVICE_ID        the Gmail service, service_dburs96
-//   EMAILJS_PUBLIC_KEY        sent as user_id
-//   EMAILJS_PRIVATE_KEY       sent as accessToken. Without it nothing sends,
-//                             and the site carries on booking as if emails were
-//                             never part of the deal.
-//   EMAILJS_TEMPLATE_BOOKING  one generic template for every email here. Its To
-//                             Email must be {{to_email}}, its subject
-//                             {{subject}}, and its content exactly
-//                             {{{message_html}}}, three braces, which is how
-//                             EmailJS inserts HTML without escaping it. The
-//                             server builds the whole email.
-//   OWNER_EMAIL               where the owner's email goes. A comma separated
-//                             list goes out as ONE request with several
-//                             recipients, because the free plan counts
-//                             requests, not addresses. If EmailJS refuses that,
-//                             the addresses are retried one at a time.
-//   EMAILJS_ENDPOINT          only for scripts/check-bookings.mjs, which points
-//                             it at a fake EmailJS.
-//
-// EmailJS also has to be told to allow this. Account, Security, API access for
-// non-browser applications. It is off by default and the call 403s without it.
+//   GMAIL_USER            the Gmail address every email is sent from.
+//   GMAIL_APP_PASSWORD    a Google app password for it. Without both, nothing
+//                         sends and the site carries on booking as if emails
+//                         were never part of the deal. A personal Gmail account
+//                         sends to about 500 people a day.
+//   OWNER_EMAIL           where the owner's email goes. A comma separated list
+//                         goes out as one email with several recipients.
+//   EMAIL_TEST_ENDPOINT   only for scripts/check-bookings.mjs: every email is
+//                         POSTed there as JSON instead of going to Gmail.
 "use strict";
 
 // Trimmed, because a value pasted into Railway can carry a tab or a newline
 // nobody can see. On 2026-09-12 one did, in TZ.
 const env = k => String(process.env[k] || "").trim();
-const ENDPOINT = env("EMAILJS_ENDPOINT") || "https://api.emailjs.com/api/v1.0/email/send";
-const SERVICE = env("EMAILJS_SERVICE_ID");
-const PUBLIC = env("EMAILJS_PUBLIC_KEY");
-const PRIVATE = env("EMAILJS_PRIVATE_KEY");
-const TEMPLATE = env("EMAILJS_TEMPLATE_BOOKING");
+const TEST_ENDPOINT = env("EMAIL_TEST_ENDPOINT");
 const GMAIL_USER = env("GMAIL_USER");
 // Google shows an app password in groups of four. The spaces are not part of it.
 const GMAIL_PASS = env("GMAIL_APP_PASSWORD").replace(/\s+/g, "");
@@ -94,71 +69,37 @@ const SHOOT_MS = 90 * 60 * 1000;
 // throws on every booking is worse than one that says, once, at boot, that it
 // is switched off.
 function configured() {
-  return gmail() || !!(SERVICE && PUBLIC && PRIVATE && TEMPLATE);
+  return !!TEST_ENDPOINT || gmail();
 }
 
 function why() {
   const missing = [];
-  if (gmail()) return OWNERS.length ? missing : ["OWNER_EMAIL"];
-  if (!SERVICE) missing.push("EMAILJS_SERVICE_ID");
-  if (!PUBLIC) missing.push("EMAILJS_PUBLIC_KEY");
-  if (!PRIVATE) missing.push("EMAILJS_PRIVATE_KEY");
-  if (!TEMPLATE) missing.push("EMAILJS_TEMPLATE_BOOKING");
+  if (!TEST_ENDPOINT && !GMAIL_USER) missing.push("GMAIL_USER");
+  if (!TEST_ENDPOINT && !GMAIL_PASS) missing.push("GMAIL_APP_PASSWORD");
   if (!OWNERS.length) missing.push("OWNER_EMAIL");
   return missing;
 }
 
-// EmailJS allows one request a second across the whole account. Every send
-// waits its turn here, so a refund pressed while the booking emails are still
-// going out is not refused for going too fast.
-let nextSlot = 0;
-async function pace() {
-  const now = Date.now();
-  const at = Math.max(now, nextSlot);
-  nextSlot = at + 1100;
-  if (at > now) await new Promise(r => setTimeout(r, at - now));
-}
-
-// Any email, through Gmail. `to` may be a comma separated list.
-async function sendGmail(to, mail, replyTo) {
-  const info = await smtp().sendMail({
-    from: { name: "EZ Shots", address: GMAIL_USER },
+// Any email. `to` may be a comma separated list.
+async function send(to, mail, replyTo) {
+  const message = {
     to,
     replyTo: replyTo || OWNER || undefined,
     subject: mail.subject,
     text: mail.text,
     html: mail.html
-  });
+  };
+  if (TEST_ENDPOINT) {
+    const r = await fetch(TEST_ENDPOINT, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(message)
+    });
+    if (!r.ok) throw new Error(`test mail endpoint replied ${r.status}`);
+    return "OK";
+  }
+  const info = await smtp().sendMail(Object.assign({ from: { name: "EZ Shots", address: GMAIL_USER } }, message));
   return info.messageId || "OK";
-}
-
-async function send(toEmail, mail, replyTo) {
-  if (gmail()) return sendGmail(toEmail, mail, replyTo);
-  await pace();
-  const r = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      service_id: SERVICE,
-      template_id: TEMPLATE,
-      user_id: PUBLIC,
-      accessToken: PRIVATE,
-      template_params: {
-        to_email: toEmail,
-        subject: mail.subject,
-        // Plain text, for a template that still says {{message}}.
-        message: mail.text,
-        // The designed email, for a template that says {{{message_html}}}.
-        message_html: mail.html,
-        reply_to: replyTo || OWNER,
-        site_name: "EZ Shots"
-      }
-    })
-  });
-  // EmailJS answers with plain text, "OK" or the reason, not JSON.
-  const text = await r.text().catch(() => "");
-  if (!r.ok) throw new Error(`EmailJS replied ${r.status}: ${text.slice(0, 200)}`);
-  return text;
 }
 
 function money(n) { return "$" + Number(n || 0).toFixed(2).replace(/\.00$/, ""); }
@@ -743,18 +684,7 @@ async function notifyBooked(b, siteUrl) {
     try {
       await send(OWNERS.join(","), m, b.email);
       out.owner = true;
-    } catch (e) {
-      out.errors.push("owner: " + e.message);
-      // Some EmailJS templates will not take several addresses in To Email. One
-      // request each then, which costs more of the monthly quota but is better
-      // than the owner finding out about a shoot when he drives past it.
-      if (OWNERS.length > 1) {
-        for (const addr of OWNERS) {
-          try { await send(addr, m, b.email); out.owner = true; }
-          catch (e2) { out.errors.push(`owner ${addr}: ${e2.message}`); }
-        }
-      }
-    }
+    } catch (e) { out.errors.push("owner: " + e.message); }
   }
   if (b.email) {
     try { await send(b.email, bookedMail(b, site), OWNER); out.customer = true; }
@@ -836,10 +766,9 @@ async function sendTest(siteUrl) {
   return out;
 }
 
-// A lead from one of the site's forms, to the owner. Gmail only: when this
-// says it is off, the browser sends the lead through EmailJS itself.
+// A lead from one of the site's forms, to the owner.
 async function sendLead({ subject, name, email, phone, message }) {
-  if (!gmail() || !OWNERS.length) throw Object.assign(new Error("gmail not configured"), { off: true });
+  if (!configured() || !OWNERS.length) throw Object.assign(new Error("email not configured"), { off: true });
   // js/contact-form.js folds every extra field into the message as
   // "Label: value" lines, then "Notes:" and whatever the visitor typed.
   // Split it back apart so the extras sit in the details table.
@@ -873,7 +802,7 @@ async function sendLead({ subject, name, email, phone, message }) {
     buttons: contact,
     footer: "Sent by ezshots.org from a form on the website. Reply to this email to reach them."
   });
-  return sendGmail(OWNERS.join(","), { subject, text, html }, email);
+  return send(OWNERS.join(","), { subject, text, html }, email);
 }
 
 module.exports = { sendLead, notifyBooked, notifyRefunded, notifyMoved, toCustomer, toOwner, configured, why, render, sendTest, googleCalendarUrl };

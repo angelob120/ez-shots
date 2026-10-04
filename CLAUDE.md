@@ -1,7 +1,7 @@
 # CLAUDE.md - EZ Shots
 
 ## What this is
-EZ Shots is a marketing, portfolio and booking website for a real estate photography business serving realtors in Metro Detroit (photo, video, and licensed FAA Part 107 drone work). The pages are plain HTML, CSS, and vanilla JavaScript with no build step and no framework. Shared announcement bar, nav and footer are injected by `js/site.js`; portfolio and gallery content lives as data in `js/projects.js` and is rendered by `js/render.js`. Lead forms email submissions to the owner through EmailJS (client side).
+EZ Shots is a marketing, portfolio and booking website for a real estate photography business serving realtors in Metro Detroit (photo, video, and licensed FAA Part 107 drone work). The pages are plain HTML, CSS, and vanilla JavaScript with no build step and no framework. Shared announcement bar, nav and footer are injected by `js/site.js`; portfolio and gallery content lives as data in `js/projects.js` and is rendered by `js/render.js`. Lead forms post to the server, which emails the owner through Gmail.
 
 Since 2026-09-11 there is also a small server, `server.js`, and it is what `npm start` runs. It exists for the things a static file cannot do: hold the live prices so the owner can change them on the site, hold the Stripe secret key so the browser never decides what a shoot costs, and own the calendar so two agents cannot book the same time. Its state lives in a Railway Postgres (`server/db.js`, one dependency, `pg`). Everything else is still static files served by the same rules `serve.json` used. `npm run start:static` still runs the old `serve` setup if the server is ever in the way, with online booking off.
 
@@ -78,7 +78,7 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   moves first: if Stripe refuses, nothing changes and no email goes out. Each
   Stripe refund id is recorded once, so a double click is one refund.
   `npm run check:bookings` runs pay, both emails and refunds against a throwaway
-  local Postgres with a fake Stripe and EmailJS; run it after touching any of
+  local Postgres with a fake Stripe and a fake mail endpoint; run it after touching any of
   this.
 - **Look busy is cosmetic.** `availability.lookBusy` hides a share of each day's
   genuinely open times, always the same ones, never a day's last one, and the
@@ -206,7 +206,7 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
 - The git remote is named `ez-shots`, not `origin`. Pushes go to `git push ez-shots <branch>`. The GitHub repo is https://github.com/angelob120/ez-shots.git.
 - There are two lead forms, one in the `#contact` section of `index.html` and one on `contact.html`. Both share `js/contact-form.js` via the `form.lead-form` class. Change form behaviour in the JS once, not per page. If you add a third form, give it class `lead-form` and it wires itself up.
 - `form.name` in JavaScript returns the form's name attribute, not the input named "name". The handler reads fields with `form.elements.namedItem(...)` for this reason. Do not switch to `form.name.value`.
-- EmailJS keys are publishable client-side keys and live in the `CONFIG` object at the top of `js/contact-form.js`, not in env files (this is a static site with no build step). The `PUBLIC_KEY` is a placeholder until the owner pastes the real one.
+- **Email is Gmail SMTP, from the server, and nothing else.** `server/email.js` sends every email (bookings and the lead forms through `POST /api/contact`) as `GMAIL_USER` with `GMAIL_APP_PASSWORD`. EmailJS was removed on 2026-10-04; do not bring it back or put any mail key in the browser.
 - Nav links are hardcoded in `js/site.js`. Adding a page means adding it to the `links` array there (or the footer block below it), not just creating the file. Nav is Services, Portfolio, Pricing (`packages.html`), Guarantee, About, Blog, Contact (Blog added 2026-10-04; the menu button takes over at 980px because seven links do not fit below that). FAQ and Areas live in the footer only. `book.html` is deliberately not a nav row: it is the header CTA button, so booking never reads as a menu item.
 - `serve.json` is no longer what runs in production, `server.js` is, but the rules
   in it are still load bearing because `server.js` reimplements them and
@@ -228,7 +228,7 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   right one, and `[data-theme="dark"]` must define every token that light defines.
 - **Forms: one handler, `js/contact-form.js`, for every `form.lead-form`.** Anything
   that is not name, email, phone or message is folded into the email body as a
-  labelled line, because the EmailJS template has seven fixed variables and cannot
+  labelled line, because `/api/contact` takes a fixed set of fields and cannot
   grow one per question. So **every field needs a `<label for>` or a `data-label`**,
   or its answer arrives unnamed. Per form behaviour is declarative on the form
   element: `data-required`, `data-subject`, `data-subject-field`, `data-success`.

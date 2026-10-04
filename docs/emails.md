@@ -1,7 +1,7 @@
 # Booking emails
 
-Every email a booking sends goes from the server through EmailJS, built in
-`server/email.js`, one template (`EMAILJS_TEMPLATE_BOOKING`) for all of them:
+Every email the site sends goes from the server through Gmail SMTP
+(nodemailer), built in `server/email.js`. EmailJS was removed on 2026-10-04.
 
 Since 2026-10-03 a booking costs nothing and the client pays after seeing the
 photos, so every step between has its own email and the client never has to
@@ -28,12 +28,13 @@ before they send, so each goes once.
 
 The Google Calendar button is a plain `calendar.google.com/calendar/render`
 link with the title, time, address and client details filled in. No sign in,
-no API. A normal job costs about 8 of the 200 free monthly requests: booked
-(2), reminder, shoot done, ready, delivered (2), review. That is 25 jobs a
-month on the free plan; past that EmailJS needs the paid plan.
+no API. A normal job sends about 8 emails: booked (2), reminder, shoot done,
+ready, delivered (2), review. A personal Gmail account sends to about 500
+people a day, far above that.
 
-The contact form is separate: client side, `js/contact-form.js`, template
-`template_qlotxua`.
+The lead forms go through the server too: `js/contact-form.js` posts to
+`POST /api/contact`, which sends a lead email in the same layout to
+`OWNER_EMAIL` with the visitor as Reply To.
 
 ## The thing that decides the whole design
 
@@ -41,7 +42,7 @@ The contact form is separate: client side, `js/contact-form.js`, template
 `book()` and the delivery emails from `paidAfter()`, which the webhook and the
 return to the manage page both reach. The reasoning below is unchanged.)
 
-EmailJS is a browser library, and 2 and 3 cannot be sent from a browser.
+A Gmail password cannot ship to a browser, and 2 and 3 cannot be sent from one.
 
 The moment a booking becomes real is `confirmFromSession()` in `server.js`. It
 is reached two ways: Stripe's webhook, and the customer landing on
@@ -53,25 +54,6 @@ no notification, for a shoot that is paid for and on the calendar.
 
 So 2 and 3 are sent **from the server**, in `confirmFromSession()`, which is
 already the single chokepoint both paths funnel through.
-
-EmailJS supports this. `POST https://api.emailjs.com/api/v1.0/email/send`, JSON
-body:
-
-```json
-{
-  "service_id":  "service_dburs96",
-  "template_id": "<template>",
-  "user_id":     "<public key>",
-  "accessToken": "<private key>",
-  "template_params": { }
-}
-```
-
-Rate limit is 1 request per second. The private key is the part that makes it
-work off a browser, and it is the reason `EMAILJS_PRIVATE_KEY` has to exist as a
-Railway variable. Before this will send at all, EmailJS Account, Security needs
-API access for non-browser applications turned on - the dashboard blocks
-server-side calls by default.
 
 ## Sending twice, for one booking
 
@@ -98,99 +80,33 @@ already confirmed. Wrap the send, log the failure loudly with the booking id,
 and still return 200. A booking that exists with no email sent is recoverable by
 hand; a Stripe retry storm is not.
 
-## Templates, and the free plan
-
-The account is on the free plan: 200 requests a month, 0 used as of 2026-09-12,
-resetting on the 9th. A booking costs 2 of those, a contact form costs 1. That
-is a real ceiling but not a close one at current volume. Worth watching, and
-worth saying out loud that this is a lead and confirmation channel, never a
-marketing one.
-
-The free plan is also thin on template slots, and the account already holds two
-templates both called "My Default Template", one of which belongs to a different
-project and delivers to a yahoo address. So do **not** plan on a template per
-email.
-
-Instead use one generic transactional template for 2 and 3, the same trick
-`js/contact-form.js` already uses for its forms: the template's To Email is
-`{{to_email}}`, its subject is `{{subject}}`, its body is `{{message}}`, and the
-server decides all three. Owner notification and customer confirmation are then
-the same template called twice with different parameters, and the template never
-has to grow a variable per field.
-
-Set its id as `EMAILJS_TEMPLATE_BOOKING`. `EMAILJS_TEMPLATE_CONTACT` stays
-pointed at the existing form template.
-
 ## Turning it on
 
-Five variables, all set on the Railway service as of 2026-09-12:
+Three variables on the Railway service, all set since 2026-10-04:
 
-| Variable | Value | Set? |
-|---|---|---|
-| `EMAILJS_SERVICE_ID` | `service_dburs96` | yes |
-| `EMAILJS_PUBLIC_KEY` | `ki7V3klQWzRzeIMte` | yes |
-| `OWNER_EMAIL` | `angelobrown1000@gmail.com,hello@ezorders.shop` | yes |
-| `EMAILJS_PRIVATE_KEY` | the account private key | yes, 2026-09-12 |
-| `EMAILJS_TEMPLATE_BOOKING` | the new template's id | yes, 2026-09-12 |
+| Variable | Value |
+|---|---|
+| `GMAIL_USER` | `brownangelob27@gmail.com`, the address every email is sent from |
+| `GMAIL_APP_PASSWORD` | a Google app password for it (Google account, Security, App passwords; needs 2 Step Verification) |
+| `OWNER_EMAIL` | `angelobrown1000@gmail.com,hello@ezorders.shop`, one email to both |
 
-The template to create: To Email `{{to_email}}`, Subject `{{subject}}`, Reply To
-`{{reply_to}}`, From Name `EZ Shots`, default From Email. Nothing in Bcc or Cc.
+The server builds the whole HTML: a wordmark, a card with the details, buttons,
+the prep list. Tables and inline styles only, because Gmail strips `<style>`
+and Outlook lays out with Word. Every customer value is escaped before it goes
+in. Each email also carries a plain text version.
 
-The body is where the design lives, and the server builds all of it. Since
-2026-09-12 both emails are HTML: a wordmark, a card with the booking details,
-buttons (Open bookings, Call, Email for the owner; Add to calendar, Change or
-cancel for the customer) and the prep list as a checklist. Tables and inline
-styles only, because Gmail strips `<style>` and Outlook lays out with Word.
-Every customer value is escaped before it goes in.
+`scripts/preview-emails.mjs` renders both booking emails for a sample booking
+without sending, fails on an `undefined`, an unescaped value, an empty
+optional row or a dash, and with a directory argument writes the `.html` files
+to look at.
 
-The server sends two versions of each email: `message` (plain text) and
-`message_html` (the finished HTML). In the template, click Edit Content, switch
-to raw HTML mode, clear it, and paste exactly this and nothing else:
+`POST /api/admin/test-email`, signed in to admin, sends both booking emails for
+a made up booking to `OWNER_EMAIL` only.
 
-```
-{{{message_html}}}
-```
+Without the two Gmail variables the site books exactly as before and simply
+sends nothing, which the boot log says out loud and `/api/admin/session`
+reports as `email: false`. `scripts/check-bookings.mjs` sets
+`EMAIL_TEST_ENDPOINT` and catches every email on a local fake instead.
 
-Three braces, not two. Two braces makes EmailJS escape the HTML and the email
-arrives as a page of visible tags. Nothing else belongs in the template: no
-greeting, no signature, no logo, because anything around it appears outside
-the card.
-
-`scripts/preview-emails.mjs` renders both emails for a sample booking without
-sending, fails on an `undefined`, an unescaped value, an empty optional row or
-a dash, and with a directory argument writes the `.html` files to look at.
-
-`POST /api/admin/test-email`, signed in to admin, sends both emails for a made
-up booking to `OWNER_EMAIL` only. It is the way to prove the keys, the template
-and the non-browser switch without booking a shoot. It costs two requests.
-
-And in EmailJS, Account, Security: turn on API access for non-browser
-applications. Without it every send comes back `403 API calls in strict mode`.
-
-Until both missing variables are set the site books and charges exactly as
-before and simply sends nothing, which the boot log says out loud and
-`/api/admin/session` reports as `email: false`.
-
-## Two owner inboxes
-
-`OWNER_EMAIL` is a comma separated list and both addresses go out on ONE EmailJS
-request, because the free plan counts requests and not addresses, and a second
-inbox should not halve the month's quota. If EmailJS turns out to refuse several
-addresses in `{{to_email}}`, the send is retried one address at a time, which
-costs an extra request but does not lose the notification. The first address in
-the list is the one the customer's confirmation replies to.
-
-The CONTACT form is not covered by this. It is still client side and its
-recipient is the To Email set on `template_qlotxua` in the EmailJS dashboard,
-not anything in this repo. To have form leads reach both inboxes as well, add
-the second address to that template's To Email field.
-
-## Still unresolved
-
-Which of `template_qlotxua` and `template_ztl1ney` delivers to
-angelobrown1000@gmail.com. `js/contact-form.js` names `template_qlotxua` and the
-dashboard screenshots show the two edit pages by URL slug, not by template id,
-so the two cannot be matched up from outside. Open `template_qlotxua` from the
-templates list and read the URL: `4f1brpw` is the gmail one, `gowiejr` is the
-yahoo one. If it is the yahoo one, every lead the site has ever sent has gone to
-another project's inbox, and EmailJS reported success every time.
+A first email from a new Gmail sender can land in spam, so every form's success
+message ends with "Not in your inbox? Check your spam folder."

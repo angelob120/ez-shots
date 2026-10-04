@@ -258,7 +258,7 @@ class Db {
   // redirect both get there; whichever wins this update sends, and the other
   // gets no row back and sends nothing. It has to be claimed BEFORE the emails
   // go out, not after, or the race is still open for the length of two HTTP
-  // calls to EmailJS.
+  // emails going out.
   async claimNotify(id, now = new Date()) {
     const r = await this.query(
       "UPDATE bookings SET notified_at = $2 WHERE id = $1 AND notified_at IS NULL RETURNING id",

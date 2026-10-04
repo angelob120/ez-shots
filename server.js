@@ -41,9 +41,8 @@
 //                          back. Set it and that dependency goes away.
 //   OWNER_EMAIL            where a booking notification goes. Unset means the
 //                          owner gets no email; the customer still gets his.
-//   EMAILJS_*              the confirmation emails. See server/email.js for the
-//                          full list and for why they are sent from here and
-//                          not from the browser like the contact form is.
+//   GMAIL_USER, GMAIL_APP_PASSWORD  every email, through Gmail. See
+//                          server/email.js.
 //   REVIEW_URL             optional, the Google review link the thank you email
 //                          points at a day after a paid delivery. Without it
 //                          that email asks for a reply instead.
@@ -403,7 +402,7 @@ async function takenNow(av, now) {
 // Deliberately not awaited. The webhook caller must answer Stripe quickly, and
 // a non-200 there makes Stripe retry the whole event and re-run a confirmation
 // that already happened; the success page caller must not make a customer who
-// has just paid watch a spinner while two HTTP calls to EmailJS finish. So this
+// has just paid watch a spinner while two emails go out through Gmail. So this
 // is started and left to run, and every outcome is logged with the booking id,
 // which is the only thing that makes a missing email findable afterwards.
 //
@@ -514,7 +513,7 @@ function ticketAge(t, now = Date.now()) {
 // first X-Forwarded-For entry is whatever the client chose to send, so it is
 // the last one, the hop the proxy added, that is trusted.
 // The site's lead forms, sent to the owner through Gmail. Answers 503 when
-// Gmail is not set up, and js/contact-form.js then uses EmailJS instead.
+// Gmail is not set up.
 const contactHits = new Map();
 async function contact(req, res) {
   const b = await body(req).catch(() => null);

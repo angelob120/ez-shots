@@ -50,10 +50,10 @@ project's `gallery` array is a different thing: the frames for that one property
 
 ## Forms
 
-Every form with class `lead-form` wires itself up from `js/contact-form.js` and mails
-through EmailJS. There is no backend.
+Every form with class `lead-form` wires itself up from `js/contact-form.js`, which
+posts to `POST /api/contact`; the server emails the owner through Gmail.
 
-The EmailJS template has seven fixed variables and cannot grow one per question, so
+The endpoint takes a fixed set of fields and cannot grow one per question, so
 any field that is not name, email, phone or message is folded into the message body as
 a `Label: value` line. **That means every field needs a `<label for>` or a
 `data-label`**, or its answer arrives in the inbox unnamed. Per form behaviour is
