@@ -189,6 +189,14 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 - To switch on: set `GMAIL_USER` and `GMAIL_APP_PASSWORD` on the Railway
   service. A personal Gmail sends to about 500 people a day.
 - Verified with `npm test` and `npm run check:bookings` (EmailJS path).
+- Gmail is live on Railway since the same day. Lead emails use the booking
+  email layout (details table, message block, Call and Email buttons), every
+  form success message says to check spam, and `/api/contact` refuses a lead
+  with no name or email.
+- Verified live: contact forms on ezshots.org and easysaastools.com, the
+  ezcontractors.shop contact acknowledgement (landed in the inbox, not spam).
+  A live booking was not made on production; the booking emails share the
+  same Gmail send and pass `npm run check:bookings`.
 
 ### 2026-10-04 - Blog, site SEO, home copy, Blog in the nav
 - **20 blog posts written by MiniMax**, modelled on the EZ Orders blog: same
