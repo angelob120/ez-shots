@@ -178,6 +178,24 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-04 (form) - Watermark and reference photos in the booking form
+
+- The last screen of `book.html` has a collapsed "Add your watermark or
+  reference photos (Optional)" section with the same fields as the manage
+  page. The controls have no `name`, so the form handler leaves them out of
+  the EmailJS email.
+- `js/booking.js` keeps the files until `/api/book` answers, then uploads them
+  to the new booking by its token before the redirect. A failed upload never
+  fails the booking: the redirect gets `&upload=partial` and the booked page
+  says to add them again from the booking page. A double tap does not upload
+  twice.
+- The upload code moved into `js/uploads.js`, shared by the form and the
+  manage page.
+- Verified in the browser: a full booking with a logo, two large photos, a
+  spot and notes, EmailJS stubbed in the page so nothing was sent; all of it
+  landed on the booking. `npm test` and `npm run check:bookings` pass. The test
+  booking was deleted from the local database.
+
 ### 2026-10-04 - Clients add a brokerage watermark and reference photos
 
 - The manage page has a new panel, "Your watermark and the look you want".

@@ -49,6 +49,14 @@
       document.getElementById("booked-actions").hidden = false;
       document.getElementById("booked-brand-link").href = "/manage?t=" + encodeURIComponent(token) + "#brand";
       document.getElementById("booked-brand").hidden = false;
+      if (b.watermark || (b.references || []).length || b.referenceNotes) {
+        document.getElementById("booked-brand").firstChild.nodeValue = "Your watermark and reference photos are with your booking. ";
+        document.getElementById("booked-brand-link").textContent = "See or change them";
+      }
+      if (q.get("upload") === "partial") {
+        document.getElementById("booked-brand").firstChild.nodeValue = "Some of your photos did not upload. ";
+        document.getElementById("booked-brand-link").textContent = "Add them again on your booking";
+      }
     })
     .catch(function () {});
 })();

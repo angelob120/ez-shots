@@ -139,7 +139,9 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   `booking_files` in Postgres, PNG, JPEG and WebP only, sniffed on the server;
   never accept SVG, the files are served on the admin origin. The owner sees
   them in the booking drawer. A logo carries over to the same email's later
-  bookings.
+  bookings. The booking form offers the same, optional and collapsed, and
+  `js/booking.js` uploads them once `/api/book` answers (`js/uploads.js` is
+  shared); a failed upload never fails the booking.
 - **Schema changes are migration files** in `server/migrations`, applied on
   boot in name order and recorded in `schema_migrations`. Never edit an applied
   one, add the next number. Never create a table by hand in the Railway

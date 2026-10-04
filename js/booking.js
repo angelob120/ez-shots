@@ -373,7 +373,10 @@
           saveHold({ id: d.id, token: d.token });
           if (fBooking) fBooking.value = d.id;
           form.setAttribute("data-redirect", d.url);
-          return d;
+          return sendBrand(d).then(function (ok) {
+            if (!ok) form.setAttribute("data-redirect", d.url + "&upload=partial");
+            return d;
+          });
         }
         if (d.taken) {
           // Someone else got there first. Back to the calendar, redrawn from
@@ -394,6 +397,78 @@
       throw new Error("Could not reach the server. Check your connection and try again.");
     });
   };
+
+  // ------------------------------------------------------------------
+  // The optional watermark and reference photos. Kept here until the
+  // booking exists, then sent to it by its token. A failed upload never
+  // fails the booking: the time is already theirs, and the confirmation
+  // page points them at their booking page to try again.
+  // ------------------------------------------------------------------
+  var brand = { wm: null, refs: [], sentFor: null };
+  var bkWm = el("#bk-wm"), bkRefs = el("#bk-refs");
+
+  function localThumb(file, i) {
+    var url = URL.createObjectURL(file);
+    return '<div class="brand-thumb"><img src="' + url + '" alt="' + esc(file.name || "Your photo") + '" />' +
+      '<button type="button" data-drop="' + i + '" aria-label="Remove ' + esc(file.name || "this photo") + '">&times;</button></div>';
+  }
+  function paintBrand() {
+    el("#bk-wm-thumbs").innerHTML = brand.wm ? localThumb(brand.wm, "wm") : "";
+    el("#bk-wm-pick").firstChild.nodeValue = brand.wm ? "Choose a different logo" : "Choose your logo";
+    el("#bk-wm-opts").hidden = !brand.wm;
+    el("#bk-spot").closest(".field").hidden = !el("#bk-want").checked;
+    el("#bk-refs-thumbs").innerHTML = brand.refs.map(localThumb).join("");
+    el("#bk-refs-pick").hidden = brand.refs.length >= EZUploads.MAX_REFERENCES;
+  }
+  function isImage(f) { return /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic)$/i.test(f.name || ""); }
+
+  if (bkWm) {
+    bkWm.addEventListener("change", function () {
+      if (bkWm.files[0] && isImage(bkWm.files[0])) brand.wm = bkWm.files[0];
+      bkWm.value = "";
+      paintBrand();
+    });
+    bkRefs.addEventListener("change", function () {
+      Array.prototype.slice.call(bkRefs.files).filter(isImage).forEach(function (f) {
+        if (brand.refs.length < EZUploads.MAX_REFERENCES) brand.refs.push(f);
+      });
+      bkRefs.value = "";
+      paintBrand();
+    });
+    el("#bk-brand").addEventListener("click", function (e) {
+      var x = e.target.closest("[data-drop]");
+      if (!x) return;
+      var i = x.getAttribute("data-drop");
+      if (i === "wm") brand.wm = null; else brand.refs.splice(+i, 1);
+      paintBrand();
+    });
+    el("#bk-want").addEventListener("change", paintBrand);
+  }
+
+  // Resolves true when everything went, false when something did not.
+  function sendBrand(d) {
+    var notes = bkWm ? el("#bk-refnotes").value.trim() : "";
+    if (!bkWm || (!brand.wm && !brand.refs.length && !notes)) return Promise.resolve(true);
+    // A double tap answers with the same booking. Send the files once.
+    if (brand.sentFor === d.id) return Promise.resolve(true);
+    brand.sentFor = d.id;
+    var status = el(".book-bar .form-status");
+    var total = (brand.wm ? 1 : 0) + brand.refs.length, n = 0, ok = true;
+    var say = function () { if (status && total) status.textContent = "Booked. Uploading your photos, " + Math.min(n + 1, total) + " of " + total + "..."; };
+    var one = function (kind, f) {
+      say();
+      return EZUploads.upload(d.token, kind, f).then(function () { n++; }, function () { n++; ok = false; });
+    };
+    var chain = brand.wm ? one("watermark", brand.wm) : Promise.resolve();
+    brand.refs.forEach(function (f) { chain = chain.then(function () { return one("reference", f); }); });
+    return chain.then(function () {
+      return EZUploads.saveBrand(d.token, {
+        wantWatermark: !!brand.wm && el("#bk-want").checked,
+        watermarkSpot: el("#bk-spot").value,
+        referenceNotes: notes
+      }).catch(function () { ok = false; });
+    }).then(function () { return ok; });
+  }
 
   // ------------------------------------------------------------------
   // Wiring that does not depend on config

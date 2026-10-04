@@ -181,6 +181,52 @@
             <p class="form-help">Optional. Skip it and we are fine.</p>
           </div>
 
+          <!-- Optional. These controls have no name on purpose, so the form
+               handler leaves them out of the email: js/booking.js sends the
+               files to the booking once it exists, through js/uploads.js. -->
+          <details class="book-extra" id="bk-brand">
+            <summary>Add your watermark or reference photos <span>Optional</span></summary>
+            <div class="book-extra-body">
+              <div class="brand-part" style="border-top:0;padding-top:0">
+                <b>Brokerage watermark</b>
+                <p class="form-help">Your brokerage or team logo, if you want it on the photos. A PNG with a see through background works best.</p>
+                <div class="brand-thumbs" id="bk-wm-thumbs"></div>
+                <div class="btn-row" style="margin-top:4px">
+                  <label class="btn btn-ghost btn-file" id="bk-wm-pick">Choose your logo<input type="file" id="bk-wm" accept="image/png,image/jpeg,image/webp" /></label>
+                </div>
+                <div id="bk-wm-opts" hidden>
+                  <div class="field-inline" style="margin-top:6px">
+                    <input type="checkbox" id="bk-want" checked />
+                    <label for="bk-want">Put my watermark on the photos<span>Untick to keep it on file without adding it this time.</span></label>
+                  </div>
+                  <div class="field" style="margin-top:10px">
+                    <label for="bk-spot">Where it goes</label>
+                    <select id="bk-spot">
+                      <option value="bottom right">Bottom right</option>
+                      <option value="bottom left">Bottom left</option>
+                      <option value="top right">Top right</option>
+                      <option value="top left">Top left</option>
+                      <option value="center">Center, faint</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="brand-part">
+                <b>Reference photos</b>
+                <p class="form-help">Show me shots you like, from your past listings or anyone's, and I will match the look. Up to 12.</p>
+                <div class="brand-thumbs" id="bk-refs-thumbs"></div>
+                <div class="btn-row" style="margin-top:4px">
+                  <label class="btn btn-ghost btn-file" id="bk-refs-pick">Add photos<input type="file" id="bk-refs" accept="image/*" multiple /></label>
+                </div>
+                <div class="field" style="margin-top:10px">
+                  <label for="bk-refnotes">Links and what you like about them</label>
+                  <textarea id="bk-refnotes" rows="2" maxlength="4000" placeholder="A Zillow listing, a Pinterest board, or just: bright and airy, twilight front exterior."></textarea>
+                </div>
+              </div>
+              <p class="form-help" style="margin:0">They upload when you press Book. You can add or change them later from your booking page too.</p>
+            </div>
+          </details>
+
           <div class="book-summary" id="book-summary"></div>
 
           <p class="form-note"><b>Nothing is charged today and no card is needed.</b> After the shoot you get your photos to look at. Happy with them? Pay online through Stripe and the full resolution files unlock. Not happy? You do not pay, and I send you $20 for the trouble.</p>
@@ -242,6 +288,7 @@
   <script src="js/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script src="js/contact-form.js"></script>
+  <script src="js/uploads.js"></script>
   <script src="js/booking.js"></script>
 </body>
 </html>

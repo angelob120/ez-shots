@@ -124,41 +124,11 @@
     // Notes being typed are not wiped by a photo upload finishing.
     if (b.canBrand !== undefined || saved) $("brand-notes").value = b.referenceNotes || "";
     ["brand-wm-pick", "brand-refs-pick", "brand-save"].forEach(function (id) { $(id).hidden = !brandOpen; });
-    $("brand-refs-pick").hidden = !brandOpen || refs.length >= 12;
+    $("brand-refs-pick").hidden = !brandOpen || refs.length >= EZUploads.MAX_REFERENCES;
     ["brand-want", "brand-spot", "brand-notes"].forEach(function (id) { $(id).disabled = !brandOpen; });
   }
 
-  // A phone photo is 3 to 12 MB. A reference only has to show a look, so it
-  // is shrunk to 2000px on the long side before it goes. A logo keeps its
-  // see through background and is only shrunk if it is over the limit.
-  function shrink(file, max, type) {
-    return new Promise(function (resolve) {
-      if (!window.createImageBitmap || !document.createElement("canvas").toBlob) return resolve(file);
-      createImageBitmap(file).then(function (img) {
-        var k = Math.min(1, max / Math.max(img.width, img.height));
-        if (k === 1 && type === "image/png") return resolve(file);
-        var c = document.createElement("canvas");
-        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-        c.toBlob(function (blob) { resolve(blob && blob.size < file.size ? blob : file); }, type, 0.85);
-      }).catch(function () { resolve(file); });
-    });
-  }
-
-  function upload(kind, file) {
-    var ready = kind === "reference" ? shrink(file, 2000, "image/jpeg")
-      : file.size > 5 * 1024 * 1024 ? shrink(file, 1600, "image/png") : Promise.resolve(file);
-    return ready.then(function (blob) {
-      return fetch("/api/manage/upload?t=" + encodeURIComponent(token) + "&kind=" + kind + "&name=" + encodeURIComponent(file.name || ""), {
-        method: "POST", headers: { accept: "application/json" }, body: blob
-      });
-    }).then(function (r) {
-      return r.json().catch(function () { return {}; }).then(function (d) {
-        if (!r.ok) throw new Error(d.error || (r.status === 413 ? "That file is too big." : "That upload did not go through. Try again."));
-        return d.booking;
-      });
-    });
-  }
+  function upload(kind, file) { return EZUploads.upload(token, kind, file); }
 
   $("brand-wm-file").addEventListener("change", function (e) {
     var f = e.target.files[0];
@@ -214,14 +184,13 @@
     var btn = this;
     btn.disabled = true;
     sayBrand("pending", "Saving...");
-    post("/api/manage/brand", {
+    EZUploads.saveBrand(token, {
       wantWatermark: $("brand-want").checked,
       watermarkSpot: $("brand-spot").value,
       referenceNotes: $("brand-notes").value
-    }).then(function (x) {
+    }).then(function (b) {
       btn.disabled = false;
-      if (!x.ok) throw new Error(x.d.error || "That did not save. Try again.");
-      paintBrand(x.d.booking, true);
+      paintBrand(b, true);
       sayBrand("success", "Saved. I will have it with me on the shoot.");
     }).catch(function (err) { btn.disabled = false; sayBrand("error", err.message); });
   });
