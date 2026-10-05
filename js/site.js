@@ -28,6 +28,7 @@
     moon: '<svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
     sun: '<svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
     menu: '<svg class="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+    phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>',
     close: '<svg class="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
   };
 
@@ -35,6 +36,9 @@
 
   // The admin pages draw their own top bar with the same mark.
   window.EZ_MARK = MARK;
+
+  // The business line, in the header on every page. A link so a phone dials it.
+  var PHONE = "(313) 246-3280", TEL = "tel:+13132463280";
 
   var header =
     '<a class="skip-link" href="#main">Skip to content</a>' +
@@ -55,11 +59,14 @@
       '<a href="/" class="brand">' + MARK + 'EZ <span>Shots</span></a>' +
       '<nav class="nav-links" id="nav-links" aria-label="Main">' + nav + '</nav>' +
       '<div class="nav-tools">' +
+        '<a href="' + TEL + '" class="nav-phone" aria-label="Call ' + PHONE + '">' + ICON.phone + '<span>' + PHONE + '</span></a>' +
         '<button type="button" class="icon-btn theme-toggle" aria-label="Switch between light and dark theme">' + ICON.sun + ICON.moon + '</button>' +
         '<a href="/book" class="btn nav-cta">Book a shoot</a>' +
         '<button type="button" class="icon-btn menu-btn" aria-label="Menu" aria-controls="nav-links" aria-expanded="false">' + ICON.menu + ICON.close + '</button>' +
       '</div>' +
-    '</div></header>';
+    '</div>' +
+    '<a href="' + TEL + '" class="phone-strip">' + ICON.phone + 'Call ' + PHONE + '</a>' +
+    '</header>';
 
   var footer =
     '<footer class="footer"><div class="container">' +
@@ -68,6 +75,7 @@
           '<div class="brand">' + MARK + 'EZ <span>Shots</span></div>' +
           '<p>Real estate photography, video and FAA licensed drone work for realtors across Metro Detroit. Book online for $0, photos back in about 24 hours, pay only if you are happy.</p>' +
           '<div class="footer-contact">' +
+            '<a href="' + TEL + '">' + PHONE + '</a>' +
             '<a href="mailto:angelobrown1000@gmail.com">angelobrown1000@gmail.com</a>' +
             '<a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">Questions? Optional 10 minute call</a>' +
           '</div>' +

@@ -204,6 +204,30 @@ p  { margin: 0 0 16px; }
 
 .nav-tools { display: flex; align-items: center; gap: 10px; flex: none; }
 .nav-cta { padding: 11px 20px; font-size: 14.5px; }
+/* The phone number sits beside the booking button. Just above the menu
+   breakpoint seven links leave no room for it, so it shrinks to the icon
+   there. On a phone the header row is full, so it gets its own strip under
+   the header instead (.phone-strip). */
+.nav-phone {
+  display: flex; align-items: center; gap: 7px; white-space: nowrap;
+  color: var(--ink); font-weight: 700; font-size: 14.5px;
+}
+.nav-phone svg { width: 16px; height: 16px; flex: none; color: var(--accent); }
+.nav-phone:hover { color: var(--accent); }
+.phone-strip {
+  display: none; align-items: center; justify-content: center; gap: 7px;
+  padding: 7px 16px; border-top: 1px solid var(--line);
+  color: var(--ink); font-weight: 700; font-size: 14px;
+}
+.phone-strip svg { width: 15px; height: 15px; flex: none; color: var(--accent); }
+@media (max-width: 1179px) and (min-width: 981px) {
+  .nav-phone span { display: none; }
+  .nav-phone svg { width: 18px; height: 18px; }
+}
+@media (max-width: 600px) {
+  .nav-phone { display: none; }
+  .phone-strip { display: flex; }
+}
 
 .icon-btn {
   background: transparent; border: 1.5px solid var(--line); border-radius: 10px;
