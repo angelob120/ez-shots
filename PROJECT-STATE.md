@@ -188,6 +188,9 @@ VIDEO" and "WITH VIDEO". See Blocked above.
   hangs off the header bottom, so it opens below the strip.
 - Verified in the preview at 1280, 1180, 1000, 700, 601 and 375: no nav
   overflow added, drawer position correct. `npm test` passes.
+- Same day: "Texting is best" sits under the number in the header and the
+  strip, and the footer says it in brackets. The phone strip links `sms:` so
+  a tap opens Messages; the header and footer still link `tel:`.
 
 ### 2026-10-04 - Booking times every 30 minutes
 

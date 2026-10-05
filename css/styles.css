@@ -216,12 +216,16 @@ p  { margin: 0 0 16px; }
 .nav-phone:hover { color: var(--accent); }
 .phone-strip {
   display: none; align-items: center; justify-content: center; gap: 7px;
-  padding: 7px 16px; border-top: 1px solid var(--line);
+  padding: 6px 16px; border-top: 1px solid var(--line);
   color: var(--ink); font-weight: 700; font-size: 14px;
 }
 .phone-strip svg { width: 15px; height: 15px; flex: none; color: var(--accent); }
+/* Number on top, "Texting is best" under it, in the header and the strip. */
+.nav-phone-text { display: flex; flex-direction: column; line-height: 1.15; }
+.nav-phone-text small { font-size: 11.5px; font-weight: 600; color: var(--muted); }
+.phone-strip .nav-phone-text { align-items: center; }
 @media (max-width: 1179px) and (min-width: 981px) {
-  .nav-phone span { display: none; }
+  .nav-phone .nav-phone-text { display: none; }
   .nav-phone svg { width: 18px; height: 18px; }
 }
 @media (max-width: 600px) {
