@@ -178,6 +178,17 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-05 - Phone number in the header
+- `js/site.js` holds the number once (`PHONE`, `TEL`) and puts it in the
+  header (`.nav-phone`, beside Book a shoot), a phone only strip under the
+  header (`.phone-strip`) and the footer contact list.
+- Breakpoints in `css/styles.css`: full number at 1180px and up, icon only
+  from 981px to 1179px (seven links leave no room), full number again in menu
+  mode down to 601px, the strip at 600px and below. The mobile drawer still
+  hangs off the header bottom, so it opens below the strip.
+- Verified in the preview at 1280, 1180, 1000, 700, 601 and 375: no nav
+  overflow added, drawer position correct. `npm test` passes.
+
 ### 2026-10-04 - Booking times every 30 minutes
 
 - The owner asked for a time on every hour and half hour. Production was still
