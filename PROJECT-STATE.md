@@ -178,6 +178,24 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-04 - Booking times every 30 minutes
+
+- The owner asked for a time on every hour and half hour. Production was still
+  offering every 2 hours, because the live schedule is the config row in
+  Postgres and the earlier hourly change only touched the `config.json` seed.
+- `server/migrations/007_half_hour_slots.sql` rewrites the live row once on the
+  next boot: hours 8:00 AM to 8:00 PM every 30, and every open weekday gets the
+  25 half hour times. Closed days stay closed, every other setting is kept.
+  After it runs, times are edited in admin settings as before.
+- `config.json` seed matches, so a fresh install starts the same way.
+- Look busy is still 40, so about 10 of the 25 times on an empty day stay
+  hidden from clients. Lower it in admin settings to show more.
+- A $1 end to end Stripe payment test is still pending. The owner needs to sign
+  in to admin in the Claude browser panel (it was hidden) or run it by hand.
+- Verified: migration run against a throwaway Postgres with an old style row
+  (25 times on open days, Sunday still empty, packages and look busy kept),
+  `npm test`, `npm run check:bookings`, then `/api/availability` on production.
+
 ### 2026-10-04 - LeadMap and GHL outreach setup verified
 
 - LeadMap now routes EZ Bookings to its own GHL subaccount and EZ Shots to its
