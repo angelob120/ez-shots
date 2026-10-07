@@ -212,6 +212,7 @@
         '<span class="adm-top-tag">Admin</span>' +
         '<nav class="adm-tabs" aria-label="Admin">' +
           tab("/admin", "Bookings", "bookings", '<span class="adm-count" id="adm-tab-count" hidden></span>') +
+          tab("/admin-analytics", "Analytics", "analytics") +
           tab("/admin-settings", "Settings", "settings") +
         "</nav>" +
         '<div class="adm-top-tools">' +

@@ -195,4 +195,45 @@
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
   }
+
+  // Site analytics, read back in /admin-analytics. Our own server, no cookie:
+  // a random id for this tab's visit in sessionStorage, the page, where the
+  // visit came from and any utm_ tags on the first page. Nothing typed into a
+  // form is ever sent. window.ezTrack(name, label) is how booking.js and
+  // contact-form.js report a step, a booking or a sent form.
+  // Admin pages and the client's own pages (manage, gallery, booked) are not
+  // counted as visits.
+  var sid = "", utm = {};
+  try {
+    sid = sessionStorage.getItem("ez_sid") || "";
+    if (!sid) { sid = Math.random().toString(36).slice(2, 12) + Date.now().toString(36); sessionStorage.setItem("ez_sid", sid); }
+    var qs = new URLSearchParams(location.search);
+    if (qs.get("utm_source")) {
+      utm = { us: qs.get("utm_source"), um: qs.get("utm_medium") || "", uc: qs.get("utm_campaign") || "" };
+      sessionStorage.setItem("ez_utm", JSON.stringify(utm));
+    } else {
+      utm = JSON.parse(sessionStorage.getItem("ez_utm") || "{}");
+    }
+  } catch (e) {}
+
+  var here = location.pathname + (location.pathname === "/project" ? location.search : "");
+  window.ezTrack = function (name, label) {
+    try {
+      var data = JSON.stringify({ n: name, l: label || "", p: here, s: sid, r: document.referrer || "", us: utm.us, um: utm.um, uc: utm.uc });
+      if (navigator.sendBeacon) navigator.sendBeacon("/api/track", new Blob([data], { type: "text/plain" }));
+      else fetch("/api/track", { method: "POST", body: data, keepalive: true }).catch(function () {});
+    } catch (e) {}
+  };
+
+  var privatePage = document.body.classList.contains("adm") || /^\/(g\/|manage|booked)/.test(location.pathname);
+  if (!privatePage) {
+    window.ezTrack("view");
+    // Which Book buttons get pressed, and on which page.
+    document.addEventListener("click", function (e) {
+      var a = e.target.closest && e.target.closest('a[href^="/book"]');
+      if (a) window.ezTrack("cta", (a.textContent || "").replace(/\s+/g, " ").trim().slice(0, 60));
+    });
+  } else {
+    window.ezTrack = function () {};
+  }
 })();

@@ -180,6 +180,24 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   that books, moves, cancels or marks a booking paid needs a `crm.report` (or
   `crm.reportCancelled`) call next to its `tracker` call.
 
+## Analytics (since 2026-10-07)
+- **Our own, in our own Postgres, no third party script and no cookie.**
+  `js/site.js` sends a `view` on every public page and defines
+  `window.ezTrack(name, label)`; `booking.js` sends `book_step` (2, 3) and
+  `booked`, `contact-form.js` sends `contact`, and any click on a link to
+  `/book` sends `cta`. They go to `POST /api/track` (always 204) and land in
+  `analytics_events` through `server/analytics.js` `record()`.
+- **Never store a name, email, IP or full referrer.** A visit is a random
+  `sessionStorage` id; a visitor is a hash of IP and browser with a daily
+  salt. Referrers keep the host only, gallery tokens become `/g`, and only
+  `/project?id=` keeps a query. Bots, the owner (admin cookie) and admin,
+  manage, booked and gallery pages are not counted.
+- `admin-analytics.html` (`/admin-analytics`, the Analytics tab) reads
+  `GET /api/admin/analytics?days=7|30|90|365`, which `report()` builds from
+  the events plus the bookings table (revenue, video rate, money waiting).
+  Rows older than 400 days are pruned on the clock. Texted links read as
+  Direct unless tagged `?utm_source=text`.
+
 ## Fulfillment: upload, AI edit, gallery (since 2026-10-06)
 - **The owner finishes a shoot in `admin-job.html`** (`/admin-job?id=EZ-...`,
   opened from Open fulfillment in a booking's drawer): upload, sort, Edit with

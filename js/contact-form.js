@@ -224,6 +224,7 @@
           deliver().then(
             function () {
               if (leave()) return;
+              if (window.ezTrack) window.ezTrack("contact", form.getAttribute("data-subject") || "");
               form.reset();
               form.querySelectorAll(".pkg-cta.open").forEach(function (n) { n.classList.remove("open"); });
               setStatus("success", successText);

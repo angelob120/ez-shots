@@ -561,3 +561,40 @@ kbd.adm-kbd, .adm kbd { font: 600 11px/1 "Inter", system-ui, sans-serif; color: 
 .adm .job-change-photos { display: flex; flex-wrap: wrap; gap: 6px; }
 .adm .job-change-photos .adm-thumb { width: 84px; padding: 0; border: 0; cursor: pointer; }
 .adm .job-asked { position: absolute; bottom: 8px; right: 8px; background: var(--adm-warn-bg); color: var(--adm-warn-fg); font-size: 11px; font-weight: 800; padding: 3px 7px; border-radius: 6px; }
+
+/* ---------- Analytics (admin-analytics.html) ----------
+   One series per chart, so one fill: --brand. Text stays in ink and muted. */
+.an-section { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 26px 0 10px; }
+.an-section:first-of-type { margin-top: 0; }
+.an-card { margin-bottom: 18px; min-width: 0; }
+.an-kpis .adm-kpi-sub { white-space: normal; }
+.an-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.an-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.an-grid-line { stroke: var(--line); stroke-width: 1; }
+.an-axis { fill: var(--muted); font-size: 11px; font-family: inherit; }
+.an-bar { fill: var(--brand); transition: opacity .12s; }
+.an-bar.dim { opacity: .45; }
+.an-hit { fill: transparent; }
+.an-empty { padding: 18px 20px; margin: 0; }
+.an-tooltip {
+  position: absolute; z-index: 60; pointer-events: none; background: var(--card); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font-size: 12.5px; line-height: 1.45;
+  box-shadow: 0 6px 20px rgba(10,23,41,.16); white-space: nowrap;
+}
+.an-table { width: 100%; border-collapse: collapse; font-size: 13.5px; table-layout: fixed; }
+.an-table th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); padding: 10px 18px 6px; }
+.an-table td { padding: 8px 18px; border-top: 1px solid var(--line); vertical-align: middle; }
+.an-table th:first-child, .an-table td:first-child { width: 55%; }
+.an-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.an-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+.an-track { height: 4px; background: var(--adm-mute-bg); border-radius: 4px; margin-top: 5px; overflow: hidden; }
+.an-track.lg { height: 10px; margin-top: 6px; }
+.an-track i { display: block; height: 100%; background: var(--brand); border-radius: 4px; }
+.an-funnel { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.an-funnel-row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.an-funnel-row b { font-variant-numeric: tabular-nums; }
+.an-funnel-sub { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+.an-tip { font-size: 13.5px; color: var(--muted); margin: 8px 0 30px; }
+.an-tip code { font-size: 12.5px; word-break: break-all; }
+@media (max-width: 900px) { .an-grid { grid-template-columns: 1fr; gap: 0; } }
+@media (max-width: 720px) { #range { order: 3; } }

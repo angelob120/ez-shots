@@ -75,6 +75,7 @@ const { Db } = require("./server/db");
 const email = require("./server/email");
 const tracker = require("./server/tracker");
 const crm = require("./server/crm");
+const analytics = require("./server/analytics");
 const storageLib = require("./server/storage");
 const fulfillmentLib = require("./server/fulfillment");
 
@@ -1358,6 +1359,17 @@ async function api(req, res, url) {
     return json(res, 200, Object.assign(avail.calendar(cfg.availability, await takenNow(cfg.availability, now), now, honest), { ticket: ticket() }));
   }
 
+  // Site analytics. Always answers 204, stored or not, so a visitor's page
+  // never waits on it or learns anything from it. sendBeacon posts text/plain.
+  if (pathname === "/api/track" && req.method === "POST") {
+    const b = await body(req, 4 * 1024).catch(() => null);
+    let host = "";
+    try { host = SITE_URL ? new URL(SITE_URL).hostname.replace(/^www\./, "") : ""; } catch {}
+    await analytics.record(db, b, { ip: clientIp(req), ua: req.headers["user-agent"], host: req.headers.host, siteHost: host,
+      admin: authed(req), secret: TICKET_KEY });
+    return send(res, 204, "");
+  }
+
   if (pathname === "/api/book" && req.method === "POST") return book(req, res);
   if (pathname === "/api/contact" && req.method === "POST") return contact(req, res);
   if (pathname === "/api/session" && req.method === "GET") return session(req, res, url);
@@ -1414,6 +1426,11 @@ async function api(req, res, url) {
     }
 
     if (pathname.startsWith("/api/admin/jobs/")) return fulfillment.admin(req, res, url);
+    if (pathname === "/api/admin/analytics" && req.method === "GET") {
+      if (!db) return json(res, 503, { error: "Analytics needs the database." });
+      const days = [7, 30, 90, 365].includes(Number(url.searchParams.get("days"))) ? Number(url.searchParams.get("days")) : 30;
+      return json(res, 200, await analytics.report(db, days, process.env.TZ || "America/Detroit"));
+    }
     if (pathname === "/api/admin/bookings" && req.method === "GET") return adminBookings(req, res);
     if (pathname === "/api/admin/bookings" && req.method === "POST") return adminCreate(req, res);
     const fm = /^\/api\/admin\/files\/(\d+)$/.exec(pathname);
@@ -1491,6 +1508,7 @@ function keepConnecting(url) {
 const REVIEW_URL = String(process.env.REVIEW_URL || "").trim();
 
 async function tick() {
+  if (db) await analytics.prune(db).catch(e => console.error("[ez-shots] analytics prune failed:", e.message));
   if (!db || !email.configured()) return;
   const now = new Date();
   for (const b of await db.dueReminders(now)) {

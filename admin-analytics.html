@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics | EZ Shots Admin</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body class="adm" data-page="admin">
+  <div id="adm-top"></div>
+
+  <div id="adm-boot" class="adm-gate"><p class="adm-muted">Loading...</p></div>
+
+  <div id="adm-off" class="adm-gate" hidden>
+    <div class="adm-card">
+      <h1>Admin is not switched on</h1>
+      <p>This page needs the EZ Shots server running with an <code>ADMIN_PASSWORD</code> set, and a <code>DATABASE_URL</code> for the numbers. On Railway that is Variables on the ez-shots service.</p>
+    </div>
+  </div>
+
+  <div id="adm-login" class="adm-gate" hidden>
+    <form class="adm-card" id="adm-login-form">
+      <h1>Sign in</h1>
+      <p>One password, yours, from the Railway variables.</p>
+      <label class="adm-field"><span>Password</span>
+        <input class="adm-input" id="adm-password" type="password" autocomplete="current-password" required />
+      </label>
+      <p class="adm-error" id="adm-login-error" role="alert"></p>
+      <button type="submit" class="adm-btn adm-btn-primary adm-btn-lg">Sign in</button>
+    </form>
+  </div>
+
+  <main id="adm-app" class="adm-main" hidden>
+    <div class="adm-wrap">
+      <div class="adm-head">
+        <div>
+          <h1>Analytics</h1>
+          <p id="range-sub">Who visits the site, where they come from, and how many book.</p>
+        </div>
+        <div class="adm-head-actions">
+          <span class="adm-updated" id="updated" aria-live="polite"></span>
+          <div class="adm-seg" id="range" role="group" aria-label="Period"></div>
+          <button type="button" class="adm-icon" id="refresh-btn" title="Refresh" aria-label="Refresh"></button>
+        </div>
+      </div>
+
+      <h2 class="an-section">Website</h2>
+      <section class="adm-kpis an-kpis" id="traffic-kpis" aria-label="Website numbers"></section>
+
+      <section class="adm-card an-card" aria-labelledby="daily-title">
+        <div class="adm-card-head"><div><h2 id="daily-title">Visitors per day</h2><p id="daily-sub"></p></div></div>
+        <div class="adm-card-pad"><div class="an-chart" id="daily"></div></div>
+      </section>
+
+      <div class="an-grid">
+        <section class="adm-card an-card" aria-labelledby="funnel-title">
+          <div class="adm-card-head"><div><h2 id="funnel-title">Booking funnel</h2><p>Visits that reached each step</p></div></div>
+          <div class="adm-card-pad" id="funnel"></div>
+        </section>
+        <section class="adm-card an-card" aria-labelledby="sources-title">
+          <div class="adm-card-head"><div><h2 id="sources-title">Where visits come from</h2><p>By the page that sent them, or the link's utm_source</p></div></div>
+          <div id="sources"></div>
+        </section>
+      </div>
+
+      <div class="an-grid">
+        <section class="adm-card an-card" aria-labelledby="pages-title">
+          <div class="adm-card-head"><div><h2 id="pages-title">Top pages</h2><p>Page views</p></div></div>
+          <div id="pages"></div>
+        </section>
+        <section class="adm-card an-card" aria-labelledby="landings-title">
+          <div class="adm-card-head"><div><h2 id="landings-title">Landing pages</h2><p>The first page of a visit, and how many of those booked</p></div></div>
+          <div id="landings"></div>
+        </section>
+      </div>
+
+      <div class="an-grid">
+        <section class="adm-card an-card" aria-labelledby="ctas-title">
+          <div class="adm-card-head"><div><h2 id="ctas-title">Book buttons pressed</h2><p>Which button, on which page</p></div></div>
+          <div id="ctas"></div>
+        </section>
+        <section class="adm-card an-card" aria-labelledby="devices-title">
+          <div class="adm-card-head"><div><h2 id="devices-title">Devices and campaigns</h2><p>Visits by device, then by utm_campaign</p></div></div>
+          <div id="devices"></div>
+        </section>
+      </div>
+
+      <h2 class="an-section">Business</h2>
+      <section class="adm-kpis an-kpis" id="biz-kpis" aria-label="Business numbers"></section>
+      <section class="adm-kpis an-kpis" id="biz-kpis-2" aria-label="More business numbers"></section>
+
+      <div class="an-grid">
+        <section class="adm-card an-card" aria-labelledby="monthly-title">
+          <div class="adm-card-head"><div><h2 id="monthly-title">Revenue by month</h2><p>Paid, net of refunds, last 12 months</p></div></div>
+          <div class="adm-card-pad"><div class="an-chart" id="monthly"></div></div>
+        </section>
+        <section class="adm-card an-card" aria-labelledby="pkgs-title">
+          <div class="adm-card-head"><div><h2 id="pkgs-title">What gets booked</h2><p>Confirmed bookings made in the period</p></div></div>
+          <div id="packages"></div>
+        </section>
+      </div>
+
+      <p class="an-tip"><b>Tip:</b> texted and emailed links show up as Direct. Add a tag to know which worked, for example
+        <code>ezshots.org/book?utm_source=text&amp;utm_campaign=october</code>. Your own visits while signed in to admin are never counted.</p>
+    </div>
+  </main>
+
+  <div class="an-tooltip" id="tip" role="tooltip" hidden></div>
+
+  <script src="js/site.js"></script>
+  <script src="js/admin-core.js"></script>
+  <script src="js/admin-analytics.js"></script>
+</body>
+</html>

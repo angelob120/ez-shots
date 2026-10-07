@@ -187,6 +187,25 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-07 - Analytics and tracking in admin
+- New Analytics tab (`/admin-analytics`): visitors, page views, visit to
+  booking rate, a per day chart, the booking funnel (visit, booking page,
+  package, time, booked), sources with booked rate per source, top and
+  landing pages, which Book buttons get pressed, devices and utm campaigns.
+  Business half: bookings made, revenue paid vs the period before, average
+  job, money waiting on ready jobs, video add on rate, first shoot share,
+  days booked ahead, repeat clients, revenue by month, packages booked.
+- Tracking is first party: `js/site.js` beacons to `POST /api/track`,
+  stored in `analytics_events` (migration 013). No cookie, no IP, no PII;
+  daily salted visitor hash. Owner visits with the admin cookie are skipped.
+- Tip for the owner: tag outreach links `?utm_source=text` or they count as
+  Direct.
+- Verified locally: walked home, pricing, portfolio, Book now, step 2 in the
+  preview and saw each event stored with the utm source; bot UA dropped,
+  `/g/<token>` stored as `/g`, referrer stored as host only, the admin
+  endpoint 401s signed out; the page drawn at desktop and phone width
+  with real local bookings; `npm test` passes.
+
 ### 2026-10-06 - First shoot $99, photos stored in Postgres
 - An agent's first shoot is $99 for the package ($199 with the video), the
   owner's big selling point: first thing in the header bar, the homepage hero

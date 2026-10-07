@@ -61,6 +61,7 @@
   var AV = null;   // { today, to, days: { "YYYY-MM-DD": ["8:00 AM", ...] } }
 
   var steps = all(".book-step", form);
+  var reached = {};
   var crumbs = all(".book-crumb");
   var pkgWrap = el("#package-options", form);
   var calWrap = el("#calendar", form);
@@ -330,6 +331,8 @@
   }
 
   function showStep(n, keepScroll) {
+    // Each step reached once per visit, for the booking funnel in admin.
+    if (n > 1 && window.ezTrack && !reached[n]) { reached[n] = true; window.ezTrack("book_step", String(n)); }
     state.step = n;
     steps.forEach(function (s) { s.hidden = parseInt(s.getAttribute("data-step"), 10) !== n; });
     crumbs.forEach(function (c, i) {
@@ -414,6 +417,7 @@
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (d) {
         if (r.ok && d.url) {
+          if (window.ezTrack) window.ezTrack("booked", (state.pkg ? state.pkg.name : "") + (state.video ? " + video" : ""));
           saveHold({ id: d.id, token: d.token });
           if (fBooking) fBooking.value = d.id;
           form.setAttribute("data-redirect", d.url);
