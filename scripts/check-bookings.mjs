@@ -203,6 +203,22 @@ try {
   check("a booking without the video costs the package price", m0.amount === pkg.price && m0.totalAmount === pkg.price &&
     m0.basePrice === pkg.price && m0.videoSelected === false && m0.videoAddonPrice === 0, m0);
   const vid = cfg.addons.find(a => a.id === "video");
+  // The first shoot price, $99: given to a new agent, refused to one who has
+  // booked before by email or by phone, and never taken off the video.
+  const d2 = days[days.length - 2];
+  const firstNew = await asClient("POST", "/api/book", { packageId: pkg.id, firstShoot: true, date: d2, time: av.days[d2].slice(-1)[0], ticket: av.ticket,
+    name: "New Agent", email: "new.agent@example.com", phone: "2485550111", address: "11 First Lane, Troy MI 48084" }, { "x-real-ip": "10.66.0.1" });
+  const fm = firstNew.status === 200 && await manageOf(firstNew.json.token);
+  check("a new agent's first shoot is the first shoot price", !!fm && fm.amount === pkg.firstPrice && fm.firstShoot === true && pkg.firstPrice < pkg.price, { firstNew: firstNew.json, fm });
+  const again1 = await asClient("POST", "/api/book", { packageId: pkg.id, firstShoot: true, date: d2, time: av.days[d2].slice(-2)[0], ticket: av.ticket,
+    name: "New Agent", email: "NEW.AGENT@example.com", phone: "3135550999", address: "12 First Lane, Troy MI 48084" }, { "x-real-ip": "10.66.0.2" });
+  const am = again1.status === 200 && await manageOf(again1.json.token);
+  check("the same email asking again gets the normal price", !!am && am.amount === pkg.price && am.firstShoot === false, { again1: again1.json, am });
+  const d3 = days[days.length - 3];
+  const samePh = await asClient("POST", "/api/book", { packageId: pkg.id, firstShoot: true, video: true, date: d3, time: av.days[d3].slice(-1)[0], ticket: av.ticket,
+    name: "Other Name", email: "different@example.com", phone: "+1 (248) 555-0111", address: "13 First Lane, Troy MI 48084" }, { "x-real-ip": "10.66.0.3" });
+  const sm = samePh.status === 200 && await manageOf(samePh.json.token);
+  check("the same phone under another email gets the normal price, video added in full", !!sm && sm.amount === pkg.price + vid.price && sm.firstShoot === false, sm);
   const lastDay = days[days.length - 1];
   const bv = await asClient("POST", "/api/book", { packageId: pkg.id, video: true, amount: 1, date: lastDay, time: av.days[lastDay].slice(-1)[0], ticket: av.ticket,
     name: "Video Agent", email: "video@example.com", phone: "3135550777", address: "77 Video Lane, Troy MI 48084" }, { "x-real-ip": "10.77.0.1" });

@@ -319,17 +319,19 @@ function str(v, max) { return String(v == null ? "" : v).trim().slice(0, max); }
 // says which package and whether it wants the video, never a number. The
 // package name carries the video so every email and the Stripe line item say
 // what was bought without each having to know about add ons.
-function priceOf(cfg, pkg, wantVideo, override) {
+// `first` is an agent's first shoot, at the package's first shoot price ($99
+// since 2026-10-06). The video is never discounted.
+function priceOf(cfg, pkg, wantVideo, override, first = false) {
   const video = (cfg.addons || []).find(a => a.id === "video" && a.active !== false);
   const videoSelected = !!(wantVideo && video);
-  const basePrice = pkg.price;
+  const basePrice = first ? pkg.firstPrice : pkg.price;
   const videoAddonPrice = videoSelected ? video.price : 0;
   let total = basePrice + videoAddonPrice;
   if (override !== undefined) total = override;
   return {
     packageName: pkg.name + (videoSelected ? " + " + video.name : ""),
     basePrice, videoSelected, videoAddonPrice,
-    amount: total, totalAmount: total, listPrice: basePrice + videoAddonPrice
+    amount: total, totalAmount: total, listPrice: pkg.price + videoAddonPrice, firstShoot: !!first
   };
 }
 
@@ -623,7 +625,12 @@ async function book(req, res) {
 
   const pkg = cfg.packages.find(p => p.id === b.packageId && p.active !== false);
   if (!pkg) return json(res, 400, { error: "Pick a package first." });
-  const price = priceOf(cfg, pkg, b.video === true);
+  // The first shoot price is given only to an email and phone with no earlier
+  // confirmed booking. Asking for it and having booked before books at the
+  // normal price; the confirmation shows what is due.
+  const wantsFirst = b.firstShoot === true;
+  const bookedBefore = wantsFirst ? await db.bookedBefore(str(b.email, 200), str(b.phone, 40)) : false;
+  const price = priceOf(cfg, pkg, b.video === true, undefined, wantsFirst && !bookedBefore);
 
   const date = str(b.date, 10);
   const time = avail.normalize(b.time);
@@ -635,7 +642,7 @@ async function book(req, res) {
   if (address.length < 6) return json(res, 400, { error: "Please enter the property address." });
 
   const now = new Date();
-  const done = x => json(res, 200, { id: x.id, token: x.token, url: "/booked?t=" + x.token, mode: "booked" });
+  const done = x => json(res, 200, { id: x.id, token: x.token, url: "/booked?t=" + x.token, mode: "booked", amount: x.amount, firstShoot: !!x.firstShoot });
 
   // A double tap, or a retry after the network dropped the first answer: the
   // same person asking for the same booking gets the one they already have,
@@ -660,7 +667,7 @@ async function book(req, res) {
 
   const held = await db.hold({
     date, time, startsAt: avail.slotAt(date, time),
-    packageId: pkg.id, firstShoot: false, ...price,
+    packageId: pkg.id, ...price,
     name, email, phone, brokerage: str(b.brokerage, 120), address,
     size: str(b.size, 60), occupancy: str(b.occupancy, 60), access: str(b.access, 60),
     accessNotes: str(b.accessNotes, 500), notes: str(b.notes, 2000),
@@ -1164,11 +1171,11 @@ async function adminCreate(req, res) {
     if (!Number.isFinite(v) || v < 0 || v > 100000) return json(res, 400, { error: "The price has to be a number of dollars." });
     amount = Math.round(v);
   }
-  const price = priceOf(cfg, pkg, p.video === true, amount);
+  const price = priceOf(cfg, pkg, p.video === true, amount, p.firstShoot === true);
   const now = new Date();
   const held = await db.hold({
     date, time, startsAt: avail.slotAt(date, time),
-    packageId: pkg.id, firstShoot: false, ...price,
+    packageId: pkg.id, ...price,
     name, email: mail, phone, brokerage: str(p.brokerage, 120), address,
     access: str(p.access, 60), notes: str(p.notes, 2000), internalNotes: str(p.internalNotes, 4000),
     checkoutMode: "manual", checkoutUrl: "", source: "admin"

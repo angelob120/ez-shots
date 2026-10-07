@@ -47,11 +47,11 @@
     // The offer in one line, biggest first: nothing down, pay only if happy.
     // On a phone it shrinks to the two things that matter most and the link.
     '<div class="announce">' +
-      '<b>Book online, $0 down.</b> Pay only after you see the photos' +
+      '<b>First shoot $99.</b> Book online, $0 down' +
       '<span class="dot hide-sm">|</span>' +
-      '<span class="hide-sm">Not happy? You do not pay, plus $20</span>' +
+      '<span class="hide-sm">Pay only after you see the photos</span>' +
       '<span class="dot hide-md">|</span>' +
-      '<span class="hide-md">$199 with drone aerials</span>' +
+      '<span class="hide-md">Not happy? You do not pay, plus $20</span>' +
       '<span class="dot hide-md">|</span>' +
       '<span class="hide-md">Photos in 24 to 48 hours</span>' +
       '<span class="dot">|</span>' +

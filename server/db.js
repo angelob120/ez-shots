@@ -432,6 +432,16 @@ class Db {
     };
   }
 
+  // Has this client had a confirmed shoot before? By email, or by phone
+  // written any way. What the $99 first shoot price is checked against.
+  async bookedBefore(email, phone) {
+    const digits = String(phone || "").replace(/\D/g, "").slice(-10);
+    const r = await this.query(
+      "SELECT 1 FROM bookings WHERE status = 'confirmed' AND (lower(email) = $1 OR ($2 <> '' AND right(regexp_replace(phone, '\\D', '', 'g'), 10) = $2)) LIMIT 1",
+      [String(email || "").toLowerCase(), digits.length >= 7 ? digits : ""]);
+    return r.rowCount > 0;
+  }
+
   async clientCounts() {
     const r = await this.query("SELECT lower(email) AS email, count(*) AS n FROM bookings WHERE status = 'confirmed' GROUP BY lower(email)");
     const out = new Map();

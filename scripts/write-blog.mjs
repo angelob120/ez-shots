@@ -48,7 +48,7 @@ export const TOPICS = [
   ["What you are really paying for with real estate photography pricing. Only quote the EZ Shots package prices, never what other photographers charge", "real estate photography pricing"],
 ].map(([brief, keyword]) => ({ brief, keyword }));
 
-const ALLOWED_PRICES = ["$0", "$20", "$100", "$199", "$299"];
+const ALLOWED_PRICES = ["$0", "$20", "$99", "$100", "$199", "$299"];
 const TELLS = ["delve", "leverage", "seamless", "robust", "elevate", "unlock", "navigate the landscape",
   "fast-paced world", "when it comes to", "at the end of the day", "game-changer", "game changer", "tapestry",
   "testament", "realm", "embark", "foster", "streamline", "empower", "moreover", "furthermore", "in conclusion"];
@@ -60,7 +60,7 @@ function systemPrompt() {
     "The business, so you never invent a feature:",
     "- Real estate photography, a one minute listing video, and drone aerials by an FAA Part 107 certified pilot.",
     "- One package: the Real Estate Media Package, $199, interior, exterior and drone photos, professionally edited, up to 75 finished images. Drone aerials are always included, never an add on.",
-    "- One add on: a one minute listing video for $100 more, $299 in total. There is no first shoot discount.",
+    "- One add on: a one minute listing video for $100 more, $299 in total. An agent's first shoot is $99 for the package (one per agent).",
     "- $0 to book. The agent pays after the shoot, once they have seen the photos.",
     "- If the agent is not happy with a gallery they do not pay, and they get $20 cash on top. Every gallery.",
     "- Photos back in 24 to 48 hours in an online gallery, and if they are not delivered within 72 hours of the booked time the shoot is free.",

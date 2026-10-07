@@ -73,7 +73,8 @@
   }
   function pkgLine(p) {
     var v = videoAddon();
-    return money(p.price) + (v.active !== false ? ", " + money(Number(p.price) + Number(v.price)) + " with video" : "");
+    return money(p.price) + (v.active !== false ? ", " + money(Number(p.price) + Number(v.price)) + " with video" : "") +
+      (Number(p.firstPrice) < Number(p.price) ? ", first shoot " + money(p.firstPrice) : "");
   }
 
   function slug(name, mine) {
@@ -115,6 +116,8 @@
           '<label class="adm-field"><span>One line description</span><input class="adm-input" data-f="blurb" value="' + esc(p.blurb) + '" /></label>' +
           '<div class="adm-grid2">' +
             '<label class="adm-field"><span>Price</span><div class="adm-money"><input class="adm-input" type="number" min="0" step="1" data-f="price" value="' + esc(p.price) + '" /></div></label>' +
+            '<label class="adm-field"><span>First shoot price</span><div class="adm-money"><input class="adm-input" type="number" min="0" step="1" data-f="firstPrice" value="' + esc(p.firstPrice) + '" /></div>' +
+              '<p class="adm-help">An agent\'s first booking. The site checks they have not booked before. Same as the price for no offer.</p></label>' +
           "</div>" +
           '<label class="adm-field"><span>What is included, one per line</span><textarea class="adm-textarea" rows="5" data-f="bullets">' + esc((p.bullets || []).join("\n")) + "</textarea></label>" +
           '<div class="adm-grid2">' +
@@ -141,7 +144,7 @@
     var f = input.getAttribute("data-f");
     if (input.type === "checkbox") p[f] = input.checked;
     else if (f === "bullets") p.bullets = input.value.split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
-    else if (f === "price") { p.price = input.value === "" ? "" : Number(input.value); p.firstPrice = p.price; }
+    else if (f === "price" || f === "firstPrice") p[f] = input.value === "" ? "" : Number(input.value);
     else p[f] = input.value;
     var title = box.querySelector(".adm-pkg-title");
     if (title) {

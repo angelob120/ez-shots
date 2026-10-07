@@ -10,8 +10,11 @@ Everything on the site points at one offer. Do not water it down or contradict i
 - One package and one add on, since 2026-10-06. The Real Estate Media Package is $199:
   interior, exterior and drone photos, professionally edited, up to 75 finished photos
   (one combined total, never a limit per category), 24 to 48 hour turnaround. The Listing
-  Video add on is $100, so $299 with it. There is no first shoot discount any more, and
-  the old Essentials $150 / Pro $250 / $75 / $125 prices must not come back in the copy.
+  Video add on is $100, so $299 with it. An agent's first shoot is $99 for the package
+  ($199 with the video), a big selling point the owner wants up front; the video is never
+  discounted. The server only gives $99 to an email and phone with no earlier confirmed
+  booking (`db.bookedBefore`). The old Essentials $150 / Pro $250 / $75 / $125 prices must
+  not come back in the copy.
   Older bookings keep the package and price they were booked at.
 - If the client is not happy with a delivered gallery they do not pay for it (or get a full
   refund if they already paid) plus $20 cash on top. Every gallery, the first one and every one after, with no deadline
@@ -134,9 +137,9 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   status confirmed, `source` admin, paid or not as the owner says, any price,
   and the You are booked email when he ticks it. The public schedule does not bind the owner, only clashes do.
 - **The list flags a returning client at the first shoot price.**
-  `clientBookings` on each booking is that email's confirmed count. Only
-  bookings from before 2026-10-06 can carry the old first shoot flag; new ones
-  never do, so the flag is only ever about old rows.
+  `clientBookings` on each booking is that email's confirmed count. Site
+  bookings are checked by `db.bookedBefore` before the $99 is given, so the
+  flag mostly catches admin bookings and old rows.
 - **Booking limits.** `/api/book` refuses bots and calendar flooding in
   `bookingRefusal()`: a signed form ticket from `/api/availability` at least
   a few seconds old, the `_hp` honeypot, and caps per IP, per client email or

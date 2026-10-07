@@ -136,8 +136,8 @@ const posts = fs.existsSync(path.join(ROOT, "scripts/blog-posts.json"))
 // $0 and $20 are the offer, not a package price, and stay as written. $100 is
 // not bound on purpose: articles also say other photographers charge "$100 to
 // $175" for aerials, and that must not move with the video price.
-const PRICE_TOKENS = { "$199": "{media}", "$299": "{media+video}" };
-const prose = (s) => esc(s).replace(/\$(199|299)\b/g, (m) => `<span data-price="${PRICE_TOKENS[m]}">${m}</span>`);
+const PRICE_TOKENS = { "$99": "{media.first}", "$199": "{media}", "$299": "{media+video}" };
+const prose = (s) => esc(s).replace(/\$(99|199|299)\b/g, (m) => `<span data-price="${PRICE_TOKENS[m]}">${m}</span>`);
 
 const LINKS = [
   ["/book", "Book a shoot, $0 down"],

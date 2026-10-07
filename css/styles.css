@@ -796,6 +796,8 @@ form.booking { background: none; border: none; box-shadow: none; padding: 0; gap
 .book-total span { font-weight: 700; }
 .book-total b { font-size: 32px; font-weight: 900; letter-spacing: -.03em; }
 .book-total small { flex-basis: 100%; color: var(--muted); font-size: 13.5px; }
+.book-total em { font-style: normal; font-size: 12.5px; font-weight: 800; color: #fff; background: var(--brand); padding: 3px 8px; border-radius: 999px; }
+.pkg-pick-first { font-size: 12.5px; font-weight: 800; color: #fff; background: var(--brand); padding: 3px 8px; border-radius: 999px; align-self: center; }
 .pkg-pick {
   position: relative; cursor: pointer; background: var(--card); border: 2px solid var(--line);
   border-radius: var(--radius); padding: 26px 24px 24px; box-shadow: var(--shadow);

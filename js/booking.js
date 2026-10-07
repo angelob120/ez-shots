@@ -57,7 +57,7 @@
   }
 
   // ------------------------------------------------------------------
-  var state = { step: 1, pkg: null, video: false, day: null, slot: null };
+  var state = { step: 1, pkg: null, first: true, video: false, day: null, slot: null };
   var AV = null;   // { today, to, days: { "YYYY-MM-DD": ["8:00 AM", ...] } }
 
   var steps = all(".book-step", form);
@@ -87,7 +87,12 @@
   // own config when the booking is made; this number is never sent.
   function price() {
     var v = videoAddon();
-    return state.pkg ? state.pkg.price + (state.video && v ? v.price : 0) : 0;
+    return state.pkg ? base(state.pkg) + (state.video && v ? v.price : 0) : 0;
+  }
+  // An agent's first shoot is at the package's first shoot price. The server
+  // checks it against earlier bookings; this only shows it.
+  function base(p) {
+    return state.first && p.firstPrice !== undefined && p.firstPrice < p.price ? p.firstPrice : p.price;
   }
 
   // ------------------------------------------------------------------
@@ -97,12 +102,13 @@
     var list = EZ.config.packages.filter(function (p) { return p.active !== false; });
     pkgWrap.classList.toggle("one", list.length === 1);
     pkgWrap.innerHTML = list.map(function (p) {
-      var now = p.price;
+      var now = base(p);
       return '<div class="pkg-pick" data-pkg="' + esc(p.id) + '" tabindex="0" role="button" aria-pressed="false">' +
         (p.badge ? '<span class="pkg-pick-badge">' + esc(p.badge) + "</span>" : "") +
         '<h3>' + esc(p.name) + "</h3>" +
         '<p class="pkg-pick-blurb">' + esc(p.blurb || "") + "</p>" +
         '<div class="pkg-pick-price"><span class="pkg-pick-now">' + money(now) + "</span>" +
+          (now < p.price ? '<span class="pkg-pick-was">' + money(p.price) + "</span><span class=\"pkg-pick-first\">first shoot</span>" : "") +
           "</div>" +
         "<ul>" + (p.bullets || []).map(function (b) { return "<li>" + esc(b) + "</li>"; }).join("") + "</ul>" +
         (list.length > 1 ? '<span class="btn pkg-pick-btn">Choose ' + esc(p.name) + ", " + money(now) + "</span>" : "") +
@@ -129,7 +135,8 @@
       if (v.blurb) el("#video-blurb", form).textContent = v.blurb;
     }
     var t = el("#book-total", form);
-    t.innerHTML = state.pkg ? '<span>Total' + (state.video ? " with video" : "") + '</span><b>' + money(price()) + "</b><small>due after you see the photos, $0 today</small>" : "";
+    t.innerHTML = state.pkg ? '<span>Total' + (state.video ? " with video" : "") + '</span><b>' + money(price()) + "</b>" +
+      (base(state.pkg) < state.pkg.price ? "<em>first shoot price</em>" : "") + "<small>due after you see the photos, $0 today</small>" : "";
   }
 
   function pickPackage(id, stay) {
@@ -285,7 +292,7 @@
     barPrice.textContent = state.pkg ? "$0 today" : "";
     bar.classList.toggle("ready", !!state.pkg);
 
-    fPrice.value = state.pkg ? money(price()) + ", due after the shoot, nothing paid at booking" : "";
+    fPrice.value = state.pkg ? money(price()) + (base(state.pkg) < state.pkg.price ? " (first shoot price)" : "") + ", due after the shoot, nothing paid at booking" : "";
 
     // Where the browser goes after the email is decided by the server at
     // submit time, once the slot is held. Until then there is nowhere to go.
@@ -311,9 +318,11 @@
       return '<div class="sum-row"><span>' + r[0] + "</span><b>" + esc(r[1]) + "</b></div>";
     });
     var v = videoAddon();
-    if (state.video && v) {
+    var off = state.pkg.price - base(state.pkg);
+    if (off > 0 || (state.video && v)) {
       lines.push('<div class="sum-row"><span>' + esc(state.pkg.name) + "</span><b>" + money(state.pkg.price) + "</b></div>");
-      lines.push('<div class="sum-row"><span>' + esc(v.name) + "</span><b>+" + money(v.price) + "</b></div>");
+      if (off > 0) lines.push('<div class="sum-row"><span>First shoot price</span><b>-' + money(off) + "</b></div>");
+      if (state.video && v) lines.push('<div class="sum-row"><span>' + esc(v.name) + "</span><b>+" + money(v.price) + "</b></div>");
     }
     lines.push('<div class="sum-row"><span>Due after you see the photos</span><b>' + money(price()) + "</b></div>");
     lines.push('<div class="sum-row sum-total"><span>Due today</span><b>$0</b></div>');
@@ -386,6 +395,7 @@
     if (!state.pkg || !state.day || !state.slot) return Promise.reject(new Error("Pick a package, a day and a time first."));
     var body = {
       packageId: state.pkg.id,
+      firstShoot: state.first,
       video: state.video,
       date: state.day,
       time: state.slot,
@@ -507,6 +517,18 @@
   // ------------------------------------------------------------------
   // Wiring that does not depend on config
   // ------------------------------------------------------------------
+  all('input[name="firstshoot"]', form).forEach(function (r) {
+    r.addEventListener("change", function () {
+      // Read the flag, not the wording: the value is copy for the email.
+      state.first = r.getAttribute("data-first") === "yes";
+      var keep = state.pkg && state.pkg.id;
+      paintPackages();
+      if (keep) pickPackage(keep, true);
+      paintAddon();
+      paintBar();
+    });
+  });
+
   fVideo.addEventListener("change", function () {
     state.video = fVideo.checked;
     paintAddon();

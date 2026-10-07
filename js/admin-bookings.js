@@ -589,6 +589,7 @@
             }).join("") + "</select></label>" +
             '<label class="adm-field"><span>Price</span><div class="adm-money"><input class="adm-input" type="number" name="amount" min="0" step="1" value="' + esc(p0.price) + '" /></div></label>' +
           "</div>" +
+          '<label class="adm-switch"><input type="checkbox" name="firstShoot" /><i></i> First shoot, ' + esc(money(p0.firstPrice)) + "</label>" +
           (videoAddon() ? '<label class="adm-switch"><input type="checkbox" name="video" /><i></i> Add ' + esc(videoAddon().name) + ", +" + esc(money(videoAddon().price)) + "</label>" : "") +
         "</div>" +
         '<div class="adm-sec adm-stack"><h3>Client</h3>' +
@@ -726,6 +727,7 @@
     var t = A.toast("Adding...", "pending");
     A.api("/api/admin/bookings", { method: "POST", body: JSON.stringify({
       date: v("date"), time: time, packageId: v("packageId"), amount: v("amount"), video: !!(f.elements.video && f.elements.video.checked),
+      firstShoot: f.elements.firstShoot.checked,
       name: v("name"), phone: v("phone"), email: v("email"), brokerage: v("brokerage"), address: v("address"),
       access: v("access"), notes: v("notes"), internalNotes: v("internalNotes"),
       paid: f.elements.paid.checked, notify: f.elements.notify.checked
@@ -820,10 +822,10 @@
     var f = el("new-form");
     if (f && f.contains(n)) {
       if (n.name === "date") { moveTime = null; paintNewSlots(); }
-      if (n.name === "packageId" || n.name === "video") {
+      if (n.name === "packageId" || n.name === "video" || n.name === "firstShoot") {
         var p = (data.packages || []).filter(function (x) { return x.id === f.elements.packageId.value; })[0];
         var vid = f.elements.video && f.elements.video.checked && videoAddon();
-        if (p) f.elements.amount.value = p.price + (vid ? vid.price : 0);
+        if (p) f.elements.amount.value = (f.elements.firstShoot.checked ? p.firstPrice : p.price) + (vid ? vid.price : 0);
       }
       syncNew();
     }

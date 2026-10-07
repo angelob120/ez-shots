@@ -4,19 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Book a Shoot | EZ Shots Real Estate Photography, Metro Detroit</title>
-  <meta name="description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Photos and drone aerials for $199, add a listing video for $100. $0 to book, pay after you see the photos." />
+  <meta name="description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Your first shoot is $99. Photos and drone aerials for $199 after that, add a listing video for $100. $0 to book, pay after you see the photos." />
   <!-- seo: written by scripts/build-seo.mjs, edit there -->
   <link rel="canonical" href="https://ezshots.org/book" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="EZ Shots" />
   <meta property="og:locale" content="en_US" />
   <meta property="og:title" content="Book a Shoot | EZ Shots Real Estate Photography, Metro Detroit" />
-  <meta property="og:description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Photos and drone aerials for $199, add a listing video for $100. $0 to book, pay after you see the photos." />
+  <meta property="og:description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Your first shoot is $99. Photos and drone aerials for $199 after that, add a listing video for $100. $0 to book, pay after you see the photos." />
   <meta property="og:url" content="https://ezshots.org/book" />
   <meta property="og:image" content="https://ezshots.org/img/work/brick-colonial-exterior-front-hero.webp" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Book a Shoot | EZ Shots Real Estate Photography, Metro Detroit" />
-  <meta name="twitter:description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Photos and drone aerials for $199, add a listing video for $100. $0 to book, pay after you see the photos." />
+  <meta name="twitter:description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Your first shoot is $99. Photos and drone aerials for $199 after that, add a listing video for $100. $0 to book, pay after you see the photos." />
   <meta name="twitter:image" content="https://ezshots.org/img/work/brick-colonial-exterior-front-hero.webp" />
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ezshots.org/"},{"@type":"ListItem","position":2,"name":"Book a shoot","item":"https://ezshots.org/book"}]}</script>
   <!-- /seo -->
@@ -78,6 +78,14 @@
 
         <!-- ============ STEP 1 ============ -->
         <div class="book-step" data-step="1">
+          <p class="opt-q">Is this your first shoot with EZ Shots?</p>
+          <div class="opt-row" role="group" aria-label="First shoot with EZ Shots">
+            <input type="radio" id="first-yes" name="firstshoot" data-first="yes" value="Yes, first shoot price" data-label="First time booking" checked />
+            <label for="first-yes">First time, <b data-price="{media.first}">$99</b></label>
+            <input type="radio" id="first-no" name="firstshoot" data-first="no" value="No, booked before" data-label="First time booking" />
+            <label for="first-no">I have booked before</label>
+          </div>
+
           <h2 class="book-q">What do you need for this listing?</h2>
           <div class="pkg-pick-grid" id="package-options">
             <p class="form-help">Loading packages...</p>
@@ -305,6 +313,7 @@
   <div id="site-footer"></div>
   <script src="js/site.js"></script>
   <script src="js/config.js"></script>
+  <script src="js/prices.js"></script>
   <script src="js/contact-form.js"></script>
   <script src="js/uploads.js"></script>
   <script src="js/booking.js"></script>
