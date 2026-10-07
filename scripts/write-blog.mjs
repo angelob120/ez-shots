@@ -48,7 +48,7 @@ export const TOPICS = [
   ["What you are really paying for with real estate photography pricing. Only quote the EZ Shots package prices, never what other photographers charge", "real estate photography pricing"],
 ].map(([brief, keyword]) => ({ brief, keyword }));
 
-const ALLOWED_PRICES = ["$0", "$20", "$75", "$125", "$150", "$250"];
+const ALLOWED_PRICES = ["$0", "$20", "$100", "$199", "$299"];
 const TELLS = ["delve", "leverage", "seamless", "robust", "elevate", "unlock", "navigate the landscape",
   "fast-paced world", "when it comes to", "at the end of the day", "game-changer", "game changer", "tapestry",
   "testament", "realm", "embark", "foster", "streamline", "empower", "moreover", "furthermore", "in conclusion"];
@@ -59,11 +59,11 @@ function systemPrompt() {
     "",
     "The business, so you never invent a feature:",
     "- Real estate photography, a one minute listing video, and drone aerials by an FAA Part 107 certified pilot.",
-    "- Two packages: Listing Essentials $150 (photos and drone aerials) and Listing Pro $250 (adds the one minute listing video). Drone aerials are always included, never an add on.",
-    "- The first shoot is 50% off: $75 for Essentials, $125 for Pro.",
+    "- One package: the Real Estate Media Package, $199, interior, exterior and drone photos, professionally edited, up to 75 finished images. Drone aerials are always included, never an add on.",
+    "- One add on: a one minute listing video for $100 more, $299 in total. There is no first shoot discount.",
     "- $0 to book. The agent pays after the shoot, once they have seen the photos.",
     "- If the agent is not happy with a gallery they do not pay, and they get $20 cash on top. Every gallery.",
-    "- Photos back in about 24 hours on average, and if they are not delivered within 72 hours of the booked time the shoot is free.",
+    "- Photos back in 24 to 48 hours in an online gallery, and if they are not delivered within 72 hours of the booked time the shoot is free.",
     "- Book online at the booking page; no call needed.",
     "Mention the business at most once or twice, near the end, lightly. Most of the article is advice that is useful even to an agent who never books.",
     "",
@@ -81,7 +81,7 @@ function systemPrompt() {
     "Hard rules. An article that breaks any of these is discarded:",
     "- Title 30 to 75 characters. Body 380 to 800 words.",
     "- Never use an em dash or an en dash. Use a plain hyphen, or two sentences.",
-    `- The only prices that exist are ${ALLOWED_PRICES.join(", ")}. Never write any other amount of money, and no percentages other than 50%.`,
+    `- The only prices that exist are ${ALLOWED_PRICES.join(", ")}. Never write any other amount of money, and no percentages.`,
     "- No links, no URLs, no email addresses, no phone numbers, no HTML, no emoji, no markdown.",
     "- Do not invent statistics, studies, named clients, testimonials or quotes. If you do not know a number, do not use one.",
     "- Never mention dates, years or seasons as news. The article must read as evergreen.",
@@ -179,7 +179,7 @@ function refuse(p) {
   const prices = all.match(/\$\s?\d[\d,]*(\.\d+)?/g) || [];
   const bad = prices.map((x) => x.replace(/\s|,/g, "")).filter((x) => !ALLOWED_PRICES.includes(x));
   if (bad.length) return `invented price ${bad[0]}`;
-  const pct = (all.match(/\d+\s?(%|percent)/g) || []).filter((x) => !/^50/.test(x));
+  const pct = all.match(/\d+\s?(%|percent)/g) || [];
   if (pct.length) return `invented percentage ${pct[0]}`;
   const lower = all.toLowerCase();
   const tell = TELLS.find((w) => new RegExp(`\\b${w}\\b`).test(lower));

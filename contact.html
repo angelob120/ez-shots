@@ -4,19 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Contact | Book a Shoot with EZ Shots</title>
-  <meta name="description" content="Book real estate photography in Metro Detroit. Send the address and timeline, get a date on the calendar. First shoot 50% off." />
+  <meta name="description" content="Book real estate photography in Metro Detroit. Send the address and timeline, get a date on the calendar. $199 for photos and aerials." />
   <!-- seo: written by scripts/build-seo.mjs, edit there -->
   <link rel="canonical" href="https://ezshots.org/contact" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="EZ Shots" />
   <meta property="og:locale" content="en_US" />
   <meta property="og:title" content="Contact | Book a Shoot with EZ Shots" />
-  <meta property="og:description" content="Book real estate photography in Metro Detroit. Send the address and timeline, get a date on the calendar. First shoot 50% off." />
+  <meta property="og:description" content="Book real estate photography in Metro Detroit. Send the address and timeline, get a date on the calendar. $199 for photos and aerials." />
   <meta property="og:url" content="https://ezshots.org/contact" />
   <meta property="og:image" content="https://ezshots.org/img/work/brick-colonial-exterior-front-hero.webp" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Contact | Book a Shoot with EZ Shots" />
-  <meta name="twitter:description" content="Book real estate photography in Metro Detroit. Send the address and timeline, get a date on the calendar. First shoot 50% off." />
+  <meta name="twitter:description" content="Book real estate photography in Metro Detroit. Send the address and timeline, get a date on the calendar. $199 for photos and aerials." />
   <meta name="twitter:image" content="https://ezshots.org/img/work/brick-colonial-exterior-front-hero.webp" />
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ezshots.org/"},{"@type":"ListItem","position":2,"name":"Contact","item":"https://ezshots.org/contact"}]}</script>
   <!-- /seo -->
@@ -38,9 +38,9 @@
   <div class="offer-strip">
     <div class="container">
       <div class="offer-item"><span class="ico">💳</span> <b>$0 to book</b>, pay after you see the photos</div>
-      <div class="offer-item"><span class="ico">🎁</span> First shoot 50% off: <b data-price="{essentials.first}">$75</b> or <b data-price="{pro.first}">$125</b></div>
+      <div class="offer-item"><span class="ico">📸</span> <b data-price="{media}">$199</b> photos and aerials, <b data-price="+{video}">+$100</b> video</div>
       <div class="offer-item"><span class="ico">🛡️</span> Not happy? <b>You do not pay, plus $20</b></div>
-      <div class="offer-item"><span class="ico">⏱️</span> Gallery back in about <b>24 hours</b></div>
+      <div class="offer-item"><span class="ico">⏱️</span> Gallery back in <b>24 to 48 hours</b></div>
     </div>
   </div>
 
@@ -101,9 +101,8 @@
         <div class="field">
           <label for="package">Package</label>
           <select id="package" name="package">
-            <option data-price="Listing Essentials, {essentials}">Listing Essentials, $150</option>
-            <option selected data-price="Listing Pro, {pro}">Listing Pro, $250</option>
-            <option>First shoot, 50% off</option>
+            <option data-price="Real Estate Media Package, {media}">Real Estate Media Package, $199</option>
+            <option selected data-price="Package with listing video, {media+video}">Package with listing video, $299</option>
             <option>Commercial or vacant land</option>
             <option>Not sure yet</option>
           </select>
@@ -114,7 +113,6 @@
         </div>
         <button type="submit" class="btn">Send request</button>
         <p class="form-status" role="status" aria-live="polite"></p>
-        <p class="form-note">First time working with EZ Shots? Mention it and your shoot is half price.</p>
       </form>
     </div>
   </section>

@@ -9,15 +9,16 @@
 // anything unmarked is left alone on purpose.
 //
 // HOW TO MARK ONE
-//   <span data-price="{essentials.first}">$75</span>
-// The attribute is a template. Tokens are {packageId} for the normal price and
-// {packageId.first} for the first shoot price. The element's text is replaced
+//   <span data-price="{media}">$199</span>
+// The attribute is a template. Tokens are {packageId} for a package price,
+// {addonId} for an add on (the listing video is {video}), and ids joined with
+// a plus add up, so {media+video} is the package with the video. The element's text is replaced
 // with the filled in template, so put the attribute on an element whose WHOLE
 // text is the template, usually a span of its own.
 //
 // Whole sentences work too, which is what <option> and <title> need because
 // neither can hold a span:
-//   <option data-price="Listing Essentials, {essentials}">Listing Essentials, $150</option>
+//   <option data-price="Real Estate Media Package, {media}">Real Estate Media Package, $199</option>
 //
 // The number shipped in the HTML is the fallback. If the config cannot be
 // reached, or a token names a package that no longer exists, the page keeps the
@@ -25,12 +26,16 @@
 (function () {
   function fill(tpl, cfg) {
     var missing = false;
-    var out = tpl.replace(/\{([a-z0-9-]+)(\.first)?\}/gi, function (whole, id, first) {
-      var p = cfg.packages.filter(function (x) { return x.id === id; })[0];
-      if (!p) { missing = true; return whole; }
-      var n = first ? p.firstPrice : p.price;
-      if (n === undefined || n === null || n === "") { missing = true; return whole; }
-      return "$" + n;
+    var out = tpl.replace(/\{([a-z0-9+-]+)(\.first)?\}/gi, function (whole, ids, first) {
+      var n = 0;
+      ids.split("+").forEach(function (id) {
+        var p = cfg.packages.filter(function (x) { return x.id === id; })[0] ||
+          (cfg.addons || []).filter(function (x) { return x.id === id; })[0];
+        var v = p ? (first && p.firstPrice !== undefined ? p.firstPrice : p.price) : undefined;
+        if (v === undefined || v === null || v === "") missing = true;
+        else n += Number(v);
+      });
+      return missing ? whole : "$" + n;
     });
     return missing ? null : out;
   }

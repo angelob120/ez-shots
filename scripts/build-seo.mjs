@@ -131,11 +131,13 @@ function faqSchema(html) {
 const posts = fs.existsSync(path.join(ROOT, "scripts/blog-posts.json"))
   ? JSON.parse(read("scripts/blog-posts.json")) : [];
 
-// The four package prices are bound to the live config like the rest of the
+// The package prices are bound to the live config like the rest of the
 // site's copy (see js/prices.js), so an article never quotes a stale price.
-// $0 and $20 are the offer, not a package price, and stay as written.
-const PRICE_TOKENS = { "$150": "{essentials}", "$75": "{essentials.first}", "$250": "{pro}", "$125": "{pro.first}" };
-const prose = (s) => esc(s).replace(/\$(150|75|250|125)\b/g, (m) => `<span data-price="${PRICE_TOKENS[m]}">${m}</span>`);
+// $0 and $20 are the offer, not a package price, and stay as written. $100 is
+// not bound on purpose: articles also say other photographers charge "$100 to
+// $175" for aerials, and that must not move with the video price.
+const PRICE_TOKENS = { "$199": "{media}", "$299": "{media+video}" };
+const prose = (s) => esc(s).replace(/\$(199|299)\b/g, (m) => `<span data-price="${PRICE_TOKENS[m]}">${m}</span>`);
 
 const LINKS = [
   ["/book", "Book a shoot, $0 down"],

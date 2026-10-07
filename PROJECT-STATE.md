@@ -178,6 +178,29 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-06 - One package, $199, video add on $100
+- The owner's plan replaced Essentials $150 / Pro $250 and the half price first
+  shoot with one Real Estate Media Package at $199 (up to 75 finished photos,
+  interior, exterior and drone combined) and a Listing Video add on at $100.
+  No first shoot discount any more.
+- `server/migrations/008_media_package.sql` rewrites the live config row once
+  (packages, `addons`, `maxPhotos`) and adds `base_price`, `video_selected`,
+  `video_addon_price` and `total_amount` to bookings. Old bookings keep their
+  package and price; old Pro bookings are marked video.
+- `/api/book` and admin's new booking take `video: true` and price it on the
+  server (`priceOf()`); the package name gains " + Listing Video".
+- Booking step one is the one package, a video tick box and a live total.
+  Admin settings edits the package price, the video price and the photo limit.
+- Every page, the blog JSON, the blog writer's facts and allowed prices, and
+  the price binding tokens (`{media}`, `{video}`, `{media+video}`) updated.
+- Fixed in passing: the big price on the package card had been rendering at
+  15px since prices were bound, because `.pkg .price span` caught the bound span.
+- The old Stripe payment links charge $150 and $250, so they were cleared.
+  New links are only needed if `STRIPE_SECRET_KEY` is ever unset.
+- Verified: `npm test`, `npm run check:bookings` (new checks: $199 without
+  video, $299 with, the browser's own amount ignored), the booking and pricing
+  pages in the preview.
+
 ### 2026-10-05 - Phone number in the header
 - `js/site.js` holds the number once (`PHONE`, `TEL`) and puts it in the
   header (`.nav-phone`, beside Book a shoot), a phone only strip under the

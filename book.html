@@ -4,19 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Book a Shoot | EZ Shots Real Estate Photography, Metro Detroit</title>
-  <meta name="description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Pick a package, the property and a time. $0 to book, pay after you see the photos. First shoot 50% off." />
+  <meta name="description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Photos and drone aerials for $199, add a listing video for $100. $0 to book, pay after you see the photos." />
   <!-- seo: written by scripts/build-seo.mjs, edit there -->
   <link rel="canonical" href="https://ezshots.org/book" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="EZ Shots" />
   <meta property="og:locale" content="en_US" />
   <meta property="og:title" content="Book a Shoot | EZ Shots Real Estate Photography, Metro Detroit" />
-  <meta property="og:description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Pick a package, the property and a time. $0 to book, pay after you see the photos. First shoot 50% off." />
+  <meta property="og:description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Photos and drone aerials for $199, add a listing video for $100. $0 to book, pay after you see the photos." />
   <meta property="og:url" content="https://ezshots.org/book" />
   <meta property="og:image" content="https://ezshots.org/img/work/brick-colonial-exterior-front-hero.webp" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Book a Shoot | EZ Shots Real Estate Photography, Metro Detroit" />
-  <meta name="twitter:description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Pick a package, the property and a time. $0 to book, pay after you see the photos. First shoot 50% off." />
+  <meta name="twitter:description" content="Book a real estate photo or video shoot in Metro Detroit in about a minute. Photos and drone aerials for $199, add a listing video for $100. $0 to book, pay after you see the photos." />
   <meta name="twitter:image" content="https://ezshots.org/img/work/brick-colonial-exterior-front-hero.webp" />
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://ezshots.org/"},{"@type":"ListItem","position":2,"name":"Book a shoot","item":"https://ezshots.org/book"}]}</script>
   <!-- /seo -->
@@ -78,19 +78,23 @@
 
         <!-- ============ STEP 1 ============ -->
         <div class="book-step" data-step="1">
-          <p class="opt-q">Is this your first shoot with EZ Shots?</p>
-          <div class="opt-row" role="group" aria-label="First shoot with EZ Shots">
-            <input type="radio" id="first-yes" name="firstshoot" data-first="yes" value="Yes, half price applied" data-label="First time booking" checked />
-            <label for="first-yes">First time, 50% off</label>
-            <input type="radio" id="first-no" name="firstshoot" data-first="no" value="No, full price" data-label="First time booking" />
-            <label for="first-no">I have booked before</label>
-          </div>
-
           <h2 class="book-q">What do you need for this listing?</h2>
           <div class="pkg-pick-grid" id="package-options">
             <p class="form-help">Loading packages...</p>
           </div>
-          <p class="form-help book-foot">$0 to book. Drone aerials are in both. One flat rate whatever the square footage. You pay after you see the photos, and if they are not what you wanted you do not pay and I send you $20.</p>
+
+          <!-- The listing video, the one add on. Its price and the total come
+               from the config through js/booking.js; the server adds it up
+               again on its own when the booking is made. -->
+          <div class="addon-pick" id="video-addon" hidden>
+            <div class="field-inline">
+              <input type="checkbox" id="video" name="video" value="Yes, add the listing video" data-label="Listing video" />
+              <label for="video">Add Listing Video <b class="addon-price" id="video-price">+$100</b><span id="video-blurb">A one minute walkthrough, edited and scored, plus a vertical cut for Reels and TikTok.</span></label>
+            </div>
+          </div>
+          <div class="book-total" id="book-total" aria-live="polite"></div>
+          <div class="btn-row"><button type="button" class="btn btn-lg" data-next="2">Continue</button></div>
+          <p class="form-help book-foot">$0 to book. Drone aerials included. Up to 75 finished photos, one flat rate whatever the square footage. You pay after you see the photos, and if they are not what you wanted you do not pay and I send you $20.</p>
         </div>
 
         <!-- ============ STEP 2 ============ -->
@@ -160,7 +164,7 @@
           <div id="time-block" hidden>
             <h2 class="book-q">Pick a time</h2>
             <div class="time-grid" id="time-options"></div>
-            <p class="form-help">About an hour on site for Essentials, an hour and a half with video. The time is yours the moment you book. Nothing to pay until the photos are in.</p>
+            <p class="form-help">About an hour on site, an hour and a half with the video. The time is yours the moment you book. Nothing to pay until the photos are in.</p>
           </div>
         </div>
 
@@ -286,12 +290,12 @@
         <div class="step">
           <div class="n">3</div>
           <h3>See your photos</h3>
-          <p>Previews in your inbox in about 24 hours, never more than 72.</p>
+          <p>Your own online gallery in 24 to 48 hours, never more than 72.</p>
         </div>
         <div class="step">
           <div class="n">4</div>
           <h3>Pay when happy</h3>
-          <p>Pay online and the full resolution files unlock. Not happy, you do not pay, plus $20.</p>
+          <p>Pay from the gallery and the downloads unlock. Not happy, you do not pay, plus $20.</p>
         </div>
       </div>
       <p class="pkg-note">Questions first? <a href="/contact">Send a message</a> and I reply the same day, or <a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">grab a 10 minute call</a>. Neither is needed to book.</p>

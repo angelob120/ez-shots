@@ -353,6 +353,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 
 /* ---------- Packages ---------- */
 .pkg-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 390px)); gap: 26px; justify-content: center; align-items: stretch; }
+.pkg-grid.pkg-grid-one { grid-template-columns: minmax(0, 440px); }
+.pkg-addon { display: flex; flex-direction: column; gap: 4px; margin: -8px 0 22px; padding: 14px 16px; border: 1.5px dashed var(--line-2); border-radius: var(--radius-sm); font-size: 14.5px; }
+.pkg-addon > span { color: var(--muted); }
+.pkg-addon > b span { color: var(--accent); }
+.pkg-addon .pkg-addon-total { color: var(--ink); font-weight: 600; margin-top: 4px; }
 .pkg {
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
   padding: 36px 32px; display: flex; flex-direction: column; box-shadow: var(--shadow); position: relative;
@@ -367,6 +372,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .pkg .desc { color: var(--muted); font-size: 15px; margin-bottom: 20px; }
 .pkg .price { font-size: 46px; font-weight: 900; letter-spacing: -.04em; margin: 6px 0 2px; }
 .pkg .price span { font-size: 15px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+/* The bound price itself is a span too, and must keep the big number. */
+.pkg .price span[data-price] { font-size: inherit; font-weight: inherit; color: inherit; letter-spacing: inherit; }
 .pkg .first-price {
   display: inline-block; background: var(--tint); color: var(--accent);
   font-size: 13.5px; font-weight: 700; padding: 6px 13px; border-radius: 8px; margin-bottom: 20px;
@@ -781,6 +788,14 @@ form.booking { background: none; border: none; box-shadow: none; padding: 0; gap
 
 /* Package cards. The whole card is the button. */
 .pkg-pick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.pkg-pick-grid.one { grid-template-columns: 1fr; max-width: 520px; }
+.addon-pick { max-width: 520px; margin-top: 16px; padding: 16px 18px; border: 1.5px solid var(--line); border-radius: var(--radius, 14px); background: var(--surface, transparent); }
+.addon-pick:has(input:checked) { border-color: var(--brand); }
+.addon-price { color: var(--accent); margin-left: 4px; }
+.book-total { max-width: 520px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 16px 0 4px; }
+.book-total span { font-weight: 700; }
+.book-total b { font-size: 32px; font-weight: 900; letter-spacing: -.03em; }
+.book-total small { flex-basis: 100%; color: var(--muted); font-size: 13.5px; }
 .pkg-pick {
   position: relative; cursor: pointer; background: var(--card); border: 2px solid var(--line);
   border-radius: var(--radius); padding: 26px 24px 24px; box-shadow: var(--shadow);

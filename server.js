@@ -155,7 +155,7 @@ function validate(cfg) {
       if (!Number.isFinite(v) || v < 0 || v > 100000) errs.push(`${at}: ${f} must be a number between 0 and 100000.`);
       else p[f] = Math.round(v);
     }
-    for (const f of ["checkoutFull", "checkoutFirst"]) {
+    for (const f of ["checkoutFull", "checkoutFirst", "checkoutVideo"]) {
       const v = String(p[f] || "").trim();
       if (v && !/^https:\/\/[^\s]+$/i.test(v)) errs.push(`${at}: ${f} has to be an https link or be left blank.`);
       p[f] = v;
@@ -166,6 +166,25 @@ function validate(cfg) {
     p.blurb = String(p.blurb || "").trim();
     p.badge = String(p.badge || "").trim();
   });
+
+  // Add ons a booking can tick on top of its package. Since 2026-10-06 there
+  // is one, the listing video. Its price is added to the package price on the
+  // server when the booking is made, never in the browser.
+  cfg.addons = Array.isArray(cfg.addons) ? cfg.addons : [];
+  cfg.addons.forEach((a, i) => {
+    const at = `Add on ${i + 1}`;
+    if (!a.id || !/^[a-z0-9-]+$/.test(a.id)) errs.push(`${at}: id must be lowercase letters, numbers or dashes.`);
+    const v = Number(a.price);
+    if (!Number.isFinite(v) || v < 0 || v > 100000) errs.push(`${at}: price must be a number between 0 and 100000.`);
+    else a.price = Math.round(v);
+    a.name = String(a.name || "").trim() || a.id;
+    a.blurb = String(a.blurb || "").trim();
+    a.active = a.active !== false;
+  });
+  // The most finished photos one gallery may deliver, interior, exterior and
+  // drone together. One combined number, never a limit per category.
+  const mp = Number(cfg.maxPhotos);
+  cfg.maxPhotos = Number.isFinite(mp) && mp >= 1 ? Math.min(500, Math.round(mp)) : 75;
 
   const a = cfg.availability || (cfg.availability = {});
   // The hours are what the admin page builds the per day lists from. The
@@ -289,6 +308,24 @@ function origin(req) {
 
 function str(v, max) { return String(v == null ? "" : v).trim().slice(0, max); }
 
+// What a booking costs, worked out from the server's own config. The browser
+// says which package and whether it wants the video, never a number. The
+// package name carries the video so every email and the Stripe line item say
+// what was bought without each having to know about add ons.
+function priceOf(cfg, pkg, wantVideo, override) {
+  const video = (cfg.addons || []).find(a => a.id === "video" && a.active !== false);
+  const videoSelected = !!(wantVideo && video);
+  const basePrice = pkg.price;
+  const videoAddonPrice = videoSelected ? video.price : 0;
+  let total = basePrice + videoAddonPrice;
+  if (override !== undefined) total = override;
+  return {
+    packageName: pkg.name + (videoSelected ? " + " + video.name : ""),
+    basePrice, videoSelected, videoAddonPrice,
+    amount: total, totalAmount: total, listPrice: basePrice + videoAddonPrice
+  };
+}
+
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 function longDate(key) {
@@ -303,6 +340,7 @@ function publicBooking(b) {
   return {
     id: b.id, status: b.status, date: b.date, time: b.time, when: longDate(b.date) + " at " + b.time,
     package: b.packageName, packageName: b.packageName, amount: b.amount, firstShoot: b.firstShoot, paid: b.paid,
+    basePrice: b.basePrice, videoSelected: !!b.videoSelected, videoAddonPrice: b.videoAddonPrice || 0, totalAmount: b.totalAmount || b.amount,
     startsAt: b.startsAt, refunded: Number(b.refundedCents || 0) / 100,
     name: b.name, email: b.email, phone: b.phone, brokerage: b.brokerage,
     address: b.address, size: b.size, occupancy: b.occupancy, access: b.access,
@@ -575,7 +613,7 @@ async function book(req, res) {
 
   const pkg = cfg.packages.find(p => p.id === b.packageId && p.active !== false);
   if (!pkg) return json(res, 400, { error: "Pick a package first." });
-  const first = b.firstShoot !== false;
+  const price = priceOf(cfg, pkg, b.video === true);
 
   const date = str(b.date, 10);
   const time = avail.normalize(b.time);
@@ -596,7 +634,7 @@ async function book(req, res) {
   if (r && r.id && r.token) {
     const old = await db.find(str(r.id, 20));
     if (old && old.token === str(r.token, 64) && old.status !== "cancelled") {
-      const same = old.date === date && old.time === time && old.packageId === pkg.id && old.address === address;
+      const same = old.date === date && old.time === time && old.packageId === pkg.id && old.address === address && !!old.videoSelected === price.videoSelected;
       if (same && old.status === "confirmed") return done(old);
       if (old.status === "held") await db.release(old.id, now);
     }
@@ -612,8 +650,7 @@ async function book(req, res) {
 
   const held = await db.hold({
     date, time, startsAt: avail.slotAt(date, time),
-    packageId: pkg.id, packageName: pkg.name, firstShoot: first,
-    amount: first ? pkg.firstPrice : pkg.price, listPrice: pkg.price,
+    packageId: pkg.id, firstShoot: false, ...price,
     name, email, phone, brokerage: str(b.brokerage, 120), address,
     size: str(b.size, 60), occupancy: str(b.occupancy, 60), access: str(b.access, 60),
     accessNotes: str(b.accessNotes, 500), notes: str(b.notes, 2000),
@@ -651,7 +688,9 @@ async function pay(req, res, url) {
     // marks it paid by hand when Stripe tells him.
     const cfg = await readConfig();
     const pkg = cfg.packages.find(p => p.id === b.packageId) || {};
-    const link = b.firstShoot ? pkg.checkoutFirst : pkg.checkoutFull;
+    // A booking from before 2026-10-06 may be a first shoot at half price; a
+    // newer one with the video needs the link that charges the video too.
+    const link = b.videoSelected ? pkg.checkoutVideo : b.firstShoot ? pkg.checkoutFirst : pkg.checkoutFull;
     if (!link) return json(res, 503, { error: "Online payment is not set up yet. Reply to your email and I will send an invoice." });
     return json(res, 200, { url: link, mode: "link" });
   }
@@ -1064,7 +1103,8 @@ async function adminBookings(req, res) {
   };
   return json(res, 200, {
     today, now: now.toISOString(), stripe: !!STRIPE_KEY, email: email.configured(), stats, bookings: list,
-    packages: cfg.packages.map(p => ({ id: p.id, name: p.name, price: p.price, firstPrice: p.firstPrice, active: p.active !== false }))
+    packages: cfg.packages.map(p => ({ id: p.id, name: p.name, price: p.price, firstPrice: p.firstPrice, active: p.active !== false })),
+    addons: cfg.addons || [], maxPhotos: cfg.maxPhotos
   });
 }
 
@@ -1098,17 +1138,17 @@ async function adminCreate(req, res) {
   if (name.length < 2) return json(res, 400, { error: "Enter the client's name." });
   if (mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return json(res, 400, { error: "That email address does not look right." });
   if (address.length < 6) return json(res, 400, { error: "Enter the property address." });
-  const first = p.firstShoot === true;
-  let amount = first ? pkg.firstPrice : pkg.price;
+  let amount;
   if (p.amount !== undefined && p.amount !== "" && p.amount !== null) {
     const v = Number(p.amount);
     if (!Number.isFinite(v) || v < 0 || v > 100000) return json(res, 400, { error: "The price has to be a number of dollars." });
     amount = Math.round(v);
   }
+  const price = priceOf(cfg, pkg, p.video === true, amount);
   const now = new Date();
   const held = await db.hold({
     date, time, startsAt: avail.slotAt(date, time),
-    packageId: pkg.id, packageName: pkg.name, firstShoot: first, amount, listPrice: pkg.price,
+    packageId: pkg.id, firstShoot: false, ...price,
     name, email: mail, phone, brokerage: str(p.brokerage, 120), address,
     access: str(p.access, 60), notes: str(p.notes, 2000), internalNotes: str(p.internalNotes, 4000),
     checkoutMode: "manual", checkoutUrl: "", source: "admin"
@@ -1261,6 +1301,8 @@ async function api(req, res, url) {
     const cfg = await readConfig();
     return json(res, 200, {
       packages: cfg.packages,
+      addons: cfg.addons || [],
+      maxPhotos: cfg.maxPhotos,
       availability: { minNoticeHours: cfg.availability.minNoticeHours, maxAdvanceDays: cfg.availability.maxAdvanceDays },
       serverCheckout: !!STRIPE_KEY,
       bookings: !!db

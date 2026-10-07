@@ -739,7 +739,7 @@ async function toOwner(kind, b, siteUrl, o = {}) {
 const SAMPLE = {
   id: "EZ-TEST01", when: "Saturday, October 10 at 8:00 PM", startsAt: "2026-10-11T00:00:00.000Z",
   address: "1841 Maplehurst Drive, Birmingham MI 48009",
-  packageName: "Listing Pro", amount: 125, firstShoot: true,
+  packageName: "Real Estate Media Package + Listing Video", amount: 299, firstShoot: false,
   name: "Test Customer", email: "", phone: "(313) 555-0142",
   brokerage: "Sample Brokerage", size: "2,450 sq ft", occupancy: "Occupied",
   access: "Agent will meet me there", notes: "This is a test booking. Nothing was charged.", paid: false,

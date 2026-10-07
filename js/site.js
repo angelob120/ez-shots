@@ -51,9 +51,9 @@
       '<span class="dot hide-sm">|</span>' +
       '<span class="hide-sm">Not happy? You do not pay, plus $20</span>' +
       '<span class="dot hide-md">|</span>' +
-      '<span class="hide-md">First shoot 50% off</span>' +
+      '<span class="hide-md">$199 with drone aerials</span>' +
       '<span class="dot hide-md">|</span>' +
-      '<span class="hide-md">Photos in about 24 hours</span>' +
+      '<span class="hide-md">Photos in 24 to 48 hours</span>' +
       '<span class="dot">|</span>' +
       '<a href="/book">Book now</a>' +
     '</div>' +

@@ -63,10 +63,17 @@
   // ----------------------------------------------------------------
   // Packages
   // ----------------------------------------------------------------
-  function off(p) {
-    if (!(p.price > 0) || p.firstPrice === "" || p.firstPrice == null) return "";
-    var pct = Math.round((1 - p.firstPrice / p.price) * 100);
-    return pct > 0 ? pct + "% off the first shoot" : pct === 0 ? "no first shoot discount" : "first shoot costs more";
+  // The listing video add on, the one there is. Edited in its own box under
+  // the packages; its price is added to a package when a client ticks it.
+  function videoAddon() {
+    cfg.addons = cfg.addons || [];
+    var v = cfg.addons.filter(function (a) { return a.id === "video"; })[0];
+    if (!v) { v = { id: "video", name: "Listing Video", blurb: "", price: 100, active: false }; cfg.addons.push(v); }
+    return v;
+  }
+  function pkgLine(p) {
+    var v = videoAddon();
+    return money(p.price) + (v.active !== false ? ", " + money(Number(p.price) + Number(v.price)) + " with video" : "");
   }
 
   function slug(name, mine) {
@@ -89,7 +96,7 @@
         '<div class="adm-pkg-head">' +
           '<button type="button" class="adm-pkg-title" data-toggle aria-expanded="' + isOpen + '">' +
             "<b>" + esc(p.name || "Untitled package") + (p.badge ? ' <span class="adm-badge b-info plain" style="margin-left:6px">' + esc(p.badge) + "</span>" : "") + "</b>" +
-            "<span>" + esc(money(p.price) + " normally, " + money(p.firstPrice) + " first shoot") + (off(p) ? ", " + esc(off(p)) : "") + ". " + (isOpen ? "Hide details" : "Edit") + "</span>" +
+            "<span>" + esc(pkgLine(p)) + ". " + (isOpen ? "Hide details" : "Edit") + "</span>" +
           "</button>" +
           '<label class="adm-switch" title="Shown on the site"><input type="checkbox" data-f="active"' + (p.active !== false ? " checked" : "") + " /><i></i><span>Live</span></label>" +
           '<div class="adm-pkg-tools">' +
@@ -107,34 +114,40 @@
           "</div>" +
           '<label class="adm-field"><span>One line description</span><input class="adm-input" data-f="blurb" value="' + esc(p.blurb) + '" /></label>' +
           '<div class="adm-grid2">' +
-            '<label class="adm-field"><span>Normal price</span><div class="adm-money"><input class="adm-input" type="number" min="0" step="1" data-f="price" value="' + esc(p.price) + '" /></div></label>' +
-            '<label class="adm-field"><span>First shoot price</span><div class="adm-money"><input class="adm-input" type="number" min="0" step="1" data-f="firstPrice" value="' + esc(p.firstPrice) + '" /></div>' +
-              '<p class="adm-help" data-off>' + esc(off(p)) + "</p></label>" +
+            '<label class="adm-field"><span>Price</span><div class="adm-money"><input class="adm-input" type="number" min="0" step="1" data-f="price" value="' + esc(p.price) + '" /></div></label>' +
           "</div>" +
           '<label class="adm-field"><span>What is included, one per line</span><textarea class="adm-textarea" rows="5" data-f="bullets">' + esc((p.bullets || []).join("\n")) + "</textarea></label>" +
           '<div class="adm-grid2">' +
-            '<label class="adm-field"><span>Stripe link, normal price</span><input class="adm-input" type="url" data-f="checkoutFull" value="' + esc(p.checkoutFull) + '" placeholder="https://buy.stripe.com/..." /></label>' +
-            '<label class="adm-field"><span>Stripe link, first shoot price</span><input class="adm-input" type="url" data-f="checkoutFirst" value="' + esc(p.checkoutFirst) + '" placeholder="https://buy.stripe.com/..." /></label>' +
+            '<label class="adm-field"><span>Stripe link, without video</span><input class="adm-input" type="url" data-f="checkoutFull" value="' + esc(p.checkoutFull) + '" placeholder="https://buy.stripe.com/..." /></label>' +
+            '<label class="adm-field"><span>Stripe link, with video</span><input class="adm-input" type="url" data-f="checkoutVideo" value="' + esc(p.checkoutVideo || "") + '" placeholder="https://buy.stripe.com/..." /></label>' +
           "</div>" +
           '<p class="adm-help">Link id <code>' + esc(p.id) + "</code>. A link to <code>/book?package=" + esc(p.id) + "</code> opens with this package picked, and renaming does not change it.</p>" +
         "</div>" : "") +
       "</div>";
     }).join("");
+    var v = videoAddon();
+    el("addon-editor").innerHTML =
+      '<div class="adm-pkg"><div class="adm-pkg-head"><div class="adm-pkg-title" style="cursor:default"><b>' + esc(v.name) + " add on</b><span>Ticked on the booking page, added to the package price.</span></div>" +
+        '<label class="adm-switch" title="Offered on the site"><input type="checkbox" data-a="active"' + (v.active !== false ? " checked" : "") + " /><i></i><span>Live</span></label></div>" +
+      '<div class="adm-pkg-body"><div class="adm-grid2">' +
+        '<label class="adm-field"><span>Video price</span><div class="adm-money"><input class="adm-input" type="number" min="0" step="1" data-a="price" value="' + esc(v.price) + '" /></div></label>' +
+        '<label class="adm-field"><span>Most finished photos per gallery</span><input class="adm-input" type="number" min="1" max="500" step="1" data-a="maxPhotos" value="' + esc(cfg.maxPhotos || 75) + '" /></label>' +
+      "</div>" +
+      '<label class="adm-field"><span>One line description</span><input class="adm-input" data-a="blurb" value="' + esc(v.blurb) + '" /></label>' +
+      '<p class="adm-help">The photo limit is one number for interior, exterior and drone together.</p></div></div>';
   }
 
   function readPackage(box, p, input) {
     var f = input.getAttribute("data-f");
     if (input.type === "checkbox") p[f] = input.checked;
     else if (f === "bullets") p.bullets = input.value.split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
-    else if (f === "price" || f === "firstPrice") p[f] = input.value === "" ? "" : Number(input.value);
+    else if (f === "price") { p.price = input.value === "" ? "" : Number(input.value); p.firstPrice = p.price; }
     else p[f] = input.value;
     var title = box.querySelector(".adm-pkg-title");
     if (title) {
       title.querySelector("b").firstChild.textContent = p.name || "Untitled package";
-      title.querySelector("span").textContent = money(p.price) + " normally, " + money(p.firstPrice) + " first shoot" + (off(p) ? ", " + off(p) : "") + ". Hide details";
+      title.querySelector("span").textContent = pkgLine(p) + ". Hide details";
     }
-    var o = box.querySelector("[data-off]");
-    if (o) o.textContent = off(p);
   }
 
   function paintStripeNote() {
@@ -370,8 +383,26 @@
     }
   });
 
+  function readAddon(e) {
+    var f = e.target.getAttribute("data-a");
+    if (!f) return;
+    var v = videoAddon();
+    if (f === "active") v.active = e.target.checked;
+    else if (f === "price") v.price = e.target.value === "" ? "" : Number(e.target.value);
+    else if (f === "maxPhotos") cfg.maxPhotos = Number(e.target.value);
+    else v[f] = e.target.value;
+    el("pkg-editor").querySelectorAll(".adm-pkg").forEach(function (box) {
+      var p = cfg.packages[Number(box.getAttribute("data-i"))];
+      var t = box.querySelector(".adm-pkg-title span");
+      if (p && t) t.textContent = pkgLine(p) + ". " + (openPkg[p.id] ? "Hide details" : "Edit");
+    });
+    changed();
+  }
+  el("addon-editor").addEventListener("input", readAddon);
+  el("addon-editor").addEventListener("change", readAddon);
+
   el("add-package").addEventListener("click", function () {
-    var p = { id: "", name: "New package", blurb: "", price: 0, firstPrice: 0, active: false, badge: "", bullets: [], checkoutFull: "", checkoutFirst: "" };
+    var p = { id: "", name: "New package", blurb: "", price: 0, firstPrice: 0, active: false, badge: "", bullets: [], checkoutFull: "", checkoutFirst: "", checkoutVideo: "" };
     cfg.packages.push(p);
     p.id = slug("new package", p);
     openPkg[p.id] = true;

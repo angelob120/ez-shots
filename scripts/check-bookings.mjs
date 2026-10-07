@@ -144,7 +144,7 @@ try {
   function bookIt(i, extra = {}, ip = "10.0.0." + (i + 1)) {
     const date = days[i], time = av.days[date][0];
     return asClient("POST", "/api/book", Object.assign({
-      packageId: pkg.id, firstShoot: true, date, time, ticket: av.ticket,
+      packageId: pkg.id, date, time, ticket: av.ticket,
       name: "Dana <b>Ruiz</b>", email: `dana${i}@example.com`, phone: "(313) 555-01" + String(40 + i),
       address: `18${i}1 Maplehurst Drive, Birmingham MI 48009`, notes: "Back deck & pond from the air"
     }, extra), { "x-real-ip": ip }).then(r => Object.assign(r, { date, time }));
@@ -200,6 +200,16 @@ try {
   check("the manage page says booked, unpaid, can cancel, cannot pay yet", m0.stage === "booked" && m0.paid === false &&
     m0.canCancel === true && m0.canPay === false && m0.finalUrl === "", m0);
   check("paying before the photos is refused", (await asClient("POST", "/api/pay?t=" + one.token)).status === 400);
+  check("a booking without the video costs the package price", m0.amount === pkg.price && m0.totalAmount === pkg.price &&
+    m0.basePrice === pkg.price && m0.videoSelected === false && m0.videoAddonPrice === 0, m0);
+  const vid = cfg.addons.find(a => a.id === "video");
+  const lastDay = days[days.length - 1];
+  const bv = await asClient("POST", "/api/book", { packageId: pkg.id, video: true, amount: 1, date: lastDay, time: av.days[lastDay].slice(-1)[0], ticket: av.ticket,
+    name: "Video Agent", email: "video@example.com", phone: "3135550777", address: "77 Video Lane, Troy MI 48084" }, { "x-real-ip": "10.77.0.1" });
+  const mv = bv.status === 200 && await manageOf(bv.json.token);
+  check("the video adds its price on the server, whatever the browser sends", !!mv && vid && mv.amount === pkg.price + vid.price &&
+    mv.totalAmount === pkg.price + vid.price && mv.videoSelected === true && mv.videoAddonPrice === vid.price &&
+    / \+ Listing Video$/.test(mv.packageName), { bv: bv.json, mv });
 
   // ---- 1b. the watermark and reference photos, from the manage page
   const PNG = Buffer.concat([Buffer.from("89504e470d0a1a0a", "hex"), Buffer.alloc(40, 1)]);
@@ -250,7 +260,7 @@ try {
   const pay = await asClient("POST", "/api/pay?t=" + one.token);
   const sess = stripeCalls.filter(c => c.url === "/v1/checkout/sessions").pop();
   check("Pay opens a Stripe checkout for the booked amount, set by the server", pay.status === 200 && pay.json.mode === "session" &&
-    sess && sess.form["line_items[0][price_data][unit_amount]"] === String(pkg.firstPrice * 100) &&
+    sess && sess.form["line_items[0][price_data][unit_amount]"] === String(pkg.price * 100) &&
     sess.form["metadata[booking_id]"] === one.id && /\/manage\?t=/.test(sess.form.success_url), { pay: pay.json, form: sess && sess.form });
   const sid = pay.json.url.split("/").pop();
   const wh = await webhookPaid(one.id, sid, "pi_one");

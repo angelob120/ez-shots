@@ -12,7 +12,7 @@ const email = require("../server/email.js");
 const booking = {
   id: "EZ-000002", when: "Saturday, October 10 at 8:00 PM", startsAt: "2026-10-11T00:00:00.000Z",
   address: "1841 Maplehurst Drive, Birmingham MI 48009",
-  packageName: "Listing Pro", amount: 125, firstShoot: true, refunded: 62.5,
+  packageName: "Real Estate Media Package + Listing Video", amount: 299, firstShoot: false, refunded: 62.5,
   name: "Dana <b>Ruiz</b>", email: "dana.ruiz@example.com", phone: "(313) 555-0142",
   brokerage: "Keller Williams Birmingham", size: "2,450 sq ft", occupancy: "Occupied",
   access: "Lockbox", accessNotes: "", notes: "Please shoot the back deck & the pond from the air.",

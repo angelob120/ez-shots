@@ -7,7 +7,12 @@ Since 2026-09-11 there is also a small server, `server.js`, and it is what `npm 
 
 ## The offer the site sells
 Everything on the site points at one offer. Do not water it down or contradict it in copy:
-- First shoot 50% off. Listing Essentials $150 becomes $75, Listing Pro $250 becomes $125.
+- One package and one add on, since 2026-10-06. The Real Estate Media Package is $199:
+  interior, exterior and drone photos, professionally edited, up to 75 finished photos
+  (one combined total, never a limit per category), 24 to 48 hour turnaround. The Listing
+  Video add on is $100, so $299 with it. There is no first shoot discount any more, and
+  the old Essentials $150 / Pro $250 / $75 / $125 prices must not come back in the copy.
+  Older bookings keep the package and price they were booked at.
 - If the client is not happy with a delivered gallery they do not pay for it (or get a full
   refund if they already paid) plus $20 cash on top. Every gallery, the first one and every one after, with no deadline
   on the request. Never reintroduce a claim window, it was removed deliberately on 2026-09-10.
@@ -92,7 +97,7 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   for a day. Toggle visibility with `el.hidden`, never with a class that sets
   `display` on something that also carries `hidden`.
 - **Prose prices are bound to the config, one element at a time.** `js/prices.js`
-  fills `data-price="{essentials.first}"` style templates on 45 elements across
+  fills `data-price="{media}"`, `{video}` (the add on) and `{media+video}` style templates on 45 elements across
   nine pages, including the meta descriptions and the package `<option>` rows.
   Add a new price to the copy and it needs a `data-price` or it will go stale.
   **Do not "simplify" this into a find and replace for `$150`.** `services.html`
@@ -100,14 +105,13 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   photographers charge "$100 to $175". Those numbers must not move when a package
   price moves, which is the whole reason the binding is explicit. The number
   typed in the HTML stays as the fallback for when the config cannot be reached.
-- **The server decides the amount, not which of the two prices applies.**
-  `/api/book` reads the package price out of its own config and the browser
-  never sends a number. But "is this your first shoot" is a radio button, and
-  nothing checks it against past bookings yet, so a returning agent who asks
-  for half price gets it. Since nothing is paid until after the shoot, the
-  owner sees the flag in admin before any money moves. The bookings table now holds
-  every email, so a check is a small query away; until it exists do not
-  describe the discount as verified anywhere in the copy.
+- **The server decides the amount.** `/api/book` reads the package price and,
+  when the client ticked the video, the `video` add on price out of its own
+  config (`priceOf()` in `server.js`) and stores `base_price`,
+  `video_selected`, `video_addon_price` and `total_amount` (`amount` is the
+  same number, for everything older). The browser sends `video: true`, never
+  a price. The add on lives in `config.addons`, the photo limit in
+  `config.maxPhotos`, both edited in admin settings.
 - **Two admin pages, one sign in, one look.** `admin-bookings.html` is the day
   (next shoot, numbers, list or week, a drawer per booking) and `admin.html` is
   settings (packages, weekly hours, rules, days off, one off days, a calendar
@@ -130,9 +134,9 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   status confirmed, `source` admin, paid or not as the owner says, any price,
   and the You are booked email when he ticks it. The public schedule does not bind the owner, only clashes do.
 - **The list flags a returning client at the first shoot price.**
-  `clientBookings` on each booking is that email's confirmed count. It is the
-  only check on the half price radio button, and it is a flag for the owner, not
-  a block, so the copy still must not call the discount verified.
+  `clientBookings` on each booking is that email's confirmed count. Only
+  bookings from before 2026-10-06 can carry the old first shoot flag; new ones
+  never do, so the flag is only ever about old rows.
 - **Booking limits.** `/api/book` refuses bots and calendar flooding in
   `bookingRefusal()`: a signed form ticket from `/api/availability` at least
   a few seconds old, the `_hp` honeypot, and caps per IP, per client email or

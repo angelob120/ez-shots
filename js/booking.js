@@ -57,7 +57,7 @@
   }
 
   // ------------------------------------------------------------------
-  var state = { step: 1, pkg: null, first: true, day: null, slot: null };
+  var state = { step: 1, pkg: null, video: false, day: null, slot: null };
   var AV = null;   // { today, to, days: { "YYYY-MM-DD": ["8:00 AM", ...] } }
 
   var steps = all(".book-step", form);
@@ -79,33 +79,57 @@
   var summary = el("#book-summary", form);
   var submit = el('button[type="submit"]', form);
 
-  function price() { return state.pkg ? (state.first ? state.pkg.firstPrice : state.pkg.price) : 0; }
+  var fVideo = el("#video", form);
+  function videoAddon() {
+    return (EZ.config.addons || []).filter(function (a) { return a.id === "video" && a.active !== false; })[0] || null;
+  }
+  // What the summary shows. The server works the same sum out again from its
+  // own config when the booking is made; this number is never sent.
+  function price() {
+    var v = videoAddon();
+    return state.pkg ? state.pkg.price + (state.video && v ? v.price : 0) : 0;
+  }
 
   // ------------------------------------------------------------------
   // Packages
   // ------------------------------------------------------------------
   function paintPackages() {
     var list = EZ.config.packages.filter(function (p) { return p.active !== false; });
+    pkgWrap.classList.toggle("one", list.length === 1);
     pkgWrap.innerHTML = list.map(function (p) {
-      var now = state.first ? p.firstPrice : p.price;
+      var now = p.price;
       return '<div class="pkg-pick" data-pkg="' + esc(p.id) + '" tabindex="0" role="button" aria-pressed="false">' +
         (p.badge ? '<span class="pkg-pick-badge">' + esc(p.badge) + "</span>" : "") +
         '<h3>' + esc(p.name) + "</h3>" +
         '<p class="pkg-pick-blurb">' + esc(p.blurb || "") + "</p>" +
         '<div class="pkg-pick-price"><span class="pkg-pick-now">' + money(now) + "</span>" +
-          '<span class="pkg-pick-was"' + (state.first ? "" : " hidden") + ">" + money(p.price) + "</span></div>" +
+          "</div>" +
         "<ul>" + (p.bullets || []).map(function (b) { return "<li>" + esc(b) + "</li>"; }).join("") + "</ul>" +
-        '<span class="btn pkg-pick-btn">Choose ' + esc(p.name) + ", " + money(now) + "</span>" +
+        (list.length > 1 ? '<span class="btn pkg-pick-btn">Choose ' + esc(p.name) + ", " + money(now) + "</span>" : "") +
       "</div>";
     }).join("");
 
     all(".pkg-pick", pkgWrap).forEach(function (card) {
-      function choose() { pickPackage(card.getAttribute("data-pkg")); }
+      function choose() { pickPackage(card.getAttribute("data-pkg"), list.length === 1); }
       card.addEventListener("click", choose);
       card.addEventListener("keydown", function (e) {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(); }
       });
     });
+  }
+
+  // The video tick box and the total under the package.
+  function paintAddon() {
+    var v = videoAddon();
+    var box = el("#video-addon", form);
+    box.hidden = !v;
+    if (!v) { state.video = false; fVideo.checked = false; }
+    else {
+      el("#video-price", form).textContent = "+" + money(v.price);
+      if (v.blurb) el("#video-blurb", form).textContent = v.blurb;
+    }
+    var t = el("#book-total", form);
+    t.innerHTML = state.pkg ? '<span>Total' + (state.video ? " with video" : "") + '</span><b>' + money(price()) + "</b><small>due after you see the photos, $0 today</small>" : "";
   }
 
   function pickPackage(id, stay) {
@@ -118,6 +142,7 @@
       c.classList.toggle("on", on);
       c.setAttribute("aria-pressed", on ? "true" : "false");
     });
+    paintAddon();
     paintBar();
     if (!stay) showStep(2);
   }
@@ -252,7 +277,7 @@
   // ------------------------------------------------------------------
   function paintBar() {
     var bits = [];
-    if (state.pkg) bits.push(state.pkg.name + ", " + money(price()) + " after the shoot");
+    if (state.pkg) bits.push(state.pkg.name + (state.video ? " + video" : "") + ", " + money(price()) + " after the shoot");
     if (state.day) bits.push(longDate(state.day) + (state.slot ? " at " + nb(state.slot) : ""));
     var addr = (form.elements.namedItem("address").value || "").trim();
     if (addr) bits.push(addr);
@@ -260,7 +285,7 @@
     barPrice.textContent = state.pkg ? "$0 today" : "";
     bar.classList.toggle("ready", !!state.pkg);
 
-    fPrice.value = state.pkg ? money(price()) + (state.first ? " (first shoot, half price)" : "") + ", due after the shoot, nothing paid at booking" : "";
+    fPrice.value = state.pkg ? money(price()) + ", due after the shoot, nothing paid at booking" : "";
 
     // Where the browser goes after the email is decided by the server at
     // submit time, once the slot is held. Until then there is nowhere to go.
@@ -273,9 +298,8 @@
     paintSummary();
   }
 
-  // The compact "no surprises" block on the last screen. It repeats the
-  // discount as its own line rather than only showing the number that is
-  // charged, because a price that quietly halved reads like a mistake.
+  // The compact "no surprises" block on the last screen. The video is its own
+  // line, so the total adds up in front of them.
   function paintSummary() {
     if (!summary || !state.pkg) return;
     var rows = [
@@ -286,9 +310,10 @@
     var lines = rows.map(function (r) {
       return '<div class="sum-row"><span>' + r[0] + "</span><b>" + esc(r[1]) + "</b></div>";
     });
-    if (state.first) {
+    var v = videoAddon();
+    if (state.video && v) {
       lines.push('<div class="sum-row"><span>' + esc(state.pkg.name) + "</span><b>" + money(state.pkg.price) + "</b></div>");
-      lines.push('<div class="sum-row"><span>First shoot, 50% off</span><b>-' + money(state.pkg.price - state.pkg.firstPrice) + "</b></div>");
+      lines.push('<div class="sum-row"><span>' + esc(v.name) + "</span><b>+" + money(v.price) + "</b></div>");
     }
     lines.push('<div class="sum-row"><span>Due after you see the photos</span><b>' + money(price()) + "</b></div>");
     lines.push('<div class="sum-row sum-total"><span>Due today</span><b>$0</b></div>');
@@ -361,7 +386,7 @@
     if (!state.pkg || !state.day || !state.slot) return Promise.reject(new Error("Pick a package, a day and a time first."));
     var body = {
       packageId: state.pkg.id,
-      firstShoot: state.first,
+      video: state.video,
       date: state.day,
       time: state.slot,
       name: val("name"), email: val("email"), phone: val("phone"), brokerage: val("brokerage"),
@@ -482,17 +507,10 @@
   // ------------------------------------------------------------------
   // Wiring that does not depend on config
   // ------------------------------------------------------------------
-  all('input[name="firstshoot"]', form).forEach(function (r) {
-    r.addEventListener("change", function () {
-      // Read the flag, not the wording. The value is copy that ends up in the
-      // email and it should be free to change without silently flipping the
-      // price this page charges.
-      state.first = r.getAttribute("data-first") === "yes";
-      var keep = state.pkg && state.pkg.id;
-      paintPackages();
-      if (keep) pickPackage(keep, true);
-      paintBar();
-    });
+  fVideo.addEventListener("change", function () {
+    state.video = fVideo.checked;
+    paintAddon();
+    paintBar();
   });
 
   // The access notes field only appears once it has something to say.
@@ -527,17 +545,23 @@
     }
     paintPackages();
     loadAvailability().then(paintCalendar);
+    // ?video=1 from the pricing page's "with video" button.
+    var qs = new URLSearchParams(location.search);
+    if (qs.get("video") === "1" && videoAddon()) { state.video = true; fVideo.checked = true; }
 
     // A package in the URL (?package=pro) comes from the pricing page, so
     // someone who already chose lands on the property screen, not on the
     // same question a second time.
-    var want = (new URLSearchParams(location.search).get("package") || "").toLowerCase();
-    if (want) {
-      var match = cfg.packages.filter(function (p) {
-        return p.id === want || p.name.toLowerCase().indexOf(want) !== -1;
-      })[0];
-      if (match) pickPackage(match.id);
-    }
+    // With one package there is nothing to choose, so it is picked and the
+    // page stays on the add on question.
+    var want = (qs.get("package") || "").toLowerCase();
+    var active = cfg.packages.filter(function (p) { return p.active !== false; });
+    var match = want && cfg.packages.filter(function (p) {
+      return p.id === want || p.name.toLowerCase().indexOf(want) !== -1;
+    })[0];
+    if (match && active.length > 1) pickPackage(match.id);
+    else if (active.length === 1) pickPackage(active[0].id, true);
+    paintAddon();
     paintBar();
     form.classList.add("ready");
   });
