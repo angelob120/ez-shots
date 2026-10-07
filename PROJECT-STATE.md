@@ -187,6 +187,10 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-07 - Clearer first shoot line on the home page
+- The hero line now reads "Your first shoot is $X. Every shoot after is $Y for the exact same package: photos and aerials, up to 75 finished images", so agents see it is one package with a first time discount, not two tiers.
+- Prices stay bound with `data-price` (`{media.first}` and `{media}`), so the live admin prices show. Checked in the browser preview.
+
 ### 2026-10-07 - Analytics and tracking in admin
 - New Analytics tab (`/admin-analytics`): visitors, page views, visit to
   booking rate, a per day chart, the booking funnel (visit, booking page,
