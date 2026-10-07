@@ -177,6 +177,42 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   that books, moves, cancels or marks a booking paid needs a `crm.report` (or
   `crm.reportCancelled`) call next to its `tracker` call.
 
+## Fulfillment: upload, AI edit, gallery (since 2026-10-06)
+- **The owner finishes a shoot in `admin-job.html`** (`/admin-job?id=EZ-...`,
+  opened from Open fulfillment in a booking's drawer): upload, sort, Edit with
+  AI or Use as shot, review, Mark ready, then copy the text or send the email.
+  `server/fulfillment.js` is all of it on the server; `js/admin-job.js` the page.
+- **Photos live in object storage, never in Postgres.** `server/storage.js`
+  is an S3 compatible client signed by hand (SigV4, checked against the AWS
+  test vectors) plus a local folder for development. Without
+  `OBJECT_STORAGE_*` in production the workspace is off and says so; it never
+  writes photos to the container disk, which a deploy wipes.
+- **The AI editor is only for editing.** `server/editor.js` is the provider
+  (OpenAI `gpt-image-2`, medium, 1024x1024 by the owner's choice, about $0.053
+  an edit, all env vars). A non square photo is padded into the square and cut
+  back out, never stretched. Every other size (high res, MLS 2400px, thumbnail,
+  watermarked preview and watermarked thumbnail) is made with sharp in
+  `server/images.js`. Never send resizing, watermarks or zips to the AI.
+- **Never pay twice for an edit.** A photo with an edited master is not sent
+  again unless the owner presses Re-edit. Attempts are counted before the call,
+  a rate limit waits and is not counted, a refusal fails without a retry, and a
+  restart finishes a half done photo from its saved master. `npm run
+  check:fulfillment` proves all of it against a fake OpenAI; run it after
+  touching any of this.
+- **HEIC is converted on arrival** (heic-decode, WebAssembly, because sharp's
+  npm binaries cannot read HEIC). From then on the JPEG is the original.
+- **75 finals at most, one number for interior, exterior and drone.** Category
+  is for sorting only. More than 75 source photos is fine.
+- **The gallery is `/g/<token>`** and replaces the pasted preview and files
+  links: Mark ready fills `preview_url` and `final_url` with it so the manage
+  page and every older email keep working, and old bookings with pasted links
+  are untouched. **An unpaid gallery serves nothing clean**: watermarked
+  thumbnails and previews only, and 402 for high res, MLS, zips and the video
+  download, checked on the server from the booking row every time. Stripe
+  saying paid (webhook or the return to the gallery) unlocks everything.
+- **Request a change** in the gallery emails the owner and lists the request
+  on the job. It is not Not happy: nothing is flagged.
+
 ## The blog and SEO
 - **The blog is static HTML built from JSON.** `scripts/write-blog.mjs` asks
   MiniMax (`MINIMAX_API_KEY` in the gitignored `.env`, never committed) for one

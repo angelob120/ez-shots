@@ -204,7 +204,10 @@
       '<div class="adm-bk-time"><b>' + esc(b.time) + "</b><span>" + esc(rel) + "</span></div>" +
       '<div class="adm-bk-main"><b>' + esc(b.address) + (repeatDiscount(b) ? '<span class="adm-flag" title="Has booked before and still got the first shoot price">Repeat at 50% off</span>' : "") +
         (b.watermark && b.watermarkWanted ? '<span class="adm-tag" title="Wants their brokerage watermark on the photos">Watermark</span>' : "") +
-        ((b.references || []).length || b.referenceNotes ? '<span class="adm-tag" title="Added reference photos or notes">References</span>' : "") + "</b><span>" + esc(sub) + "</span></div>" +
+        ((b.references || []).length || b.referenceNotes ? '<span class="adm-tag" title="Added reference photos or notes">References</span>' : "") +
+        (b.job && b.job.editing ? '<span class="adm-tag" title="Photos with the AI editor">Editing ' + b.job.editing + "</span>" : "") +
+        (b.job && b.job.failed ? '<span class="adm-flag" title="Photos whose edit failed">' + b.job.failed + " failed</span>" : "") +
+        (b.videoSelected ? '<span class="adm-tag" title="Bought the listing video">Video</span>' : "") + "</b><span>" + esc(sub) + "</span></div>" +
       '<div class="adm-bk-amt">' + esc(money(b.amount)) + "<small>" + (b.firstShoot ? "first shoot" : b.source === "admin" ? "added by you" : "&nbsp;") + "</small></div>" +
       '<div class="adm-bk-state">' + badge(b) + "</div>" +
       icon("chev", "adm-bk-chev") +
@@ -468,6 +471,17 @@
   // One panel that says what to do next for this stage, so the owner never
   // has to remember the order: shoot done, send the photos, get paid.
   function jobPanel(b, k) {
+    // The photos: upload, AI edit, review and the gallery all happen in the
+    // fulfillment workspace. The pasted links below are the old way, kept for
+    // a job edited somewhere else.
+    var j = b.job || { total: 0, finals: 0, editing: 0, failed: 0 };
+    var gallery = b.galleryToken && b.previewUrl;
+    var ws = '<div class="adm-panel"><b>Photos and gallery</b><p class="adm-help">' +
+      (j.total ? j.total + " uploaded, " + j.finals + " final" + (j.editing ? ", " + j.editing + " editing" : "") + (j.failed ? ", " + j.failed + " failed" : "") + "." : "Nothing uploaded yet.") +
+      (gallery ? " The gallery is live." : "") + "</p>" +
+      '<div class="adm-panel-actions"><a class="adm-btn adm-btn-primary" href="/admin-job?id=' + esc(b.id) + '">Open fulfillment</a>' +
+      (gallery ? '<a class="adm-btn" href="' + esc(b.previewUrl) + '" target="_blank" rel="noopener">Open gallery</a>' : "") + "</div></div>";
+    var old = function (html) { return gallery ? "" : '<details class="adm-old"><summary>Or paste outside links (the old way)</summary>' + html + "</details>"; };
     var links = '<label class="adm-field"><span>Preview link (what they see before paying: watermarked or low resolution)</span>' +
         '<input class="adm-input" data-f="preview" type="url" placeholder="https://" value="' + esc(b.previewUrl || "") + '" /></label>' +
       '<label class="adm-field"><span>Full resolution files link (unlocked only by the payment)</span>' +
@@ -482,23 +496,24 @@
         btns([btn("unflag", "Clear the flag", true)]);
     }
     if (k === "booked") {
-      return head("Booked, nothing paid yet", "That is normal: they pay after seeing the photos. After the shoot, press Shoot done so they know editing has started, or send the photos straight away below.") +
-        btns([btn("shot", "Shoot done", true)]) +
-        head("Send the photos", "Emails " + esc(first(b.name)) + " the preview link and a Pay button. The files link stays hidden until they pay.") + links +
-        btns([btn("ready", "Send photos and ask for payment", false)]);
+      return head("Booked, nothing paid yet", "That is normal: they pay after seeing the photos. After the shoot, press Shoot done so they know editing has started, then upload the photos.") +
+        btns([btn("shot", "Shoot done", true)]) + ws +
+        old(head("Send the photos", "Emails " + esc(first(b.name)) + " the preview link and a Pay button. The files link stays hidden until they pay.") + links +
+        btns([btn("ready", "Send photos and ask for payment", false)]));
     }
     if (k === "editing") {
-      return head("Editing, photos to send", "Paste both links and send. " + esc(first(b.name)) + " gets the previews, the amount and a Pay button.") + links +
-        btns([btn("ready", "Send photos and ask for payment", true)]);
+      return ws + old(head("Editing, photos to send", "Paste both links and send. " + esc(first(b.name)) + " gets the previews, the amount and a Pay button.") + links +
+        btns([btn("ready", "Send photos and ask for payment", true)]));
     }
     if (k === "due") {
-      return head("Photos sent, " + money(b.amount) + " due", "Sent " + esc(A.stamp(b.readyAt)) + ". When Stripe says paid, the files link goes to them on its own. Paid another way? Mark it paid and the files go out the same.") +
-        btns([btn("confirm", "Mark paid", true), btn("flag", "Mark not happy", false)]) +
-        head("Links", "Change a link and press Save to send the corrected email.") + links + btns([btn("ready", "Save and resend", false)]);
+      return head("Photos sent, " + money(b.amount) + " due", "Sent " + esc(A.stamp(b.readyAt)) + ". When Stripe says paid, the downloads unlock on their own. Paid another way? Mark it paid and they unlock the same.") +
+        btns([btn("confirm", "Mark paid", true), btn("flag", "Mark not happy", false)]) + ws +
+        old(head("Links", "Change a link and press Save to send the corrected email.") + links + btns([btn("ready", "Save and resend", false)]));
     }
     if (k === "paid") {
-      return head(b.finalUrl ? "Paid and delivered" : "Paid, files to send", b.finalUrl ? "The files link went to them with the payment." : "Paid before the photos were sent. Paste the links to deliver.") + links +
-        btns([btn("ready", b.finalUrl ? "Save and resend files" : "Deliver the files", !b.finalUrl), btn("flag", "Mark not happy", false)]);
+      return head(b.finalUrl ? "Paid and delivered" : "Paid, files to send", b.finalUrl ? "The downloads unlocked with the payment." : "Paid before the photos were ready. Finish them in fulfillment.") + ws +
+        old(links + btns([btn("ready", b.finalUrl ? "Save and resend files" : "Deliver the files", !b.finalUrl)])) +
+        btns([btn("flag", "Mark not happy", false)]);
     }
     return "";
   }

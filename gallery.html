@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your photos | EZ Shots</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="no-referrer" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body data-page="gallery" class="gal">
+  <!-- The client's gallery, /g/<token>. The token is the only key. Drawn by
+       js/gallery.js from /api/gallery/<token>; the photos, zips and video are
+       streamed by the server, which checks the payment before any clean file
+       leaves it. -->
+  <header class="gal-top">
+    <div class="container gal-top-in">
+      <a href="/" class="gal-brand" id="gal-brand" aria-label="EZ Shots">EZ <span>Shots</span></a>
+      <button type="button" class="btn btn-ghost gal-share" id="gal-share">Copy Gallery Link</button>
+    </div>
+  </header>
+
+  <main class="gal-main" id="main">
+    <section class="container gal-head">
+      <p class="eyebrow" id="gal-eyebrow">Your property media</p>
+      <h1 id="gal-title">Loading your gallery...</h1>
+      <p class="lead" id="gal-lead"></p>
+    </section>
+
+    <section class="container" id="gal-box" hidden>
+      <div class="gal-panel" id="pay" hidden>
+        <div>
+          <b>Review your completed photos.</b>
+          <span id="gal-pay-note">Happy with them? Pay and the full resolution and MLS downloads unlock straight away.</span>
+        </div>
+        <div class="gal-pay-right">
+          <span class="gal-total">Total: <b id="gal-amount"></b></span>
+          <button type="button" class="btn btn-lg" id="gal-pay">Pay &amp; Unlock Downloads</button>
+        </div>
+      </div>
+
+      <div class="gal-panel gal-paid" id="downloads" hidden>
+        <div><b>Payment complete.</b><span>Thank you. Download everything below, or any single photo from its full view.</span></div>
+        <div class="gal-pay-right">
+          <a class="btn btn-lg" id="gal-zip-high" href="#">Download High Resolution</a>
+          <a class="btn btn-lg btn-ghost" id="gal-zip-mls" href="#">Download MLS / Web Resolution</a>
+        </div>
+      </div>
+
+      <!-- Which size the gallery shows and single downloads give. Links can
+           open on one with ?res=mls or ?res=full. -->
+      <div class="gal-tools">
+        <div class="gal-res" role="group" aria-label="Gallery resolution">
+          <button type="button" data-res="mls" aria-pressed="true">Low res, MLS and web</button>
+          <button type="button" data-res="full" aria-pressed="false">Full resolution</button>
+        </div>
+        <button type="button" class="btn btn-ghost gal-change-btn" id="gal-change-all">Request a change</button>
+      </div>
+      <p class="gal-res-note" id="gal-res-note"></p>
+
+      <form class="gal-change" id="gal-change" hidden>
+        <p class="gal-change-head"><b id="gal-change-title">What would you like changed?</b></p>
+        <label for="gal-change-msg" class="gal-sr">What would you like changed?</label>
+        <textarea id="gal-change-msg" rows="3" maxlength="2000" placeholder="Brighter kitchen, remove the car in the driveway, a different crop..."></textarea>
+        <div class="btn-row" style="margin-top:8px">
+          <button type="submit" class="btn">Send to EZ Shots</button>
+          <button type="button" class="btn btn-ghost" id="gal-change-cancel">Never mind</button>
+        </div>
+      </form>
+
+      <p class="form-status" id="gal-status" role="status" aria-live="polite"></p>
+
+      <div class="gal-video" id="gal-video" hidden></div>
+      <div class="gal-grid" id="gal-grid"></div>
+      <p class="gal-foot" id="gal-foot"></p>
+    </section>
+
+    <section class="container" id="gal-missing" hidden>
+      <div class="form-block">
+        <p class="form-legend"><b>That link does not match a gallery</b><span>It may have been copied short, or the gallery is not ready yet.</span></p>
+        <p>Open the link from your message again, or email <a href="mailto:angelobrown1000@gmail.com">angelobrown1000@gmail.com</a> with the property address.</p>
+      </div>
+    </section>
+  </main>
+
+  <div class="gal-light" id="gal-light" role="dialog" aria-modal="true" aria-label="Photo" hidden></div>
+
+  <script src="/js/site.js"></script>
+  <script src="/js/gallery.js"></script>
+</body>
+</html>

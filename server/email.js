@@ -448,10 +448,12 @@ function shotMail(b, site) {
 function readyMail(b, site) {
   const first = firstName(b);
   const manage = manageUrl(b, site);
+  // A job delivered through the EZ Shots gallery pays from the gallery.
+  const payAt = b.galleryUrl ? b.galleryUrl + "#pay" : manage + "#pay";
   const rows = [["Property", b.address], ["Package", b.packageName], ["Amount", money(b.amount)], ["Booking", b.id]];
   const buttons = [];
   if (b.previewUrl) buttons.push(button(b.previewUrl, "See your photos", true));
-  buttons.push(button(manage + "#pay", "Pay " + money(b.amount) + " and get the files", !b.previewUrl));
+  buttons.push(button(payAt, "Pay " + money(b.amount) + " and get the files", !b.previewUrl));
   buttons.push(button(manage + "#unhappy", "Not happy with them?", false));
   return {
     subject: `Your photos are ready: ${b.address}`,
@@ -459,7 +461,7 @@ function readyMail(b, site) {
       `Hi ${first},`, "",
       `Your photos for ${b.address} are ready to look at.`, "",
       b.previewUrl ? `See them: ${b.previewUrl}` : "", "",
-      `Happy with them? Pay ${money(b.amount)} online and the full resolution files unlock straight away: ${manage}#pay`, "",
+      `Happy with them? Pay ${money(b.amount)} online and the full resolution files unlock straight away: ${payAt}`, "",
       `${GUARANTEE} Tell me here: ${manage}#unhappy, or just reply.`, "",
       lines(rows), "",
       "Thanks,", "Angelo", "EZ Shots"
@@ -551,14 +553,14 @@ function ownerAlert(b, site, o) {
   if (o.reason) rows.unshift(["What they said", o.reason]);
   return {
     subject: o.subject,
-    text: [o.line, "", lines(rows), "", `Bookings: ${site}/admin`].join("\n"),
+    text: [o.line, "", lines(rows), "", `${o.link ? "The job" : "Bookings"}: ${site}${o.link || "/admin"}`].join("\n"),
     html: layout({
       preheader: o.line,
       eyebrow: o.eyebrow,
       heading: o.heading,
       intro: esc(o.line),
       body: detailsBox(rows),
-      buttons: [button(`${site}/admin`, "Open bookings", true)].concat(b.email ? [button("mailto:" + b.email, "Email " + firstName(b), false)] : []),
+      buttons: [button(o.link ? site + o.link : `${site}/admin`, o.link ? "Open the job" : "Open bookings", true)].concat(b.email ? [button("mailto:" + b.email, "Email " + firstName(b), false)] : []),
       footer: "Sent by ezshots.org."
     })
   };
@@ -573,6 +575,10 @@ const ALERTS = {
     subject: `Cancelled: ${b.when}, ${b.address}`, eyebrow: "Cancelled by the client", heading: `${b.name} cancelled`,
     line: `${b.name} cancelled the shoot on ${b.when} at ${b.address}. The time is open on the calendar again.` +
       (b.paid ? " It was paid, so refund it from admin." : " Nothing was paid.")
+  }),
+  change: b => ({
+    subject: `Change requested: ${b.address}`, eyebrow: "Change requested", heading: `${b.name} would like something changed`,
+    line: `${b.name} asked for a change in the gallery for ${b.address}. Nothing is flagged and no email is held back; mark it done in the job when it is sorted.`
   }),
   paid: b => ({
     subject: `Paid ${money(b.amount)}: ${b.address}`, eyebrow: "Paid", heading: `${b.name} paid ${money(b.amount)}`,

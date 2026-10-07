@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fulfillment | EZ Shots Admin</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+</head>
+<body class="adm" data-page="admin">
+  <div id="adm-top"></div>
+
+  <div id="adm-boot" class="adm-gate"><p class="adm-muted">Loading...</p></div>
+
+  <div id="adm-off" class="adm-gate" hidden>
+    <div class="adm-card">
+      <h1>Admin is not switched on</h1>
+      <p>This page needs the EZ Shots server running with an <code>ADMIN_PASSWORD</code> set.</p>
+    </div>
+  </div>
+
+  <div id="adm-login" class="adm-gate" hidden>
+    <form class="adm-card" id="adm-login-form">
+      <h1>Sign in</h1>
+      <p>One password, yours, from the Railway variables.</p>
+      <label class="adm-field"><span>Password</span>
+        <input class="adm-input" id="adm-password" type="password" autocomplete="current-password" required />
+      </label>
+      <p class="adm-error" id="adm-login-error" role="alert"></p>
+      <button type="submit" class="adm-btn adm-btn-primary adm-btn-lg">Sign in</button>
+    </form>
+  </div>
+
+  <!-- One booking's fulfillment: upload, sort, AI edit, review, ready, send.
+       Everything below is drawn by js/admin-job.js from
+       GET /api/admin/jobs/<id>. -->
+  <main id="adm-app" class="adm-main" hidden>
+    <div class="adm-wrap">
+      <div class="adm-head">
+        <div>
+          <a class="adm-back" href="/admin" id="job-back">&larr; Bookings</a>
+          <h1 id="job-title">Loading...</h1>
+          <p id="job-sub"></p>
+        </div>
+        <div class="adm-head-actions">
+          <span class="adm-updated" id="job-updated" aria-live="polite"></span>
+          <button type="button" class="adm-icon" id="job-refresh" title="Refresh" aria-label="Refresh"></button>
+        </div>
+      </div>
+
+      <ol class="job-flow" id="job-flow" aria-label="Where this job is"></ol>
+      <div id="job-notices"></div>
+      <section class="adm-card job-sec job-changes" id="job-changes" aria-label="Change requests" hidden></section>
+
+      <section class="adm-card job-sec" id="sec-upload" aria-labelledby="h-upload">
+        <div class="adm-card-head"><div><h2 id="h-upload">1. Upload the shoot</h2><p>Drop every photo from the shoot. JPG, PNG, WebP and HEIC. You pick the finals next, so upload more than 75 if you shot more.</p></div></div>
+        <div class="adm-card-pad">
+          <label class="job-drop" id="job-drop" tabindex="0">
+            <input type="file" id="job-files" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,.jpg,.jpeg,.png,.webp" />
+            <b>Drop shoot photos here</b>
+            <span>or click to choose photos</span>
+          </label>
+          <div class="job-queue" id="job-queue" hidden></div>
+          <div class="job-video" id="job-video"></div>
+        </div>
+      </section>
+
+      <section class="adm-card job-sec" id="sec-photos" aria-labelledby="h-photos">
+        <div class="adm-card-head">
+          <div><h2 id="h-photos">2. Sort, then edit</h2><p>Click to select, shift click for a range, drag to reorder. Pick the finals and press Edit with AI. Double click a photo to look closer.</p></div>
+          <div class="job-count" id="job-count"></div>
+        </div>
+        <div class="job-bar" id="job-bar"></div>
+        <div class="adm-card-pad">
+          <div class="job-grid" id="job-grid"></div>
+          <details class="job-settings" id="job-settings">
+            <summary>Editing notes for this shoot</summary>
+            <div class="job-settings-body" id="job-settings-body"></div>
+          </details>
+        </div>
+      </section>
+
+      <section class="adm-card job-sec" id="sec-ready" aria-labelledby="h-ready">
+        <div class="adm-card-head"><div><h2 id="h-ready">3. Review and mark ready</h2><p>Approve all, take out the odd miss, re-edit one if it needs it. Mark ready makes the gallery.</p></div></div>
+        <div class="adm-card-pad" id="job-ready"></div>
+      </section>
+
+      <section class="adm-card job-sec" id="sec-send" aria-labelledby="h-send" hidden>
+        <div class="adm-card-head"><div><h2 id="h-send">4. Send to the client</h2><p>Copy the text into your conversation with them, or send the email.</p></div></div>
+        <div class="adm-card-pad" id="job-send"></div>
+      </section>
+
+      <section class="adm-card job-sec" aria-labelledby="h-usage">
+        <div class="adm-card-head"><div><h2 id="h-usage">This shoot's numbers</h2></div></div>
+        <div class="adm-card-pad" id="job-usage"></div>
+      </section>
+    </div>
+  </main>
+
+  <div class="job-viewer" id="job-viewer" role="dialog" aria-modal="true" aria-label="Photo" hidden></div>
+
+  <script src="js/site.js"></script>
+  <script src="js/admin-core.js"></script>
+  <script src="js/admin-job.js"></script>
+</body>
+</html>

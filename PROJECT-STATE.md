@@ -4,6 +4,15 @@
 This file is the memory between sessions. Read it at the start of every session along with `CLAUDE.md`. At the end of every session, append a new dated entry to the top of the Work Log describing what changed and anything the next session would otherwise have to rediscover. "Blocked on a human" lists things only the owner can do (accounts, keys, DNS, deploy clicks). Detailed per-area status lives in `docs/site.md`.
 
 ## Blocked on a human
+- **Create the photo bucket.** Fulfillment needs S3 compatible storage. Easiest
+  is a Railway bucket in the "WEBSITE EZ Shots (rebuild)" project, then give
+  the ez-shots service OBJECT_STORAGE_ENDPOINT, OBJECT_STORAGE_BUCKET,
+  OBJECT_STORAGE_ACCESS_KEY_ID, OBJECT_STORAGE_SECRET_ACCESS_KEY and
+  OBJECT_STORAGE_REGION (Cloudflare R2 works the same). Until then the
+  workspace says storage is off.
+- **Paste the OpenAI key.** `OPENAI_API_KEY` is on the ez-shots service with a
+  placeholder (added 2026-10-06); replace it with the real `sk-...` key. The
+  placeholder reads as not set, so AI editing stays off until then.
 - **Point the EmailJS contact template at angelobrown1000@gmail.com.** The
   site now shows that address, but `template_qlotxua`'s To Email is set in
   the EmailJS dashboard and may still be bigmoneygelo2@gmail.com.
@@ -177,6 +186,33 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-10-06 - Fulfillment inside EZ Shots: upload, AI edit, gallery, pay, download
+- New workspace per booking, `/admin-job?id=EZ-...`: drag and drop the shoot
+  (JPG, PNG, WebP, HEIC converted to JPEG on arrival, duplicates skipped, per
+  file progress, retry, cancel), sort (select, shift click, drag to reorder,
+  category, finals capped at 75 combined), Edit with AI or Use as shot, review
+  with Before and After, Approve all, Re-edit one, Mark ready, then Copy Text,
+  Copy Email or Send Email, plus a delivery dashboard and per shoot numbers.
+- AI editing: `server/editor.js`, OpenAI `gpt-image-2`, medium quality,
+  1024x1024 (the owner's choice, about $0.053 an edit). Background queue in
+  the server process, 3 at a time, safe across restarts, never pays twice.
+- Sizes with sharp, no AI: high res is the edited master, MLS 2400px, 600px
+  thumbnail, 1600px watermarked preview and a watermarked thumbnail.
+- Client gallery `/g/<token>`: watermarked until paid, Pay from the gallery
+  (Stripe, same webhook), then high res and MLS one by one or as zips
+  (`123-main-st-high-resolution.zip`), a Low res / Full res switch, the video,
+  Copy Gallery Link, and Request a change (emails the owner, listed on the job).
+- Migrations 009 (photos, gallery and video columns) and 010 (watermarked
+  thumbnails, change requests).
+- With OPENAI at 1024x1024 a delivered photo is about 1024x683. Fine for the
+  MLS, small for print. `OPENAI_IMAGE_SIZE=auto` gives about 3520x2336 at a
+  higher cost.
+- Verified: `npm run check:fulfillment` (new, 58 checks: uploads, HEIC, the 75
+  cap, AI success, refusal, rate limit, no double billing, re-edit, padding,
+  ready rules, templates, locked and unlocked downloads, zips, change requests,
+  restart recovery), `npm test`, `npm run check:bookings`, and the workspace
+  and gallery in the preview at desktop and phone size.
 
 ### 2026-10-06 - One package, $199, video add on $100
 - The owner's plan replaced Essentials $150 / Pro $250 and the half price first

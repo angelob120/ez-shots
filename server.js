@@ -48,6 +48,11 @@
 //                          that email asks for a reply instead.
 //   SITE_URL               optional, the public origin used to build Stripe's
 //                          return URLs. Worked out from the request when unset.
+//   OBJECT_STORAGE_*       where the photos live, see server/storage.js. Without
+//                          it the fulfillment workspace is off and says so.
+//   OPENAI_API_KEY, OPENAI_IMAGE_MODEL  the AI photo editor, see server/editor.js.
+//   PUBLIC_GALLERY_BASE_URL optional, the origin gallery links use. SITE_URL
+//                          or the request's own origin when unset.
 //   TZ                     the business timezone. Defaulted below to Detroit so
 //                          "8:00 AM" means 8 in the morning in Michigan even on
 //                          a Railway box that thinks it is in UTC.
@@ -70,6 +75,8 @@ const { Db } = require("./server/db");
 const email = require("./server/email");
 const tracker = require("./server/tracker");
 const crm = require("./server/crm");
+const storageLib = require("./server/storage");
+const fulfillmentLib = require("./server/fulfillment");
 
 const ROOT = __dirname;
 const PORT = parseInt(process.env.PORT || "3000", 10);
@@ -351,7 +358,10 @@ function publicBooking(b) {
     // link is the thing the payment buys, so it never leaves the server
     // before the booking is paid.
     previewUrl: b.stage === "ready" || b.stage === "delivered" ? b.previewUrl || "" : "",
-    finalUrl: b.paid ? b.finalUrl || "" : ""
+    finalUrl: b.paid ? b.finalUrl || "" : "",
+    // A booking delivered through EZ Shots' own gallery. Both links above are
+    // the gallery then, and the gallery itself decides what is unlocked.
+    galleryUrl: b.galleryToken && (b.stage === "ready" || b.stage === "delivered") ? b.previewUrl || "" : ""
   };
 }
 
@@ -683,6 +693,14 @@ async function pay(req, res, url) {
   if (b.status !== "confirmed") return json(res, 400, { error: "This booking is cancelled, so there is nothing to pay." });
   if (b.stage !== "ready") return json(res, 400, { error: "Nothing is due yet. You pay once your photos are ready." });
 
+  const manageUrl = origin(req) + "/manage?t=" + b.token;
+  return checkout(req, res, b, manageUrl + "&paid={CHECKOUT_SESSION_ID}", manageUrl);
+}
+
+// The Stripe Checkout Session for what a booking owes, read off the booking,
+// never from the browser. The manage page and the gallery both pay through
+// here, each with its own way back.
+async function checkout(req, res, b, successUrl, cancelUrl) {
   if (!STRIPE_KEY) {
     // No secret key on the server: the package's payment link, and the owner
     // marks it paid by hand when Stripe tells him.
@@ -695,26 +713,26 @@ async function pay(req, res, url) {
     return json(res, 200, { url: link, mode: "link" });
   }
 
-  const site = origin(req);
-  const manageUrl = site + "/manage?t=" + b.token;
   const payload = {
     mode: "payment",
-    success_url: manageUrl + "&paid={CHECKOUT_SESSION_ID}",
-    cancel_url: manageUrl,
+    success_url: successUrl,
+    cancel_url: cancelUrl,
     client_reference_id: b.id,
     customer_email: b.email || undefined,
     customer_creation: "always",
     "line_items[0][quantity]": 1,
     "line_items[0][price_data][currency]": "usd",
     "line_items[0][price_data][unit_amount]": Math.round(Number(b.amount) * 100),
-    "line_items[0][price_data][product_data][name]": b.packageName + (b.firstShoot ? " (first shoot, half price)" : ""),
+    "line_items[0][price_data][product_data][name]": b.packageName + (b.firstShoot && b.amount < b.listPrice ? " (first shoot, half price)" : ""),
     "line_items[0][price_data][product_data][description]": [b.address, longDate(b.date)].join(", ").slice(0, 500),
     "payment_intent_data[receipt_email]": b.email || undefined,
     metadata: { booking_id: b.id, purpose: "pay", package: b.packageName, address: b.address.slice(0, 400), shoot_date: longDate(b.date) }
   };
   try {
-    // Keyed on the booking and the minute, so a double tap is one session.
-    const s = await stripe.createSession(STRIPE_KEY, payload, b.id + "-pay-" + Math.floor(Date.now() / 60000));
+    // Keyed on the booking, the return page and the minute, so a double tap
+    // is one session and the gallery and manage page do not share one.
+    const where = crypto.createHash("sha1").update(successUrl).digest("hex").slice(0, 8);
+    const s = await stripe.createSession(STRIPE_KEY, payload, b.id + "-pay-" + where + "-" + Math.floor(Date.now() / 60000));
     await db.update(b.id, { stripeSessionId: s.id });
     return json(res, 200, { url: s.url, mode: "session" });
   } catch (e) {
@@ -1061,10 +1079,12 @@ async function adminBookings(req, res) {
   const counts = await db.clientCounts();
   const rows = await db.list(from, to);
   const filesOf = await db.filesFor(rows);
+  const jobs = await fulfillment.summaries(rows.map(b => b.id));
   const href = id => "/api/admin/files/" + id;
   const list = rows.map(b => {
     const f = filesOf(b);
     return Object.assign(adminView(b, now), {
+      job: jobs.get(b.id) || null,
       clientBookings: counts.get(String(b.email || "").toLowerCase()) || 0,
       watermark: fileView(f.watermark, href),
       references: f.references.map(x => fileView(x, href))
@@ -1288,6 +1308,16 @@ async function adminBooking(req, res, id) {
 }
 
 // ---------------------------------------------------------------------------
+// Fulfillment: uploads, the AI edit queue, the gallery. See server/fulfillment.js.
+// ---------------------------------------------------------------------------
+const storage = storageLib.fromEnv();
+const fulfillment = fulfillmentLib.setup({
+  getDb: () => db, storage, storageMissing: storageLib.missing, SITE_URL,
+  json, send, raw, body, str, readConfig, origin, email, after, crm, tracker,
+  publicBooking, checkout, authed
+});
+
+// ---------------------------------------------------------------------------
 // Routes
 // ---------------------------------------------------------------------------
 async function api(req, res, url) {
@@ -1328,9 +1358,11 @@ async function api(req, res, url) {
   if (pathname === "/api/manage" || pathname.startsWith("/api/manage/")) return manage(req, res, url);
   if (pathname === "/api/pay" && req.method === "POST") return pay(req, res, url);
   if (pathname === "/api/ics" && req.method === "GET") return ics(req, res, url);
+  if (pathname.startsWith("/api/gallery/")) return fulfillment.gallery(req, res, url);
 
   if (pathname === "/api/admin/session" && req.method === "GET") {
-    return json(res, 200, { enabled: !!ADMIN_PASSWORD, authed: authed(req), stripe: !!STRIPE_KEY, webhook: !!WEBHOOK_SECRET, bookings: !!db, email: email.configured() });
+    return json(res, 200, { enabled: !!ADMIN_PASSWORD, authed: authed(req), stripe: !!STRIPE_KEY, webhook: !!WEBHOOK_SECRET, bookings: !!db, email: email.configured(),
+      storage: storage ? storage.name : null, editor: require("./server/editor").provider.ready });
   }
 
   if (pathname === "/api/admin/login" && req.method === "POST") {
@@ -1374,6 +1406,7 @@ async function api(req, res, url) {
       return json(res, r.owner && r.customer ? 200 : 502, r);
     }
 
+    if (pathname.startsWith("/api/admin/jobs/")) return fulfillment.admin(req, res, url);
     if (pathname === "/api/admin/bookings" && req.method === "GET") return adminBookings(req, res);
     if (pathname === "/api/admin/bookings" && req.method === "POST") return adminCreate(req, res);
     const fm = /^\/api\/admin\/files\/(\d+)$/.exec(pathname);
@@ -1400,6 +1433,12 @@ const server = http.createServer((req, res) => {
   });
 
   if (url.pathname.startsWith("/api/")) return done(api(req, res, url));
+  if (url.pathname.startsWith("/g/")) {
+    // /g/<token> is the client's gallery page; everything under it is the
+    // photos, zips and video, which fulfillment.gallery checks and streams.
+    if (/^\/g\/[A-Za-z0-9_-]{16,64}\/?$/.test(url.pathname)) return done(serveStatic(req, res, "/gallery"));
+    return done(fulfillment.gallery(req, res, url).then(r => { if (r === false && !res.headersSent) send(res, 404, "Not found", { "content-type": "text/plain" }); }));
+  }
   if (req.method !== "GET" && req.method !== "HEAD") return send(res, 405, "Method not allowed", { "content-type": "text/plain" });
   return done(serveStatic(req, res, url.pathname, url.search));
 });
@@ -1472,6 +1511,9 @@ server.listen(PORT, () => {
   // Named at boot, because the first time anybody notices a missing variable
   // should not be the first booking that goes unconfirmed.
   if (!email.configured()) console.log(`[ez-shots] no confirmation emails, missing: ${email.why().join(", ")}`);
+  console.log(`[ez-shots] photo storage ${storage ? storage.name : "OFF (set OBJECT_STORAGE_*)"}` +
+    `, AI editor ${require("./server/editor").provider.ready ? require("./server/editor").provider.model : "OFF (set OPENAI_API_KEY)"}`);
+  fulfillment.start();
   if (process.env.DATABASE_URL) keepConnecting(process.env.DATABASE_URL);
   else console.log(`[ez-shots] no DATABASE_URL: config from ${DATA_DIR}, online booking OFF`);
 });

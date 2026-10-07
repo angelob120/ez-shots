@@ -44,6 +44,26 @@ function fromRow(r) {
   return out;
 }
 
+// bigint and numeric come back from pg as strings, so they are turned into
+// numbers here; a photo's size is never near 2^53.
+const PHOTO_NUMS = ["id", "originalSize", "editedSize", "highResSize", "lowResSize", "derivedSize", "aiCostEstimate"];
+function photoRow(r) {
+  const p = fromRow(r);
+  if (!p) return null;
+  delete p.number;
+  for (const k of PHOTO_NUMS) p[k] = Number(p[k] || 0);
+  return p;
+}
+
+function changeRow(r) {
+  if (!r) return null;
+  return {
+    id: r.id, bookingId: r.booking_id, photoIds: (r.photo_ids || []).map(Number), photos: r.photo_labels, message: r.message,
+    createdAt: r.created_at instanceof Date ? r.created_at.toISOString() : r.created_at,
+    resolvedAt: r.resolved_at instanceof Date ? r.resolved_at.toISOString() : r.resolved_at
+  };
+}
+
 function fromFile(r) {
   return {
     id: r.id, bookingId: r.booking_id, kind: r.kind, name: r.name, mime: r.mime, size: r.size,
@@ -211,7 +231,8 @@ class Db {
     const keys = Object.keys(payment);
     const sets = keys.map((k, i) => `${snake(k)} = $${i + 3}`);
     const r = await this.query(
-      "UPDATE bookings SET paid = true, paid_at = $2, stage = 'delivered', delivered_at = $2, updated_at = $2" +
+      "UPDATE bookings SET paid = true, paid_at = $2, stage = 'delivered', delivered_at = $2, updated_at = $2, " +
+      "downloads_unlocked_at = COALESCE(downloads_unlocked_at, $2)" +
       (sets.length ? ", " + sets.join(", ") : "") +
       " WHERE id = $1 AND paid = false AND status = 'confirmed' RETURNING *",
       [id, now, ...keys.map(k => payment[k])]);
@@ -424,6 +445,156 @@ class Db {
       "SELECT * FROM bookings WHERE date >= $1 AND date <= $2 ORDER BY date, starts_at, number",
       [from, to]);
     return r.rows.map(fromRow);
+  }
+
+  // ---- photos: the shoot uploaded to a booking --------------------------
+  // See server/migrations/009_fulfillment.sql for what each column means.
+
+  async photos(bookingId) {
+    const r = await this.query("SELECT * FROM photos WHERE booking_id = $1 ORDER BY sort_order, id", [bookingId]);
+    return r.rows.map(photoRow);
+  }
+
+  async photo(bookingId, id) {
+    const r = await this.query("SELECT * FROM photos WHERE booking_id = $1 AND id = $2", [bookingId, id]);
+    return photoRow(r.rows[0]);
+  }
+
+  // A new photo at the end of the job. The same bytes twice in one booking
+  // hit the unique index and come back as { duplicate } instead.
+  async addPhoto(f) {
+    const r = await this.query(
+      "INSERT INTO photos (booking_id, original_filename, sort_order, sha256, mime_type, original_storage_key, source_thumb_key, " +
+      "source_preview_key, original_width, original_height, original_size) " +
+      "VALUES ($1, $2, COALESCE((SELECT max(sort_order) + 1 FROM photos WHERE booking_id = $1), 0), $3, $4, $5, $6, $7, $8, $9, $10) " +
+      "ON CONFLICT (booking_id, sha256) DO NOTHING RETURNING *",
+      [f.bookingId, f.originalFilename, f.sha256, f.mimeType, f.originalStorageKey, f.sourceThumbKey, f.sourcePreviewKey,
+        f.originalWidth, f.originalHeight, f.originalSize]);
+    return photoRow(r.rows[0]);
+  }
+
+  async findPhotoBySha(bookingId, sha) {
+    const r = await this.query("SELECT * FROM photos WHERE booking_id = $1 AND sha256 = $2", [bookingId, sha]);
+    return photoRow(r.rows[0]);
+  }
+
+  async updatePhoto(id, patch, where = "") {
+    const keys = Object.keys(patch);
+    const sets = keys.map((k, i) => `${snake(k)} = $${i + 2}`);
+    sets.push("updated_at = now()");
+    const r = await this.query(`UPDATE photos SET ${sets.join(", ")} WHERE id = $1 ${where} RETURNING *`, [id, ...keys.map(k => patch[k])]);
+    return photoRow(r.rows[0]);
+  }
+
+  // The same change to many photos of one booking at once: the bulk actions.
+  // `where` narrows it further, so "queue these" never touches a photo that
+  // is already being edited.
+  async updatePhotos(bookingId, ids, patch, where = "") {
+    const keys = Object.keys(patch);
+    const sets = keys.map((k, i) => `${snake(k)} = $${i + 3}`);
+    sets.push("updated_at = now()");
+    const r = await this.query(
+      `UPDATE photos SET ${sets.join(", ")} WHERE booking_id = $1 AND id = ANY($2::bigint[]) ${where} RETURNING *`,
+      [bookingId, ids, ...keys.map(k => patch[k])]);
+    return r.rows.map(photoRow);
+  }
+
+  async deletePhotos(bookingId, ids) {
+    const r = await this.query(
+      "DELETE FROM photos WHERE booking_id = $1 AND id = ANY($2::bigint[]) AND ai_edit_status <> 'processing' RETURNING *",
+      [bookingId, ids]);
+    return r.rows.map(photoRow);
+  }
+
+  // The order the owner dragged them into. Ids not named keep their place
+  // after the named ones.
+  async reorderPhotos(bookingId, ids) {
+    await this.query(
+      "UPDATE photos p SET sort_order = o.n - 1, updated_at = now() FROM unnest($2::bigint[]) WITH ORDINALITY AS o(id, n) " +
+      "WHERE p.booking_id = $1 AND p.id = o.id", [bookingId, ids]);
+    await this.query(
+      "UPDATE photos SET sort_order = sort_order + $3 WHERE booking_id = $1 AND NOT (id = ANY($2::bigint[]))",
+      [bookingId, ids, ids.length]);
+  }
+
+  // The next photos for the AI editor, taken so no other worker can take them.
+  // The attempt is counted here, before the call, so a server that dies mid
+  // edit still has it on the record and a photo can never be retried forever.
+  async claimEdits(n, now = new Date()) {
+    const r = await this.query(
+      "UPDATE photos SET ai_edit_status = 'processing', locked_at = $2, ai_attempt_count = ai_attempt_count + 1, updated_at = $2 " +
+      "WHERE id IN (SELECT id FROM photos WHERE ai_edit_status = 'queued' AND (next_attempt_at IS NULL OR next_attempt_at <= $2) " +
+      "ORDER BY next_attempt_at NULLS FIRST, booking_id, sort_order, id LIMIT $1 FOR UPDATE SKIP LOCKED) RETURNING *",
+      [n, now]);
+    return r.rows.map(photoRow);
+  }
+
+  // Photos a restarted server left half done. One whose master was saved only
+  // needs its sizes made again, which costs nothing; one without goes back in
+  // the queue if it has attempts left, and fails if not.
+  async staleEdits(olderThan) {
+    const r = await this.query("SELECT * FROM photos WHERE ai_edit_status = 'processing' AND locked_at < $1", [olderThan]);
+    return r.rows.map(photoRow);
+  }
+
+  async editCounts() {
+    const r = await this.query("SELECT ai_edit_status AS s, count(*) AS n FROM photos WHERE ai_edit_status IN ('queued', 'processing') GROUP BY 1");
+    const out = { queued: 0, processing: 0 };
+    for (const row of r.rows) out[row.s] = Number(row.n);
+    return out;
+  }
+
+  // Per booking numbers for the admin list: how far each job's photos are.
+  async photoSummary(ids) {
+    if (!ids.length) return new Map();
+    const r = await this.query(
+      "SELECT booking_id, count(*) AS total, count(*) FILTER (WHERE selected_for_delivery) AS finals, " +
+      "count(*) FILTER (WHERE ai_edit_status IN ('queued', 'processing')) AS editing, " +
+      "count(*) FILTER (WHERE ai_edit_status = 'failed') AS failed " +
+      "FROM photos WHERE booking_id = ANY($1) GROUP BY booking_id", [ids]);
+    const c = await this.query(
+      "SELECT booking_id, count(*) AS n FROM change_requests WHERE booking_id = ANY($1) AND resolved_at IS NULL GROUP BY booking_id", [ids]);
+    const open = new Map(c.rows.map(x => [x.booking_id, Number(x.n)]));
+    const out = new Map(r.rows.map(x => [x.booking_id, { total: Number(x.total), finals: Number(x.finals), editing: Number(x.editing), failed: Number(x.failed), changes: open.get(x.booking_id) || 0 }]));
+    for (const [id, n] of open) if (!out.has(id)) out.set(id, { total: 0, finals: 0, editing: 0, failed: 0, changes: n });
+    return out;
+  }
+
+  // ---- change requests from the gallery ----------------------------------
+  async addChange(bookingId, photoIds, labels, message) {
+    const r = await this.query(
+      "INSERT INTO change_requests (booking_id, photo_ids, photo_labels, message) VALUES ($1, $2::bigint[], $3, $4) RETURNING *",
+      [bookingId, photoIds, labels, message]);
+    return changeRow(r.rows[0]);
+  }
+
+  async changes(bookingId) {
+    const r = await this.query("SELECT * FROM change_requests WHERE booking_id = $1 ORDER BY created_at DESC", [bookingId]);
+    return r.rows.map(changeRow);
+  }
+
+  async changesToday(bookingId) {
+    const r = await this.query("SELECT count(*) AS n FROM change_requests WHERE booking_id = $1 AND created_at > now() - interval '1 day'", [bookingId]);
+    return Number(r.rows[0].n);
+  }
+
+  async resolveChange(bookingId, id, done) {
+    const r = await this.query("UPDATE change_requests SET resolved_at = $3 WHERE booking_id = $1 AND id = $2 RETURNING *",
+      [bookingId, id, done ? new Date() : null]);
+    return changeRow(r.rows[0]);
+  }
+
+  async byGallery(tok) {
+    if (!tok) return null;
+    const r = await this.query("SELECT * FROM bookings WHERE gallery_token = $1", [tok]);
+    return fromRow(r.rows[0]);
+  }
+
+  // Stamp a booking column once; whoever wins the update does the thing.
+  async claimOnce(id, column, now = new Date()) {
+    if (!["gallery_first_viewed_at", "delivery_email_sent_at", "sms_copied_at"].includes(column)) throw new Error("bad claim column");
+    const r = await this.query(`UPDATE bookings SET ${column} = $2 WHERE id = $1 AND ${column} IS NULL RETURNING id`, [id, now]);
+    return r.rowCount === 1;
   }
 
   async close() { await this.pool.end(); }
