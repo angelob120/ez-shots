@@ -187,6 +187,10 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-07 - Owner's visits stay out of analytics
+- Analytics only skipped the 12 hour admin cookie, so the owner counted once it ran out or on a device not signed in. Admin sign in and every admin page load now also set `ez_owner=1` for a year, and `/api/track` skips it. It grants nothing.
+- Verified against local Postgres with curl: a plain visit is stored, one with `ez_owner=1` is not, and login returns both cookies.
+
 ### 2026-10-07 - Clearer first shoot line on the home page
 - The hero line now reads "Your first shoot is $X. Every shoot after is $Y for the exact same package: photos and aerials, up to 75 finished images", so agents see it is one package with a first time discount, not two tiers.
 - Prices stay bound with `data-price` (`{media.first}` and `{media}`), so the live admin prices show. Checked in the browser preview.
