@@ -90,6 +90,12 @@ const STRIPE_KEY = process.env.STRIPE_SECRET_KEY || "";
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 const SITE_URL = String(process.env.SITE_URL || "").trim().replace(/\/$/, "");
 const SESSION_HOURS = 12;
+const SECURE = process.env.NODE_ENV === "development" ? "" : "; Secure";
+// Marks the owner's device for a year so analytics skips it after the 12
+// hour admin session runs out. It grants nothing; it only means "do not count
+// me", so a forged one costs nothing. Set at sign in and on every admin page
+// load, kept through sign out.
+const OWNER_COOKIE = "ez_owner=1; SameSite=Lax; Path=/; Max-Age=" + 365 * 24 * 3600 + SECURE;
 
 // Files that live in the repo but must not be served. docs/site.md noted that
 // the working notes were publicly readable on the old static deploy. They are
@@ -1366,7 +1372,7 @@ async function api(req, res, url) {
     let host = "";
     try { host = SITE_URL ? new URL(SITE_URL).hostname.replace(/^www\./, "") : ""; } catch {}
     await analytics.record(db, b, { ip: clientIp(req), ua: req.headers["user-agent"], host: req.headers.host, siteHost: host,
-      admin: authed(req), secret: TICKET_KEY });
+      admin: authed(req) || cookies(req).ez_owner === "1", secret: TICKET_KEY });
     return send(res, 204, "");
   }
 
@@ -1380,8 +1386,9 @@ async function api(req, res, url) {
   if (pathname.startsWith("/api/gallery/")) return fulfillment.gallery(req, res, url);
 
   if (pathname === "/api/admin/session" && req.method === "GET") {
+    const mine = authed(req) ? { "set-cookie": OWNER_COOKIE } : {};
     return json(res, 200, { enabled: !!ADMIN_PASSWORD, authed: authed(req), stripe: !!STRIPE_KEY, webhook: !!WEBHOOK_SECRET, bookings: !!db, email: email.configured(),
-      storage: storage ? storage.name : null, editor: require("./server/editor").provider.ready });
+      storage: storage ? storage.name : null, editor: require("./server/editor").provider.ready }, mine);
   }
 
   if (pathname === "/api/admin/login" && req.method === "POST") {
@@ -1396,8 +1403,7 @@ async function api(req, res, url) {
     if (!ok) return json(res, 401, { error: "That password is not right." });
     const tok = sign(Date.now() + SESSION_HOURS * 3600 * 1000);
     return json(res, 200, { ok: true }, {
-      "set-cookie": `ez_admin=${tok}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_HOURS * 3600}` +
-        (process.env.NODE_ENV === "development" ? "" : "; Secure")
+      "set-cookie": [`ez_admin=${tok}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_HOURS * 3600}` + SECURE, OWNER_COOKIE]
     });
   }
 

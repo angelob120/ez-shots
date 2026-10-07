@@ -190,7 +190,8 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
 - **Never store a name, email, IP or full referrer.** A visit is a random
   `sessionStorage` id; a visitor is a hash of IP and browser with a daily
   salt. Referrers keep the host only, gallery tokens become `/g`, and only
-  `/project?id=` keeps a query. Bots, the owner (admin cookie) and admin,
+  `/project?id=` keeps a query. Bots, the owner (admin cookie, or the year long `ez_owner` cookie any
+  admin sign in or admin page load sets on that device) and admin,
   manage, booked and gallery pages are not counted.
 - `admin-analytics.html` (`/admin-analytics`, the Analytics tab) reads
   `GET /api/admin/analytics?days=7|30|90|365`, which `report()` builds from

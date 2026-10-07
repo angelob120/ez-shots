@@ -10,7 +10,8 @@
 // What is never stored: a name, an email, an IP, a cookie. A visitor is a
 // hash of the IP and browser with a salt that changes every day, so the
 // same person counts once a day and cannot be followed across days. The
-// owner's own visits are skipped (a request carrying the admin cookie), and
+// owner's own visits are skipped (the admin cookie, or the year long
+// ez_owner cookie that signing in to admin leaves on the device), and
 // so are bots that say they are bots.
 "use strict";
 
