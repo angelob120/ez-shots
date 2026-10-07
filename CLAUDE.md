@@ -185,11 +185,14 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   opened from Open fulfillment in a booking's drawer): upload, sort, Edit with
   AI or Use as shot, review, Mark ready, then copy the text or send the email.
   `server/fulfillment.js` is all of it on the server; `js/admin-job.js` the page.
-- **Photos live in object storage, never in Postgres.** `server/storage.js`
-  is an S3 compatible client signed by hand (SigV4, checked against the AWS
-  test vectors) plus a local folder for development. Without
-  `OBJECT_STORAGE_*` in production the workspace is off and says so; it never
-  writes photos to the container disk, which a deploy wipes.
+- **Photos live in the Railway Postgres**, by the owner's choice on
+  2026-10-06 (`STORAGE_BACKEND=postgres` on Railway): `server/storage.js`
+  PgStorage keeps each file in 8 MB pieces (migration 012), so videos fit and
+  range requests read only what they need. Photo records are in `photos`
+  either way. The same module can talk to an S3 bucket (SigV4 by hand) or a
+  local folder for development; never the container disk in production,
+  which a deploy wipes. The Postgres volume is 50 GB and a shoot is roughly
+  1 GB, so watch it and set `SOURCE_RETENTION_DAYS` before it fills.
 - **The AI editor is only for editing.** `server/editor.js` is the provider
   (OpenAI `gpt-image-2`, medium, 1024x1024 by the owner's choice, about $0.053
   an edit, all env vars). A non square photo is padded into the square and cut

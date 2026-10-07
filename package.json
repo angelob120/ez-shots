@@ -12,7 +12,7 @@
     "check:bookings": "node scripts/check-bookings.mjs",
     "blog:write": "node --env-file-if-exists=.env scripts/write-blog.mjs",
     "seo": "node scripts/build-seo.mjs",
-    "check:fulfillment": "node scripts/check-fulfillment.mjs"
+    "check:fulfillment": "node scripts/check-fulfillment.mjs && CHECK_STORAGE=postgres node scripts/check-fulfillment.mjs"
   },
   "dependencies": {
     "heic-decode": "^2.1.0",

@@ -4,12 +4,12 @@
 This file is the memory between sessions. Read it at the start of every session along with `CLAUDE.md`. At the end of every session, append a new dated entry to the top of the Work Log describing what changed and anything the next session would otherwise have to rediscover. "Blocked on a human" lists things only the owner can do (accounts, keys, DNS, deploy clicks). Detailed per-area status lives in `docs/site.md`.
 
 ## Blocked on a human
-- **Create the photo bucket.** Fulfillment needs S3 compatible storage. Easiest
-  is a Railway bucket in the "WEBSITE EZ Shots (rebuild)" project, then give
-  the ez-shots service OBJECT_STORAGE_ENDPOINT, OBJECT_STORAGE_BUCKET,
-  OBJECT_STORAGE_ACCESS_KEY_ID, OBJECT_STORAGE_SECRET_ACCESS_KEY and
-  OBJECT_STORAGE_REGION (Cloudflare R2 works the same). Until then the
-  workspace says storage is off.
+- **Photos are stored in the Railway Postgres** (`STORAGE_BACKEND=postgres`,
+  the owner's choice). Its volume is 50 GB and a shoot is roughly 1 GB of
+  originals and sizes, so keep an eye on it; `SOURCE_RETENTION_DAYS` deletes
+  unused source photos after delivery. An empty volume `ez-shots-photos` was
+  attached to the ez-shots service at /data on 2026-10-06 before the owner
+  chose Postgres; it is unused and can be deleted, along with `STORAGE_DIR`.
 - **Paste the OpenAI key.** `OPENAI_API_KEY` is on the ez-shots service with a
   placeholder (added 2026-10-06); replace it with the real `sk-...` key. The
   placeholder reads as not set, so AI editing stays off until then.
@@ -186,6 +186,22 @@ All four still present as **Design Byte Agency**, selling "Photography Pictures 
 VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
+
+### 2026-10-06 - First shoot $99, photos stored in Postgres
+- An agent's first shoot is $99 for the package ($199 with the video), the
+  owner's big selling point: first thing in the header bar, the homepage hero
+  ("First shoot $99, then $199 for photos and aerials, up to 75 finished
+  images"), offer strips, pricing card and table, FAQ, guarantee, refund
+  terms, CTAs, blog facts. Migration 011 sets it live.
+- The booking page asks "Is this your first shoot?" again and the total moves
+  with it. The server gives $99 only to an email and phone with no earlier
+  confirmed booking (`db.bookedBefore`); otherwise it books at $199.
+- Photos and video now live in the Railway Postgres (`PgStorage`, migration
+  012, 8 MB pieces) with `STORAGE_BACKEND=postgres` on Railway.
+- Verified: `npm test`, `npm run check:bookings` (new checks: new agent $99,
+  same email or same phone $199, video never discounted), `npm run
+  check:fulfillment` on local disk and on Postgres storage, the homepage
+  header and hero in the preview on desktop and phone.
 
 ### 2026-10-06 - Fulfillment inside EZ Shots: upload, AI edit, gallery, pay, download
 - New workspace per booking, `/admin-job?id=EZ-...`: drag and drop the shoot

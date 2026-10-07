@@ -1317,7 +1317,7 @@ async function adminBooking(req, res, id) {
 // ---------------------------------------------------------------------------
 // Fulfillment: uploads, the AI edit queue, the gallery. See server/fulfillment.js.
 // ---------------------------------------------------------------------------
-const storage = storageLib.fromEnv();
+const storage = storageLib.fromEnv(() => db && db.pool);
 const fulfillment = fulfillmentLib.setup({
   getDb: () => db, storage, storageMissing: storageLib.missing, SITE_URL,
   json, send, raw, body, str, readConfig, origin, email, after, crm, tracker,

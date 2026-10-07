@@ -1,8 +1,13 @@
 // Where the photos live. Postgres holds what a photo is; the bytes live here.
 //
-// Two providers behind one small interface, so the rest of the server never
+// Three providers behind one small interface, so the rest of the server never
 // knows which one it has:
 //
+//   postgres  the Railway Postgres the bookings already live in. The owner's
+//          choice on 2026-10-06: everything on Railway, nothing else to set
+//          up. Files are split into 8 MB pieces (migration 012), so a big
+//          video fits and a range request reads only what it needs. This is
+//          the default whenever there is a DATABASE_URL and no bucket.
 //   s3     any S3 compatible bucket: Cloudflare R2, a Railway bucket, Amazon
 //          S3, Backblaze B2. Signed with AWS Signature Version 4 by hand, the
 //          same way server/stripe.js talks to Stripe without an SDK. Path
@@ -16,7 +21,7 @@
 //   get(key, range)          { status, stream, length, type, range } or null
 //   buffer(key)              the whole object, for image processing
 //   remove(key)
-//   name                     "s3" or "local", for the status line in admin
+//   name                     "postgres", "s3" or "local", for admin status
 //
 // The client never sees a storage address. Every byte a browser gets is
 // streamed through the server after it has checked who is asking, which is
@@ -31,6 +36,7 @@
 //   A Railway bucket's own variable names (ENDPOINT, BUCKET, ACCESS_KEY_ID,
 //   SECRET_ACCESS_KEY, REGION) work too, so referencing them is enough.
 //   STORAGE_DIR                       local folder, development only
+//   STORAGE_BACKEND                   postgres, s3 or local, to choose outright
 "use strict";
 
 const crypto = require("node:crypto");
@@ -163,6 +169,97 @@ class S3Storage {
   }
 }
 
+const { Readable } = require("node:stream");
+const CHUNK = 8 * 1024 * 1024;
+
+class PgStorage {
+  // getPool is a function because the database is joined after the server
+  // starts listening; storage is only used once it is there.
+  constructor(getPool) { this.getPool = getPool; this.name = "postgres"; }
+
+  pool() {
+    const p = this.getPool();
+    if (!p) throw new Error("the database is not connected yet");
+    return p;
+  }
+
+  async put(key, source, type) {
+    checkKey(key);
+    const c = await this.pool().connect();
+    try {
+      await c.query("BEGIN");
+      await c.query("DELETE FROM storage_objects WHERE key = $1", [key]);
+      await c.query("INSERT INTO storage_objects (key, type, size, chunk_size) VALUES ($1, $2, $3, $4)",
+        [key, type || "application/octet-stream", contentLength(source), CHUNK]);
+      let n = 0;
+      if (Buffer.isBuffer(source)) {
+        for (let i = 0; i < source.length || (i === 0 && n === 0); i += CHUNK) {
+          await c.query("INSERT INTO storage_chunks (key, n, data) VALUES ($1, $2, $3)", [key, n++, source.subarray(i, i + CHUNK)]);
+          if (!source.length) break;
+        }
+      } else {
+        // A file on disk, read a piece at a time so a big video never sits
+        // in memory whole.
+        for await (const piece of fs.createReadStream(source, { highWaterMark: CHUNK })) {
+          await c.query("INSERT INTO storage_chunks (key, n, data) VALUES ($1, $2, $3)", [key, n++, piece]);
+        }
+      }
+      await c.query("COMMIT");
+    } catch (e) {
+      await c.query("ROLLBACK").catch(() => {});
+      throw e;
+    } finally {
+      c.release();
+    }
+  }
+
+  async get(key, range) {
+    checkKey(key);
+    const r = await this.pool().query("SELECT type, size, chunk_size FROM storage_objects WHERE key = $1", [key]);
+    if (!r.rowCount) return null;
+    const size = Number(r.rows[0].size), cs = r.rows[0].chunk_size, type = r.rows[0].type;
+    let start = 0, end = size - 1, status = 200, cr = "";
+    const m = range && /^bytes=(\d*)-(\d*)$/.exec(range);
+    if (m && (m[1] || m[2])) {
+      start = m[1] ? Number(m[1]) : Math.max(0, size - Number(m[2]));
+      end = m[1] && m[2] ? Math.min(Number(m[2]), size - 1) : size - 1;
+      if (start > end || start >= size) return { status: 416, stream: null, length: 0, type, range: `bytes */${size}` };
+      status = 206;
+      cr = `bytes ${start}-${end}/${size}`;
+    }
+    const pool = this.pool();
+    const first = Math.floor(start / cs), last = Math.floor(Math.max(end, 0) / cs);
+    let n = first;
+    const stream = new Readable({
+      async read() {
+        if (n > last || size === 0) return this.push(null);
+        try {
+          const q = await pool.query("SELECT data FROM storage_chunks WHERE key = $1 AND n = $2", [key, n]);
+          if (!q.rowCount) return this.destroy(new Error("missing piece " + n + " of " + key));
+          let d = q.rows[0].data;
+          const from = n === first ? start - n * cs : 0;
+          const to = n === last ? end - n * cs + 1 : d.length;
+          n++;
+          this.push(d.subarray(from, to));
+        } catch (e) { this.destroy(e); }
+      }
+    });
+    return { status, stream, length: size === 0 ? 0 : end - start + 1, type, range: cr };
+  }
+
+  async buffer(key) {
+    const r = await this.get(key);
+    if (!r) return null;
+    const parts = [];
+    for await (const p of r.stream) parts.push(p);
+    return Buffer.concat(parts);
+  }
+
+  async remove(key) {
+    await this.pool().query("DELETE FROM storage_objects WHERE key = $1", [checkKey(key)]);
+  }
+}
+
 class LocalStorage {
   constructor(dir) { this.dir = path.resolve(dir); this.name = "local"; }
   file(key) { return path.join(this.dir, checkKey(key)); }
@@ -204,7 +301,10 @@ class LocalStorage {
 // The storage this process uses, or null when none is set up. Null switches
 // the fulfillment workspace off with a message saying what to set, rather than
 // writing photos somewhere the next deploy deletes.
-function fromEnv() {
+function fromEnv(getPool) {
+  const want = env("STORAGE_BACKEND").toLowerCase();
+  if (want === "postgres" && getPool) return new PgStorage(getPool);
+  if (want === "local") return new LocalStorage(env("STORAGE_DIR") || path.join(__dirname, "..", "data", "storage"));
   const endpoint = env("OBJECT_STORAGE_ENDPOINT", "ENDPOINT", "AWS_ENDPOINT_URL_S3", "AWS_ENDPOINT_URL");
   const bucket = env("OBJECT_STORAGE_BUCKET", "BUCKET", "AWS_S3_BUCKET_NAME");
   const accessKey = env("OBJECT_STORAGE_ACCESS_KEY_ID", "ACCESS_KEY_ID", "AWS_ACCESS_KEY_ID");
@@ -213,7 +313,9 @@ function fromEnv() {
     return new S3Storage({ endpoint, bucket, accessKey, secretKey, region: env("OBJECT_STORAGE_REGION", "REGION", "AWS_REGION", "AWS_DEFAULT_REGION") || "auto" });
   }
   const dir = env("STORAGE_DIR");
-  if (dir) return new LocalStorage(dir);
+  if (dir && want !== "postgres") return new LocalStorage(dir);
+  // No bucket and no folder: the database the bookings are in.
+  if (getPool && env("DATABASE_URL")) return new PgStorage(getPool);
   if (process.env.NODE_ENV === "development") return new LocalStorage(path.join(__dirname, "..", "data", "storage"));
   return null;
 }
@@ -223,4 +325,4 @@ function missing() {
     .filter(n => !env(n));
 }
 
-module.exports = { fromEnv, missing, signV4, S3Storage, LocalStorage, checkKey };
+module.exports = { fromEnv, missing, signV4, S3Storage, LocalStorage, PgStorage, checkKey };

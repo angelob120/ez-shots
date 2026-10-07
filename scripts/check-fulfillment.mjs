@@ -39,6 +39,10 @@ const DB_NAME = "ez_shots_ful_" + process.pid;
 const dbUrl = new URL(BASE_DB);
 dbUrl.pathname = "/" + DB_NAME;
 const STORE = fs.mkdtempSync(path.join(os.tmpdir(), "ez-store-"));
+// CHECK_STORAGE=postgres runs the whole thing with the photos in Postgres,
+// the way production keeps them.
+const STORAGE_KIND = process.env.CHECK_STORAGE === "postgres" ? "postgres" : "local";
+console.log("  storage: " + STORAGE_KIND);
 
 let failures = 0;
 function check(name, ok, detail) {
@@ -114,7 +118,7 @@ function startServer() {
   server = spawn(process.execPath, ["server.js"], {
     env: Object.assign({}, process.env, {
       PORT: String(PORT), DATABASE_URL: dbUrl.toString(), NODE_ENV: "development", TZ: "America/Detroit",
-      ADMIN_PASSWORD: "check-pass", ADMIN_SECRET: "", STORAGE_DIR: STORE,
+      ADMIN_PASSWORD: "check-pass", ADMIN_SECRET: "", STORAGE_DIR: STORE, STORAGE_BACKEND: STORAGE_KIND,
       OBJECT_STORAGE_ENDPOINT: "", OBJECT_STORAGE_BUCKET: "", ENDPOINT: "", BUCKET: "",
       OPENAI_API_KEY: "sk-fake-test-key-000", OPENAI_API_BASE: "http://127.0.0.1:" + portOf(aiSrv), OPENAI_IMAGE_MODEL: "gpt-image-2",
       AI_CONCURRENCY: "3", AI_RATE_LIMIT_WAIT_MS: "2000",
@@ -151,7 +155,7 @@ function signed(payload) {
 execFileSync("psql", [BASE_DB, "-qc", `CREATE DATABASE ${DB_NAME}`], { stdio: "pipe" });
 try {
   const up = await startServer();
-  check("server boots with local storage and the AI editor", !!up && /photo storage local, AI editor gpt-image-2/.test(serverLog), serverLog.slice(-800));
+  check("server boots with " + STORAGE_KIND + " storage and the AI editor", !!up && new RegExp("photo storage " + STORAGE_KIND + ", AI editor gpt-image-2").test(serverLog), serverLog.slice(-800));
   if (!up) throw new Error("server did not start");
   const login = await call("POST", "/api/admin/login", { password: "check-pass" });
   cookie = (login.headers.get("set-cookie") || "").split(";")[0];
