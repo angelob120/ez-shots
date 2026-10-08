@@ -14,13 +14,12 @@
     grid.innerHTML = list.map(function (p) {
       return '<a class="card" href="/project?id=' + encodeURIComponent(p.id) + '">' +
         '<div class="thumb">' +
-          '<img src="' + esc(p.cover) + '" alt="' + esc(p.title) + ', ' + esc(p.location) + '" loading="lazy">' +
+          '<img src="' + esc(p.cover) + '" alt="' + esc(p.title) + '" loading="lazy">' +
           '<span class="pill">' + (p.gallery || []).length + ' photos</span>' +
         '</div>' +
         '<div class="body">' +
           '<span class="tag">' + esc(p.type) + '</span>' +
           '<h3>' + esc(p.title) + '</h3>' +
-          '<p class="meta">' + esc(p.location) + (p.sqft ? " &middot; " + esc(p.sqft) : "") + '</p>' +
           '<p>' + esc(p.short) + '</p>' +
           '<span class="more">View the shoot &rarr;</span>' +
         '</div>' +

@@ -187,6 +187,26 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-08 - Four more homes in the portfolio, no locations anywhere
+- Added four homes from `EZ Shots new images/EZ Shots OUR WORK` (folders 01 to 04)
+  as `oak-farmhouse`, `brick-new-build`, `infill-farmhouse` and
+  `plunge-pool-modern` in `js/projects.js`: 59 frames, 14 to 15 each, the
+  owner asked for the best ones only, not the full sets. Converted to webp at
+  the source 1280px with an 800px cover in `img/work/thumbs`.
+- These homes are in Austin, so the owner chose to remove every location tag:
+  the `location` field is gone from all ten projects, the cards and project
+  page no longer print it, and the portfolio and project meta descriptions no
+  longer say Southeast Michigan. The rest of the site still says Metro Detroit,
+  which is the service area.
+- House numbers cloned out of the oak farmhouse front, both brick new build
+  fronts and the plunge pool front. Skyline aerials (01/40, 04/02, 04/03,
+  04/29, 04/30) and the 04/06 carport with the number on the wall were left
+  out, same rule as the first six homes.
+- `EZ Shots new images/` is gitignored like the old reference library; the
+  folders 01 to 06 and BEST OF in it are the six homes already on the site.
+- Portfolio stats now 10 homes, 154 photos, 8 twilight. Checked /portfolio and
+  /project?id=plunge-pool-modern in the preview, every cover loads.
+
 ### 2026-10-08 - Email address hidden from scrapers
 - Took angelobrown1000@gmail.com out of every public page, the footer, booking.js,
   contact-form.js and the JSON-LD (build-seo.mjs, then `npm run seo`).

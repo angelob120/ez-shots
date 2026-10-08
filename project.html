@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Shoot | EZ Shots</title>
-  <meta name="description" content="A real estate photography shoot by EZ Shots in Southeast Michigan." />
+  <meta name="description" content="A real estate photography shoot by EZ Shots." />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="css/styles.css" />
   <script>(function(){try{var t=localStorage.getItem("theme");if(!t){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
@@ -64,13 +64,12 @@
         var has = function (s) { return (p.services || []).indexOf(s) >= 0; };
         var chips = (p.services || []).map(function (s) { return '<span class="chip">' + esc(s) + '</span>'; }).join("");
         var imgs = (p.gallery || []).map(function (src) {
-          return '<img src="' + esc(src) + '" alt="' + esc(p.title) + ', ' + esc(p.location) + '" loading="lazy">';
+          return '<img src="' + esc(src) + '" alt="' + esc(p.title) + '" loading="lazy">';
         }).join("");
         el.innerHTML =
           '<a class="back" href="/portfolio">&larr; Back to portfolio</a>' +
           '<p class="eyebrow">' + esc(p.type) + '</p>' +
           '<h1>' + esc(p.title) + '</h1>' +
-          '<p class="detail-meta">' + esc(p.location) + '</p>' +
           '<div class="chips">' + chips + '</div>' +
           '<div class="spec-row">' +
             '<div><b>' + esc(p.type) + '</b><span>Property</span></div>' +
@@ -93,7 +92,6 @@
             '<div class="body">' +
               '<span class="tag">' + esc(o.type) + '</span>' +
               '<h3>' + esc(o.title) + '</h3>' +
-              '<p class="meta">' + esc(o.location) + '</p>' +
               '<span class="more">View the shoot &rarr;</span>' +
             '</div></a>';
         }).join("");
