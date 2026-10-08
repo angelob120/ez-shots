@@ -19,7 +19,6 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SITE = "https://ezshots.org";
 const OG_IMAGE = "/img/work/brick-colonial-exterior-front-hero.webp";
-const EMAIL = "angelobrown1000@gmail.com";
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
 const write = (f, s) => { fs.mkdirSync(path.dirname(path.join(ROOT, f)), { recursive: true }); fs.writeFileSync(path.join(ROOT, f), s); };
 
@@ -59,7 +58,6 @@ const BUSINESS = {
   url: `${SITE}/`,
   image: `${SITE}${OG_IMAGE}`,
   logo: `${SITE}/favicon.svg`,
-  email: EMAIL,
   priceRange: "$$",
   address: { "@type": "PostalAddress", addressLocality: "Detroit", addressRegion: "MI", addressCountry: "US" },
   areaServed: AREAS.map((name) => ({ "@type": "Place", name })),

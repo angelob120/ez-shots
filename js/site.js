@@ -78,7 +78,7 @@
           '<p>Real estate photography, video and FAA licensed drone work for realtors across Metro Detroit. Book online for $0, photos back in about 24 hours, pay only if you are happy.</p>' +
           '<div class="footer-contact">' +
             '<a href="' + TEL + '">' + PHONE + ' (texting is best)</a>' +
-            '<a href="mailto:angelobrown1000@gmail.com">angelobrown1000@gmail.com</a>' +
+            '<button type="button" class="email-reveal" data-email>Tap to show email</button>' +
             '<a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">Questions? Optional 10 minute call</a>' +
           '</div>' +
         '</div>' +
@@ -236,4 +236,75 @@
   } else {
     window.ezTrack = function () {};
   }
+
+  // ------------------------------------------------------------------
+  // The email address is never in a page. Every place that shows it is a
+  // <button data-email>, and this swaps them all for a mailto link once a
+  // person taps one. A signed ticket is fetched only after the visitor moves,
+  // scrolls, taps or types, and the server (revealEmail in server.js) answers
+  // only a ticket a couple of seconds old, from this site, a few times an
+  // hour. A script reading the HTML never sees the address.
+  // ------------------------------------------------------------------
+  var mailTicket = null, mailAddr = "";
+  try { mailAddr = sessionStorage.getItem("ez_mail") || ""; } catch (e) {}
+  function getTicket() {
+    if (!mailTicket && window.fetch) {
+      mailTicket = fetch("/api/ticket", { credentials: "same-origin" })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { return { t: d.ticket, at: Date.now() }; })
+        .catch(function () { mailTicket = null; return null; });
+    }
+    return mailTicket || Promise.resolve(null);
+  }
+  ["pointermove", "touchstart", "scroll", "keydown"].forEach(function (ev) {
+    window.addEventListener(ev, function once() {
+      window.removeEventListener(ev, once, { passive: true });
+      getTicket();
+    }, { passive: true });
+  });
+  function showMail(addr) {
+    var btns = document.querySelectorAll("button[data-email]");
+    for (var i = 0; i < btns.length; i++) {
+      var a = document.createElement("a");
+      a.href = "mailto:" + addr;
+      a.textContent = addr;
+      a.className = "email-link";
+      btns[i].parentNode.replaceChild(a, btns[i]);
+    }
+  }
+  function revealMail(btn) {
+    if (mailAddr) return showMail(mailAddr);
+    var label = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "One moment...";
+    getTicket().then(function (tk) {
+      if (!tk) throw new Error("no ticket");
+      var wait = Math.max(0, tk.at + 2200 - Date.now());
+      return new Promise(function (r) { setTimeout(r, wait); }).then(function () {
+        return fetch("/api/email", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ticket: tk.t })
+        });
+      });
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || !d.email) throw new Error("refused");
+      mailAddr = d.email;
+      try { sessionStorage.setItem("ez_mail", mailAddr); } catch (e) {}
+      showMail(mailAddr);
+    }).catch(function () {
+      mailTicket = null;
+      btn.disabled = false;
+      btn.textContent = label;
+      btn.title = "That did not work. Try again, or text " + PHONE + ".";
+    });
+  }
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest && e.target.closest("button[data-email]");
+    if (!btn || !e.isTrusted) return;
+    e.preventDefault();
+    revealMail(btn);
+  });
+  if (mailAddr) showMail(mailAddr);
 })();

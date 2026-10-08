@@ -100,7 +100,7 @@ const OWNER_COOKIE = "ez_owner=1; SameSite=Lax; Path=/; Max-Age=" + 365 * 24 * 3
 // Files that live in the repo but must not be served. docs/site.md noted that
 // the working notes were publicly readable on the old static deploy. They are
 // not any more.
-const PRIVATE = [/^\/?\.git/, /^\/?\.claude/, /^\/?node_modules/, /^\/?data\//, /^\/?server\//,
+const PRIVATE = [/^\/?ez-shots\//, /^\/?\.git/, /^\/?\.claude/, /^\/?node_modules/, /^\/?data\//, /^\/?server\//,
   /\.md$/i, /^\/?server\.js$/, /^\/?package(-lock)?\.json$/, /^\/?Dockerfile$/, /^\/?scripts\//];
 
 const TYPES = {
@@ -556,14 +556,51 @@ function ticket(now = Date.now()) {
   return now + "." + crypto.createHmac("sha256", "ticket:" + TICKET_KEY).update(String(now)).digest("hex").slice(0, 32);
 }
 // "ok", "fast" (under the minimum), or "bad" (missing, forged or stale).
-function ticketAge(t, now = Date.now()) {
+function ticketAge(t, now = Date.now(), minSeconds = LIMITS.BOOK_MIN_SECONDS) {
   const [ts, mac] = String(t || "").split(".");
   if (!ts || !mac || !/^\d+$/.test(ts)) return "bad";
   const want = crypto.createHmac("sha256", "ticket:" + TICKET_KEY).update(ts).digest("hex").slice(0, 32);
   if (mac.length !== want.length || !crypto.timingSafeEqual(Buffer.from(mac), Buffer.from(want))) return "bad";
   const age = now - Number(ts);
   if (age > TICKET_HOURS * 3600 * 1000 || age < -60 * 1000) return "bad";
-  return age < LIMITS.BOOK_MIN_SECONDS * 1000 ? "fast" : "ok";
+  return age < minSeconds * 1000 ? "fast" : "ok";
+}
+
+// ---------------------------------------------------------------------------
+// The public email address
+//
+// It is never written into a page, a script or the structured data, so a
+// scraper reading the HTML finds nothing. A page shows a "tap to show" button
+// instead (js/site.js). The browser fetches a signed ticket only once a person
+// moves, scrolls, taps or types, and trades it here after a real click for the
+// address. The ticket has to be EMAIL_MIN_SECONDS old, the request has to come
+// from this site, and one address gets EMAIL_PER_HOUR answers an hour. The
+// server's own error messages still name the address: they only answer a
+// booking or a form a person sent.
+// ---------------------------------------------------------------------------
+const CONTACT_EMAIL = process.env.PUBLIC_EMAIL || "angelobrown1000@gmail.com";
+const EMAIL_MIN_SECONDS = 2, EMAIL_PER_HOUR = 20;
+const emailHits = new Map();
+async function revealEmail(req, res) {
+  const b = await body(req, 2 * 1024).catch(() => null);
+  if (!b) return json(res, 400, { error: "Bad request." });
+  const site = req.headers["sec-fetch-site"];
+  if (site && site !== "same-origin") return json(res, 403, { error: "Forbidden." });
+  const origin = req.headers.origin;
+  if (origin && origin !== "null") {
+    let host = "";
+    try { host = new URL(origin).host; } catch {}
+    if (host !== req.headers.host) return json(res, 403, { error: "Forbidden." });
+  }
+  const t = ticketAge(b.ticket, Date.now(), EMAIL_MIN_SECONDS);
+  if (t !== "ok") return json(res, 400, { error: t });
+  const ip = clientIp(req);
+  const hour = Date.now() - 3600 * 1000;
+  const hits = (emailHits.get(ip) || []).filter(x => x > hour);
+  if (hits.length >= EMAIL_PER_HOUR) return json(res, 429, { error: "Too many requests." });
+  emailHits.set(ip, hits.concat(Date.now()));
+  if (emailHits.size > 5000) for (const [k, v] of emailHits) if (!v.some(x => x > hour)) emailHits.delete(k);
+  return json(res, 200, { email: CONTACT_EMAIL }, { "cache-control": "no-store", "x-robots-tag": "noindex" });
 }
 
 // The address the request came from. Railway's proxy sets X-Real-IP; the
@@ -579,7 +616,7 @@ async function contact(req, res) {
   const ip = clientIp(req);
   const hour = Date.now() - 3600 * 1000;
   const hits = (contactHits.get(ip) || []).filter(t => t > hour);
-  if (hits.length >= 10) return json(res, 429, { error: "Too many messages. Please email angelobrown1000@gmail.com." });
+  if (hits.length >= 10) return json(res, 429, { error: "Too many messages. Please email " + CONTACT_EMAIL + "." });
   contactHits.set(ip, hits.concat(Date.now()));
   if (!str(b.from_name, 200) || !str(b.email_id, 200)) return json(res, 400, { error: "Missing fields." });
   try {
@@ -611,12 +648,12 @@ async function bookingRefusal(req, b, email, phone) {
     console.log(`[ez-shots] booking refused (${why}) from ${clientIp(req)} for ${email}`);
     return { status, error };
   };
-  if (str(b.hp, 200)) return say("honeypot", "Sorry, the booking did not go through. Email angelobrown1000@gmail.com and I will book you in.", 400);
+  if (str(b.hp, 200)) return say("honeypot", "Sorry, the booking did not go through. Email " + CONTACT_EMAIL + " and I will book you in.", 400);
   const t = ticketAge(b.ticket);
   if (t === "bad") return say("no ticket", "This page has been open too long. Refresh it and book again, your choices only take a moment.", 400);
   if (t === "fast") return say("too fast", "That was quicker than a person can book. Wait a few seconds and press Book again.", 400);
   const p = await db.bookingPressure(clientIp(req), email, phone);
-  const email_ = "Email angelobrown1000@gmail.com and I will book you in myself.";
+  const email_ = "Email " + CONTACT_EMAIL + " and I will book you in myself.";
   if (p.upcoming >= LIMITS.BOOK_PER_CLIENT) return say("client", `You already have ${p.upcoming} shoots coming up, which is the most the site books at once. ${email_}`);
   if (p.byIp >= LIMITS.BOOK_PER_IP) return say("address", `That is a lot of bookings from one place today. ${email_}`);
   if (p.total >= LIMITS.BOOK_PER_DAY) return say("total", `Online booking is full for today. ${email_}`);
@@ -1376,6 +1413,9 @@ async function api(req, res, url) {
     return send(res, 204, "");
   }
 
+  // A ticket on its own, for the "tap to show" email buttons.
+  if (pathname === "/api/ticket" && req.method === "GET") return json(res, 200, { ticket: ticket() }, { "cache-control": "no-store" });
+  if (pathname === "/api/email" && req.method === "POST") return revealEmail(req, res);
   if (pathname === "/api/book" && req.method === "POST") return book(req, res);
   if (pathname === "/api/contact" && req.method === "POST") return contact(req, res);
   if (pathname === "/api/session" && req.method === "GET") return session(req, res, url);

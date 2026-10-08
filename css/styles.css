@@ -615,6 +615,12 @@ form.lead-form.stacked { padding: 0; background: none; border: none; box-shadow:
 .footer .brand .brand-house { fill: #60a5fa; }
 .footer-brand p { color: rgba(255,255,255,.6); font-size: 14.5px; margin: 0 0 14px; line-height: 1.65; max-width: 320px; }
 .footer-contact a { display: block; color: #60a5fa; font-weight: 600; font-size: 14.5px; padding: 3px 0; }
+/* The email address is fetched on a tap (js/site.js), so it starts as a button that reads like a link. */
+.email-reveal { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: var(--accent); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.email-reveal:disabled { cursor: progress; opacity: .7; }
+.email-link { color: var(--accent); font-weight: 700; word-break: break-all; }
+.footer-contact .email-reveal { display: block; color: #60a5fa; font-weight: 600; font-size: 14.5px; padding: 3px 0; text-align: left; }
+.footer-contact .email-link { color: #60a5fa; font-weight: 600; }
 .footer-col h4 { color: #fff; font-size: 12.5px; text-transform: uppercase; letter-spacing: .12em; margin: 0 0 16px; font-weight: 800; }
 .footer-col a { display: block; color: rgba(255,255,255,.6); font-size: 14.5px; padding: 5px 0; transition: color .16s ease; }
 .footer-col a:hover { color: #fff; }

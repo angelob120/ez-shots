@@ -187,6 +187,23 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-08 - Email address hidden from scrapers
+- Took angelobrown1000@gmail.com out of every public page, the footer, booking.js,
+  contact-form.js and the JSON-LD (build-seo.mjs, then `npm run seo`).
+- Each spot is now a "tap to show" button. site.js fetches a signed ticket after
+  the first human signal, and on a trusted click POSTs it to `/api/email`, which
+  wants a ticket at least 2 seconds old, a same origin request and at most 20 an
+  hour per IP. Revealing once swaps every button on the page and is remembered
+  for the tab.
+- Browser side errors that used to name the email now say to text the phone.
+  Server JSON errors still name it, they only answer a person who sent a form.
+- The stale `ez-shots/` folder (old site, email and formsubmit form) was being
+  served at /ez-shots/index.html; it is now on PRIVATE and 404s.
+- Verified: curl of /, /contact, /privacy, /blog, site.js, booking.js has no
+  address; /api/email refuses no ticket, a fresh ticket and a foreign origin; a
+  real click on /contact in the preview revealed it. npm test and
+  check:bookings pass.
+
 ### 2026-10-07 - Owner's visits stay out of analytics
 - Analytics only skipped the 12 hour admin cookie, so the owner counted once it ran out or on a device not signed in. Admin sign in and every admin page load now also set `ez_owner=1` for a year, and `/api/track` skips it. It grants nothing.
 - Verified against local Postgres with curl: a plain visit is stored, one with `ez_owner=1` is not, and login returns both cookies.

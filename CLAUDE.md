@@ -263,6 +263,14 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   `blog/<slug>.html`; `/blog/<slug>.html` 301s to the clean address.
 
 ## Rules that will bite you
+- **Never write the email address into a page, a script or the JSON-LD.** Since
+  2026-10-08 it is a `<button type="button" class="email-reveal" data-email>`
+  and `js/site.js` swaps every one for a mailto link after a real tap: a
+  signed ticket from `GET /api/ticket` (fetched only once the visitor moves,
+  scrolls, taps or types), traded at `POST /api/email` when it is two seconds
+  old, same origin only, 20 an hour per IP (`revealEmail()` in `server.js`).
+  The address lives in `CONTACT_EMAIL` (env `PUBLIC_EMAIL`). The old copy of
+  the site in `ez-shots/` is on the private list and answers 404.
 - **URLs have no `.html`.** Since 2026-10-03 every link is root relative and clean:
   `/book`, `/project?id=x`, `/` for home, `/admin` for bookings and
   `/admin-settings` for `admin.html` (the one page not named after its file).

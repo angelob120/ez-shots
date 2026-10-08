@@ -236,7 +236,7 @@
               // regardless. Everything else has no record but this email, so
               // it has to be said.
               if (leave()) return;
-              setStatus("error", "Sorry, something went wrong. Please email angelobrown1000@gmail.com or try again.");
+              setStatus("error", "Sorry, something went wrong. Please try again, or text (313) 246-3280.");
               restoreButton();
             }
           );

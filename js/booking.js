@@ -183,13 +183,13 @@
     nextWrap.innerHTML = "";
     if (!AV) {
       calWrap.innerHTML = '<p class="form-help">The calendar could not load. Refresh the page, or email ' +
-        '<a href="mailto:angelobrown1000@gmail.com">angelobrown1000@gmail.com</a> and I will find you a time.</p>';
+        '<button type="button" class="email-reveal" data-email>my email (tap to show)</button> and I will find you a time.</p>';
       return;
     }
     var keys = Object.keys(AV.days).sort();
     if (!keys.length) {
       calWrap.innerHTML = '<p class="form-help">Nothing is open in the next few weeks. Email ' +
-        '<a href="mailto:angelobrown1000@gmail.com">angelobrown1000@gmail.com</a> and we will find a time.</p>';
+        '<button type="button" class="email-reveal" data-email>my email (tap to show)</button> and we will find a time.</p>';
       return;
     }
 
@@ -394,7 +394,7 @@
   function val(name) { var f = form.elements.namedItem(name); return f && typeof f.value === "string" ? f.value.trim() : ""; }
 
   form.beforeSend = function () {
-    if (!window.fetch) return Promise.reject(new Error("This browser cannot book online. Please email angelobrown1000@gmail.com."));
+    if (!window.fetch) return Promise.reject(new Error("This browser cannot book online. Please text (313) 246-3280."));
     if (!state.pkg || !state.day || !state.slot) return Promise.reject(new Error("Pick a package, a day and a time first."));
     var body = {
       packageId: state.pkg.id,
@@ -439,7 +439,7 @@
             throw new Error(d.error || "That time was just booked. Pick another available time.");
           });
         }
-        throw new Error(d.error || "Sorry, the booking did not go through. Try again in a minute, or email angelobrown1000@gmail.com.");
+        throw new Error(d.error || "Sorry, the booking did not go through. Try again in a minute, or text (313) 246-3280.");
       });
     }, function () {
       throw new Error("Could not reach the server. Check your connection and try again.");
@@ -566,7 +566,7 @@
   EZ.ready(function (cfg) {
     if (EZ.failed || !cfg.packages.length) {
       pkgWrap.innerHTML = '<p class="form-help">Packages could not load. Refresh the page, or email ' +
-        '<a href="mailto:angelobrown1000@gmail.com">angelobrown1000@gmail.com</a> and I will book you in directly.</p>';
+        '<button type="button" class="email-reveal" data-email>my email (tap to show)</button> and I will book you in directly.</p>';
       return;
     }
     paintPackages();
