@@ -187,6 +187,20 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-08 - Portfolio reordered best to worst
+- Homes now run best cover to weakest: plunge pool, oak farmhouse, modern
+  infill, brick new build, craftsman, modern farmhouse, infill farmhouse,
+  foursquare, fairway ranch, brick colonial. The owner did not want the brick
+  colonial first. The purple sky covers (oak farmhouse, brick new build,
+  infill) never sit next to each other, so the home page top three mixes them.
+- Every gallery was reordered best frame first, with the purple sky twilight
+  frames spread out between daytime ones instead of bunched at the top.
+- Removed `oak-farmhouse-exterior-rear-courtyard.webp`: the owner's folder had
+  the same photo twice (01/05 and 01/37). Portfolio stat now 153 photos.
+- Checked: npm test, check:bookings and check:fulfillment pass; all 13 public
+  pages and all 10 project pages load in the preview with no console errors
+  and no broken images.
+
 ### 2026-10-08 - Four more homes in the portfolio, no locations anywhere
 - Added four homes from `EZ Shots new images/EZ Shots OUR WORK` (folders 01 to 04)
   as `oak-farmhouse`, `brick-new-build`, `infill-farmhouse` and
