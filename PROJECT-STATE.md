@@ -187,6 +187,21 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-08 - First shoot price bound everywhere
+- Live config has the package at $149 and the first shoot at $49, but a
+  dozen spots still said $99 because they had no `data-price`: the
+  announcement bar in `js/site.js` (every page), about, areas, portfolio, the
+  faq question and its "with the video" line, the packages table $199, and
+  the meta descriptions on book, contact and guarantee.
+- All bound now. The faq video line uses `{media+video.first}`. areas,
+  portfolio and refund never loaded `config.js` and `prices.js` (refund had
+  `data-price` spans that never filled); they do now.
+- Reran `npm run seo` so og and twitter descriptions carry the templates.
+  Its sitemap reorder was reverted.
+- Verified in the preview: no $99, $199 or $299 text outside a `data-price`
+  element on any public page, and with a $149/$49 config fed in, the bar,
+  faq, areas, portfolio and refund all show $49.
+
 ### 2026-10-08 - Portfolio reordered best to worst
 - Homes now run best cover to weakest: plunge pool, oak farmhouse, modern
   infill, brick new build, craftsman, modern farmhouse, infill farmhouse,

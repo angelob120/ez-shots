@@ -47,7 +47,7 @@
     // The offer in one line, biggest first: nothing down, pay only if happy.
     // On a phone it shrinks to the two things that matter most and the link.
     '<div class="announce">' +
-      '<b>First shoot $99.</b> Book online, $0 down' +
+      '<b data-price="First shoot {media.first}.">First shoot $99.</b> Book online, $0 down' +
       '<span class="dot hide-sm">|</span>' +
       '<span class="hide-sm">Pay only after you see the photos</span>' +
       '<span class="dot hide-md">|</span>' +
