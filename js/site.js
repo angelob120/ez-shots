@@ -39,7 +39,7 @@
 
   // The business line, in the header on every page. The owner prefers a text,
   // so the phone strip opens Messages and every copy says texting is best.
-  var PHONE = "(313) 246-3280", TEL = "tel:+13132463280", SMS = "sms:+13132463280";
+  var PHONE = "(313) 395-1233", TEL = "tel:+13133951233", SMS = "sms:+13133951233";
   var TEXT_BEST = "Texting is best";
 
   var header =
