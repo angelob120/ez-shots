@@ -37,9 +37,10 @@
   // The admin pages draw their own top bar with the same mark.
   window.EZ_MARK = MARK;
 
-  // The GHL receptionist line accepts calls and texts on every public page.
-  var PHONE = "(313) 395-1233", TEL = "tel:+13133951233", SMS = "sms:+13133951233";
-  var PHONE_WELCOME = "Calls and texts are welcome";
+  // The business line, in the header on every page. The owner prefers a text,
+  // so the phone strip opens Messages and every copy says texting is best.
+  var PHONE = "(313) 246-3280", TEL = "tel:+13132463280", SMS = "sms:+13132463280";
+  var TEXT_BEST = "Texting is best";
 
   var header =
     '<a class="skip-link" href="#main">Skip to content</a>' +
@@ -60,13 +61,13 @@
       '<a href="/" class="brand">' + MARK + 'EZ <span>Shots</span></a>' +
       '<nav class="nav-links" id="nav-links" aria-label="Main">' + nav + '</nav>' +
       '<div class="nav-tools">' +
-        '<a href="' + TEL + '" class="nav-phone" aria-label="Call ' + PHONE + '; calls and texts are welcome">' + ICON.phone + '<span class="nav-phone-text"><b>' + PHONE + '</b><small>' + PHONE_WELCOME + '</small></span></a>' +
+        '<a href="' + TEL + '" class="nav-phone" aria-label="Call or text ' + PHONE + ', texting is best">' + ICON.phone + '<span class="nav-phone-text"><b>' + PHONE + '</b><small>' + TEXT_BEST + '</small></span></a>' +
         '<button type="button" class="icon-btn theme-toggle" aria-label="Switch between light and dark theme">' + ICON.sun + ICON.moon + '</button>' +
         '<a href="/book" class="btn nav-cta">Book a shoot</a>' +
         '<button type="button" class="icon-btn menu-btn" aria-label="Menu" aria-controls="nav-links" aria-expanded="false">' + ICON.menu + ICON.close + '</button>' +
       '</div>' +
     '</div>' +
-    '<a href="' + SMS + '" class="phone-strip" aria-label="Text ' + PHONE + '; calls and texts are welcome">' + ICON.phone + '<span class="nav-phone-text"><b>' + PHONE + '</b><small>' + PHONE_WELCOME + '</small></span></a>' +
+    '<a href="' + SMS + '" class="phone-strip">' + ICON.phone + '<span class="nav-phone-text"><b>' + PHONE + '</b><small>' + TEXT_BEST + '</small></span></a>' +
     '</header>';
 
   var footer =
@@ -76,7 +77,7 @@
           '<div class="brand">' + MARK + 'EZ <span>Shots</span></div>' +
           '<p>Real estate photography, video and FAA licensed drone work for realtors across Metro Detroit. Book online for $0, photos back in about 24 hours, pay only if you are happy.</p>' +
           '<div class="footer-contact">' +
-            '<a href="' + TEL + '">' + PHONE + ' — Calls and texts are welcome</a>' +
+            '<a href="' + TEL + '">' + PHONE + ' (texting is best)</a>' +
             '<button type="button" class="email-reveal" data-email>Tap to show email</button>' +
             '<a href="https://tidycal.com/angelo3/quick-10-minute-chat" target="_blank" rel="noopener">Questions? Optional 10 minute call</a>' +
           '</div>' +
