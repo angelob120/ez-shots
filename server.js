@@ -76,6 +76,7 @@ const email = require("./server/email");
 const tracker = require("./server/tracker");
 const crm = require("./server/crm");
 const analytics = require("./server/analytics");
+const prices = require("./server/prices");
 const storageLib = require("./server/storage");
 const fulfillmentLib = require("./server/fulfillment");
 
@@ -421,7 +422,8 @@ async function serveStatic(req, res, pathname, search = "") {
   if (!stat || stat.isDirectory()) {
     const html = await fsp.readFile(path.join(ROOT, "index.html")).catch(() => null);
     if (!html) return send(res, 404, "Not found", { "content-type": "text/plain" });
-    return send(res, 404, html, { "content-type": TYPES[".html"] });
+    const cfg = await readConfig().catch(() => null);
+    return send(res, 404, prices.render(html.toString(), cfg), { "content-type": TYPES[".html"] });
   }
 
   const ext = path.extname(file).toLowerCase();
@@ -434,6 +436,26 @@ async function serveStatic(req, res, pathname, search = "") {
   // Images and fonts do not have that problem, a new photo is a new filename.
   const CODE = [".html", ".json", ".js", ".css", ".svg", ".xml", ".txt"];
   const cacheHeader = CODE.indexOf(ext) !== -1 ? "no-cache" : "public, max-age=604800";
+
+  // A page that quotes a price is filled with the live config here, so the
+  // HTML, its meta descriptions and its JSON-LD say what admin says, even to
+  // a crawler that never runs js/prices.js. The ETag is the filled page, so a
+  // price change in admin is a new ETag and never a stale 304. js/site.js is
+  // filled too: it draws the announcement bar, which quotes the first shoot
+  // price on every page, and would otherwise flash the old number first.
+  if (ext === ".html" || rel === "/js/site.js") {
+    let html = await fsp.readFile(file, "utf8");
+    if (html.indexOf("data-price=") !== -1) {
+      try { html = prices.render(html, await readConfig()); }
+      catch (e) { console.error("[prices] could not fill", rel, e.message); }
+    }
+    const body = Buffer.from(html);
+    const tag = '"' + crypto.createHash("sha1").update(body).digest("base64url").slice(0, 20) + '"';
+    if (req.headers["if-none-match"] === tag) { res.writeHead(304, { etag: tag }); return res.end(); }
+    res.writeHead(200, { "content-type": TYPES[ext], "content-length": body.length, "cache-control": cacheHeader, etag: tag });
+    return res.end(req.method === "HEAD" ? undefined : body);
+  }
+
   const etag = '"' + stat.size + "-" + Number(stat.mtimeMs).toString(36) + '"';
   if (req.headers["if-none-match"] === etag) { res.writeHead(304, { etag }); return res.end(); }
 

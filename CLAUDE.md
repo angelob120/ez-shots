@@ -99,10 +99,15 @@ Never write an em-dash or an en-dash anywhere: not in code, comments, docs, comm
   manage page showed "That link does not match a booking" under a real booking
   for a day. Toggle visibility with `el.hidden`, never with a class that sets
   `display` on something that also carries `hidden`.
-- **Prose prices are bound to the config, one element at a time.** `js/prices.js`
-  fills `data-price="{media}"`, `{video}` (the add on) and `{media+video}` style templates on 45 elements across
-  nine pages, including the meta descriptions and the package `<option>` rows.
-  Add a new price to the copy and it needs a `data-price` or it will go stale.
+- **Prose prices are bound to the config, one element at a time.** Every
+  `data-price="{media}"`, `{media.first}` (the first shoot price), `{video}`
+  (the add on) and `{media+video}` style template is filled on the server by
+  `server/prices.js` before the page is sent (HTML pages and `js/site.js`, the
+  announcement bar), so crawlers, link previews and the JSON-LD get the live
+  price too. `js/prices.js` fills the same templates again in the browser.
+  `scripts/build-seo.mjs` carries the templates into the og, twitter and
+  JSON-LD tags. Since 2026-10-08 every package price on the site is bound;
+  add a new price to the copy and it needs a `data-price` or it will go stale.
   **Do not "simplify" this into a find and replace for `$150`.** `services.html`
   says "Plus $75" for the twilight and rush add ons and `faq.html` says other
   photographers charge "$100 to $175". Those numbers must not move when a package

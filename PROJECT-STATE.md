@@ -187,6 +187,22 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-08 - Prices filled on the server, so every reader gets the live one
+- The browser binding alone left crawlers, link previews and the JSON-LD on
+  the typed in $99/$199. `server/prices.js` now fills every `data-price`
+  template in an HTML page (and in `js/site.js`, the announcement bar) with
+  the live config before sending it. The ETag is a hash of the filled page,
+  so a price change in admin is never answered with a stale 304.
+- `scripts/build-seo.mjs` writes JSON-LD with a `data-price` template beside
+  the fallback JSON (FAQPage and the packages Service). Fixed a slip from the
+  entry below: `<summary data-price>` was skipped by `faqSchema`, which
+  dropped the first shoot question from the FAQ schema. It is back.
+- book.html video add on price bound too (`+{video}`).
+- Verified with the local config at $149/$49: curl of every public page,
+  the 404, a blog post and `js/site.js` returned no $99, $199 or $299, the
+  JSON-LD parsed, the faq schema said "How does the $49 first shoot work?",
+  and a repeat request with the ETag got a 304. Local config put back after.
+
 ### 2026-10-08 - First shoot price bound everywhere
 - Live config has the package at $149 and the first shoot at $49, but a
   dozen spots still said $99 because they had no `data-price`: the

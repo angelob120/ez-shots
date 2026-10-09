@@ -26,7 +26,18 @@ const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 const unesc = (s) => s.replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&middot;/g, "-");
 const strip = (s) => unesc(s.replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
 // Inside a <script type="application/ld+json">, "</" must not appear.
-const ld = (o) => `<script type="application/ld+json">${JSON.stringify(o).replace(/</g, "\\u003c")}</script>`;
+const json = (o) => JSON.stringify(o).replace(/</g, "\\u003c");
+// An entry can be [object, template]: the same object with {media} style price
+// tokens in place of the numbers. The template rides along in data-price, and
+// server/prices.js fills it with the live config before the page is sent, so
+// the structured data quotes the same price as the page.
+const ld = (o) => {
+  const [obj, tpl] = Array.isArray(o) ? o : [o, null];
+  const dp = tpl && json(tpl) !== json(obj) ? ` data-price="${esc(json(tpl))}"` : "";
+  return `<script type="application/ld+json"${dp}>${json(obj)}</script>`;
+};
+// Like strip(), but a bound price becomes its template, {media.first}, not the number.
+const stripTpl = (s) => strip(s.replace(/<([a-z0-9]+)\b[^>]*\sdata-price="([^"]*)"[^>]*>[^<]*<\/\1>/gi, (m, t, tpl) => esc(unesc(tpl))));
 
 // Public pages: file, clean path, breadcrumb name. Order is the sitemap order.
 const PAGES = [
@@ -114,12 +125,14 @@ function pageMeta(html) {
 }
 
 function faqSchema(html) {
-  const qa = [...html.matchAll(/<summary>([\s\S]*?)<\/summary>\s*<div class="answer">([\s\S]*?)<\/div>\s*<\/details>/g)];
-  return {
+  const qa = [...html.matchAll(/<summary([^>]*)>([\s\S]*?)<\/summary>\s*<div class="answer">([\s\S]*?)<\/div>\s*<\/details>/g)];
+  const schema = (q, a) => ({
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: qa.map(([, q, a]) => ({ "@type": "Question", name: strip(q), acceptedAnswer: { "@type": "Answer", text: strip(a) } })),
-  };
+    mainEntity: qa.map((m) => ({ "@type": "Question", name: q(m), acceptedAnswer: { "@type": "Answer", text: a(m) } })),
+  });
+  const qTpl = ([, attrs, q]) => { const t = (attrs.match(/data-price="([^"]*)"/) || [])[1]; return t ? strip(t) : stripTpl(q); };
+  return [schema((m) => strip(m[2]), (m) => strip(m[3])), schema(qTpl, (m) => stripTpl(m[3]))];
 }
 
 /* ---------------------------------------------------------------------------
@@ -312,11 +325,12 @@ for (const [file, url, crumb] of PAGES) {
   if (file === "index.html") extra.push(BUSINESS, { "@context": "https://schema.org", "@type": "WebSite", name: "EZ Shots", url: `${SITE}/` });
   if (file === "faq.html") extra.push(faqSchema(html));
   if (file === "services.html" || file === "packages.html") {
-    extra.push({
+    const service = (description) => ({
       "@context": "https://schema.org", "@type": "Service", serviceType: "Real estate photography",
       provider: { "@id": `${SITE}/#business` }, areaServed: AREAS.slice(0, 3),
-      name: meta.title, description: meta.description,
+      name: meta.title, description,
     });
+    extra.push([service(meta.description), service(meta.descTpl || meta.description)]);
   }
   if (crumb) extra.push(crumbs([[crumb, url]]));
   html = inject(html, seoBlock({ url, ...meta, extra }));
