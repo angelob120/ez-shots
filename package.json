@@ -7,7 +7,7 @@
     "dev": "node --env-file-if-exists=.env server.js",
     "start:static": "serve . -l ${PORT:-3000}",
     "check:forms": "node scripts/check-forms.mjs",
-    "test": "node scripts/check-forms.mjs && node scripts/check-availability.mjs",
+    "test": "node scripts/check-forms.mjs && node scripts/check-availability.mjs && node scripts/check-ghl.mjs",
     "check:emails": "node scripts/preview-emails.mjs",
     "check:bookings": "node scripts/check-bookings.mjs",
     "blog:write": "node --env-file-if-exists=.env scripts/write-blog.mjs",

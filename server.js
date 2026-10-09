@@ -46,6 +46,11 @@
 //   REVIEW_URL             optional, the Google review link the thank you email
 //                          points at a day after a paid delivery. Without it
 //                          that email asks for a reply instead.
+//   GHL_LOCATION_ID, GHL_PRIVATE_TOKEN  optional HighLevel sub-account sync.
+//                          A confirmed booking is upserted as a contact and
+//                          receives GHL_BOOKED_TAG (default ezshots-booked).
+//                          The GHL workflow behind that tag owns pipeline and
+//                          follow-up cleanup. No opt-out fields are sent.
 //   SITE_URL               optional, the public origin used to build Stripe's
 //                          return URLs. Worked out from the request when unset.
 //   OBJECT_STORAGE_*       where the photos live, see server/storage.js. Without
@@ -75,6 +80,7 @@ const { Db } = require("./server/db");
 const email = require("./server/email");
 const tracker = require("./server/tracker");
 const crm = require("./server/crm");
+const ghl = require("./server/ghl");
 const analytics = require("./server/analytics");
 const prices = require("./server/prices");
 const storageLib = require("./server/storage");
@@ -752,6 +758,7 @@ async function book(req, res) {
   console.log(`[ez-shots] ${c.id} booked from the site for ${date} ${time}, nothing paid`);
   notify(c);
   crm.report("booked", publicBooking(c));
+  ghl.report(publicBooking(c));
   return done(c);
 }
 
@@ -1257,6 +1264,7 @@ async function adminCreate(req, res) {
   }
   console.log(`[ez-shots] ${b.id} added by the owner for ${date} ${time}${paid ? ", paid" : ", unpaid"}`);
   crm.report("booked", publicBooking(b));
+  ghl.report(publicBooking(b));
   if (paid) crm.report("paid", publicBooking(b));
   let emailed = false;
   if (p.notify === true && mail) { emailed = email.configured(); notify(b); }
@@ -1294,6 +1302,7 @@ async function adminBooking(req, res, id) {
         out = await db.confirm(b.id, { checkoutMode: b.checkoutMode || "manual" }, now);
         tracker.reportPaid(db, out);
         crm.report("booked", publicBooking(out));
+        ghl.report(publicBooking(out));
         crm.report("paid", publicBooking(out));
       }
     } else if (p.action === "move") {

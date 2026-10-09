@@ -187,6 +187,20 @@ VIDEO" and "WITH VIDEO". See Blocked above.
 
 ## Work Log (newest first)
 
+### 2026-10-08 - Confirmed bookings automatically stop GHL follow-up
+- Added `server/ghl.js`. After any site or owner-created booking is confirmed,
+  the server upserts the customer into the EZ Shots GHL sub-account and adds
+  `ezshots-booked` without replacing other tags or sending any DND/opt-out
+  fields. Failures do not block booking and retry once after 30 seconds.
+- GHL's published `EZ Shots - Confirmed Booking Cleanup` workflow is triggered
+  by that tag. It removes the contact from every other workflow and moves or
+  creates the EZ Shots Sales Pipeline opportunity at `Booked`.
+- Production needs `GHL_LOCATION_ID` and a `GHL_PRIVATE_TOKEN` limited to the
+  `contacts.write` scope. `GHL_BOOKED_TAG` is optional and defaults to
+  `ezshots-booked`.
+- Added a deterministic mock API check to `npm test`. It verifies the sync
+  preserves existing tags and never sends opt-out/DND fields.
+
 ### 2026-10-08 - Prices filled on the server, so every reader gets the live one
 - The browser binding alone left crawlers, link previews and the JSON-LD on
   the typed in $99/$199. `server/prices.js` now fills every `data-price`
