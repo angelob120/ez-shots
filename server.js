@@ -79,6 +79,7 @@ const stripe = require("./server/stripe");
 const { Db } = require("./server/db");
 const email = require("./server/email");
 const tracker = require("./server/tracker");
+const {trackerAnalytics} = require("./server/tracker-analytics");
 const crm = require("./server/crm");
 const ghl = require("./server/ghl");
 const analytics = require("./server/analytics");
@@ -1431,6 +1432,11 @@ async function api(req, res, url) {
     const honest = url.searchParams.get("all") === "1" && authed(req);
     // The ticket the booking form hands back with the booking, see LIMITS.
     return json(res, 200, Object.assign(avail.calendar(cfg.availability, await takenNow(cfg.availability, now), now, honest), { ticket: ticket() }));
+  }
+
+  if (pathname === "/api/tracker/analytics" && req.method === "GET") {
+    try { const result=await trackerAnalytics(db,req,url);return json(res,result.status,result.data,{"cache-control":"no-store"}); }
+    catch { return json(res,503,{error:"analytics_unavailable"}); }
   }
 
   // Site analytics. Always answers 204, stored or not, so a visitor's page
